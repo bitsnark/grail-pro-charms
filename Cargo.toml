@@ -1,6 +1,6 @@
 [package]
-name = "charmed-btc"
-description = "A simple Charms app"
+name = "grail-pro-charms"
+description = "App contract for Grail Pro"
 version = "0.1.0"
 edition = "2021"
 license = "MIT"
