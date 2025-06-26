@@ -126,14 +126,5 @@ fn nft_contract_satisfied(nft_app: &App, tx: &Transaction, x: &Data, w: &Data) -
         return false;
     };
 
-    // If new cosigners are present append and compare to the tx_out cosigner roster,
-    // otherwise checks if tx_out/tx_in roster remains the same
-    let updated_cosigners: Vec<String> = roster_nft_in
-        .pubkeys
-        .iter()
-        .cloned()
-        .chain(roster_nft_out.new_cosigners.clone().unwrap_or_default())
-        .collect();
-
-    updated_cosigners == roster_nft_out.pubkeys
+    roster_nft_in.pubkeys == roster_nft_out.pubkeys
 }
