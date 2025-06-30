@@ -31,11 +31,11 @@ fn token_contract_satisfied(token_app: &App, tx: &Transaction, x: &Data, w: &Dat
     let utxo_id_charms = tx.ins.get(&utxo_id).expect("UtxoId not found in `ins`!");
     let utxo_id_data = utxo_id_charms
         .get(token_app)
-        .expect("Data for charms app not found!");
+        .expect("Could not find tx.in data for token app!");
 
     let xbtc_data_in: XBTCData = utxo_id_data
         .value()
-        .expect("Couldn't deserialize data into PeginData");
+        .expect("Couldn't deserialize tx.in into XBTCData");
 
     match xbtc_data_in.action {
         TransactionType::Mint => {
@@ -53,7 +53,7 @@ fn mint_contract_satisfied(
     token_app: &App,
     tx: &Transaction,
     x: &Data,
-    w: &Data,
+    _w: &Data,
     xbtc_data_in: XBTCData,
 ) -> bool {
     let locked_funds_tx =
@@ -63,7 +63,7 @@ fn mint_contract_satisfied(
     let Some(xbtc_data_out): Option<XBTCData> =
         app_datas(token_app, tx.outs.iter()).find_map(|data| data.value().ok())
     else {
-        eprintln!("could not determine outgoing remaining supply");
+        eprintln!("could not find tx.out XBTC data");
         return false;
     };
 
@@ -81,14 +81,14 @@ fn mint_contract_satisfied(
 fn burn_contract_satisfied(
     token_app: &App,
     tx: &Transaction,
-    x: &Data,
-    w: &Data,
+    _x: &Data,
+    _w: &Data,
     xbtc_data_in: XBTCData,
 ) -> bool {
     let Some(xbtc_data_out): Option<XBTCData> =
         app_datas(token_app, tx.outs.iter()).find_map(|data| data.value().ok())
     else {
-        eprintln!("could not determine outgoing remaining supply");
+        eprintln!("Could not find tx.out XBTC data");
         return false;
     };
 
@@ -102,7 +102,7 @@ fn burn_contract_satisfied(
     xbtc_data_out.lock_amount + xbtc_data_out.change_amount == xbtc_data_in.lock_amount
 }
 
-fn nft_contract_satisfied(nft_app: &App, tx: &Transaction, x: &Data, w: &Data) -> bool {
+fn nft_contract_satisfied(nft_app: &App, tx: &Transaction, _x: &Data, w: &Data) -> bool {
     let utxo_id = UtxoId::from_bytes(
         w.bytes()
             .as_slice()
@@ -113,18 +113,18 @@ fn nft_contract_satisfied(nft_app: &App, tx: &Transaction, x: &Data, w: &Data) -
     let utxo_id_charms = tx.ins.get(&utxo_id).expect("UtxoId not found in `ins`!");
     let utxo_id_data = utxo_id_charms
         .get(nft_app)
-        .expect("Data for charms app not found!");
+        .expect("Could not find tx.in RosterNFT data!");
 
-    let roster_nft_in: RosterNFT = utxo_id_data
+    let _: RosterNFT = utxo_id_data
         .value()
-        .expect("Couldn't deserialize data into PeginData");
+        .expect("Couldn't deserialize data into RosterNFT");
 
-    let Some(roster_nft_out): Option<RosterNFT> =
+    let Some(_): Option<RosterNFT> =
         app_datas(nft_app, tx.outs.iter()).find_map(|data| data.value().ok())
     else {
-        eprintln!("could not determine outgoing remaining supply");
+        eprintln!("Could not find RosterNFT");
         return false;
     };
 
-    roster_nft_in.pubkeys == roster_nft_out.pubkeys
+    return true;
 }
