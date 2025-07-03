@@ -1,0 +1,7 @@
+
+{
+    "deployerPublicKey": "02911b8d7cdf57a1e7758587df66172407b3e45944003b98f8fbe690d4b3cd89b1",
+    "deployerPrivateKey": "fd9e30ff6736c3cd85c80f2dae42924820906a2dd69c51b437427899c2284351",
+    "network": "regtest",
+    "feerate": 1000
+}

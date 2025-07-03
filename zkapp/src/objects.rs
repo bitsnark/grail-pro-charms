@@ -21,3 +21,9 @@ pub struct XBTCData {
     pub fee: u64,
     pub action: TransactionType,
 }
+
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
+pub struct NftData {
+    pub current_cosigners: String,
+    pub current_threshold: u32
+}

@@ -1,26 +1,13 @@
 use charms_sdk::data::{app_datas, check, App, Data, Transaction, UtxoId, NFT, TOKEN};
 
-use crate::objects::{RosterNFT, TransactionType, XBTCData};
+use crate::objects::{NftData, TransactionType, XBTCData};
 
 pub mod objects;
 
-pub fn app_contract(app: &App, tx: &Transaction, x: &Data, w: &Data) -> bool {
-    match app.tag {
-        TOKEN => {
-            check!(token_contract_satisfied(app, tx, x, w))
-        }
-        NFT => {
-            check!(nft_contract_satisfied(app, tx, x, w))
-        }
-        _ => {
-            unreachable!()
-        }
-    }
+// x - private inputs
+// w - public inputs
 
-    true
-}
-
-fn token_contract_satisfied(token_app: &App, tx: &Transaction, x: &Data, w: &Data) -> bool {
+pub fn token_contract_satisfied(token_app: &App, tx: &Transaction, x: &Data, w: &Data) -> bool {
     let utxo_id = UtxoId::from_bytes(
         w.bytes()
             .as_slice()
@@ -33,17 +20,17 @@ fn token_contract_satisfied(token_app: &App, tx: &Transaction, x: &Data, w: &Dat
         .get(token_app)
         .expect("Data for charms app not found!");
 
-    let xbtc_data_in: XBTCData = utxo_id_data
+    let data_in: XBTCData = utxo_id_data
         .value()
         .expect("Couldn't deserialize data into PeginData");
 
-    match xbtc_data_in.action {
+    match data_in.action {
         TransactionType::Mint => {
-            check!(mint_contract_satisfied(token_app, tx, x, w, xbtc_data_in));
+            check!(mint_contract_satisfied(token_app, tx, x, w, data_in));
             true
         }
         TransactionType::Burn => {
-            check!(burn_contract_satisfied(token_app, tx, x, w, xbtc_data_in));
+            check!(burn_contract_satisfied(token_app, tx, x, w, data_in));
             true
         }
     }
@@ -102,38 +89,39 @@ fn burn_contract_satisfied(
     xbtc_data_out.lock_amount + xbtc_data_out.change_amount == xbtc_data_in.lock_amount
 }
 
-fn nft_contract_satisfied(nft_app: &App, tx: &Transaction, x: &Data, w: &Data) -> bool {
-    let utxo_id = UtxoId::from_bytes(
-        w.bytes()
-            .as_slice()
-            .try_into()
-            .expect("Expected 36 bytes for utxo_id"),
-    );
+// fn nft_contract_satisfied(nft_app: &App, tx: &Transaction, x: &Data, w: &Data) -> bool {
 
-    let utxo_id_charms = tx.ins.get(&utxo_id).expect("UtxoId not found in `ins`!");
-    let utxo_id_data = utxo_id_charms
-        .get(nft_app)
-        .expect("Data for charms app not found!");
+//     let utxo_id = UtxoId::from_bytes(
+//         w.bytes()
+//             .as_slice()
+//             .try_into()
+//             .expect("Expected 36 bytes for utxo_id"),
+//     );
 
-    let roster_nft_in: RosterNFT = utxo_id_data
-        .value()
-        .expect("Couldn't deserialize data into PeginData");
+//     let utxo_id_charms = tx.ins.get(&utxo_id).expect("UtxoId not found in `ins`!");
+//     let utxo_id_data = utxo_id_charms
+//         .get(nft_app)
+//         .expect("Data for charms app not found!");
 
-    let Some(roster_nft_out): Option<RosterNFT> =
-        app_datas(nft_app, tx.outs.iter()).find_map(|data| data.value().ok())
-    else {
-        eprintln!("could not determine outgoing remaining supply");
-        return false;
-    };
+//     let roster_nft_in: RosterNFT = utxo_id_data
+//         .value()
+//         .expect("Couldn't deserialize data into PeginData");
 
-    // If new cosigners are present append and compare to the tx_out cosigner roster,
-    // otherwise checks if tx_out/tx_in roster remains the same
-    let updated_cosigners: Vec<String> = roster_nft_in
-        .pubkeys
-        .iter()
-        .cloned()
-        .chain(roster_nft_out.new_cosigners.clone().unwrap_or_default())
-        .collect();
+//     let Some(roster_nft_out): Option<RosterNFT> =
+//         app_datas(nft_app, tx.outs.iter()).find_map(|data| data.value().ok())
+//     else {
+//         eprintln!("could not determine outgoing remaining supply");
+//         return false;
+//     };
 
-    updated_cosigners == roster_nft_out.pubkeys
-}
+//     // If new cosigners are present append and compare to the tx_out cosigner roster,
+//     // otherwise checks if tx_out/tx_in roster remains the same
+//     let updated_cosigners: Vec<String> = roster_nft_in
+//         .pubkeys
+//         .iter()
+//         .cloned()
+//         .chain(roster_nft_out.new_cosigners.clone().unwrap_or_default())
+//         .collect();
+
+//     updated_cosigners == roster_nft_out.pubkeys
+// }
