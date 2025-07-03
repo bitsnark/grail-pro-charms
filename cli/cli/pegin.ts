@@ -3,29 +3,39 @@ import { BitcoinClient } from '../core/bitcoin';
 import { createSpell, transmitSpell } from '../core/spells';
 import { generateGrailPaymentAddress } from '../core/taproot-address';
 import { Network } from '../core/taproot/taptree';
-import { DeployRequest } from '../core/types';
+import { MintRequest, utxoFromUtxoId } from '../core/types';
 
 import config from './config.json';
 
-const deployYamlTemplate = `
+const peginYamlTemplate = `
 version: 4
 apps:
  $00: n/{{appId}}/{{appVk}}
 public_inputs:
  $00: 
-  action: deploy
+  action: update
+ $01:
+  action: mint
 ins:
+ - utxo_id: {{previousNftUtxoId}}
 outs:
  - address: {{nextNftAddress}}
    charms:
-     $00:
-       current_cosigners: {{currentNftState.publicKeys}}
-       current_threshold: {{currentNftState.threshold}}
+    $00:
+     current_cosigners: {{currentNftState.publicKeys}}
+     current_threshold: {{currentNftState.threshold}}
+ - address: {{userWalletAddress}}
+   charms:
+    $01:
+     amount: {{amount}}
 `;
 
-export async function deployNft(
+export async function mintToken(
     network: Network,
     feeRate: number,
+    amount: number,
+    userWalletAddress: string,
+    previousNftUtxoId: string,
     deployerPublicKey: Buffer
 ) {
 
@@ -35,7 +45,7 @@ export async function deployNft(
     const fundingChangeAddress = await bitcoinClient.getAddress();
     const fundingUtxo = await bitcoinClient.getFundingUtxo();
 
-    const request: DeployRequest = {
+    const request: MintRequest = {
         fundingUtxo,
         fundingChangeAddress,
         feeRate,
@@ -43,10 +53,15 @@ export async function deployNft(
         currentNftState: {
             publicKeys: deployerPublicKey.toString('hex'),
             threshold: 1
-        }
+        },
+        amount,
+        userWalletAddress,
+        previousUtxo: utxoFromUtxoId(previousNftUtxoId)
     };
 
-    const spell = await createSpell(bitcoinClient, deployYamlTemplate, [], request);
+    const previousNftTransactionHex = await bitcoinClient.getTransaction(request.previousUtxo.txid);
+
+    const spell = await createSpell(bitcoinClient, peginYamlTemplate, [previousNftTransactionHex], request);
     if (!spell || spell.length !== 2) {
         throw new Error('Spell creation failed');
     }
@@ -61,21 +76,28 @@ async function main() {
         alias: {
             n: 'network',
             p: 'deployer-public-key',
-            f: 'feerate'
+            f: 'fee-rate',
+            a: 'amount',
+            u: 'previous-nft-utxo-id',
         },
         default: {
-            'network': config.network,
             'feerate': config.feerate,
-            'deployer-public-key': config.deployerPublicKey
+            'network': config.network,
+            'pubkey': config.deployerPublicKey,
+            'amount': 1,
+            'user-wallet-address': config.userWalletAddress,
         },
         '--': true
     });
 
     const network = argv['network'] as Network;
-    const feeRate = Number.parseInt(argv['feerate']);
+    const feeRate = Number.parseInt(argv['fee-rate']);
     const deployerPublicKey = Buffer.from(argv['deployer-public-key'], 'hex');
+    const amount = Number.parseInt(argv['amount']);
+    const userWalletAddress = argv['user-wallet-address'] as string;
+    const previousNftUtxoId = argv['previous-nft-utxo-id'] as string;
 
-    await deployNft(network, feeRate, deployerPublicKey);
+    await mintToken(network, feeRate, amount, userWalletAddress, previousNftUtxoId, deployerPublicKey);
     console.log('NFT deployment completed successfully');
 }
 

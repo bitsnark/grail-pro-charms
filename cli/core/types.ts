@@ -8,7 +8,18 @@ export enum PegType {
 export interface Utxo {
     txid: string;
     vout: number;
-    value: number;
+    value?: number;
+}
+
+export function utxoFromUtxoId(str: string): Utxo {
+    const parts = str.split(':');
+    if (parts.length !== 2) {
+        throw new Error(`Invalid UTXO ID format: ${str}`);
+    }
+    return {
+        txid: parts[0],
+        vout: parseInt(parts[1], 10)
+    };  
 }
 
 export interface GrailState {
@@ -41,6 +52,10 @@ export interface UpdateRequest extends NftRequest {
     previousUtxo: Utxo;
 }
 
+export interface MintRequest extends UpdateRequest {
+    amount: number;
+    userWalletAddress: string;
+}
 
 
 //     userBtcUtxo?: Utxo;
