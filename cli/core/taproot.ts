@@ -3,6 +3,7 @@ import * as bitcoin from 'bitcoinjs-lib';
 import { Network, SimpleTapTree } from './taproot/taptree';
 import { schnorr } from "@noble/curves/secp256k1";
 import { LabeledSignature } from './types';
+import { getHash } from './taproot/taproot-common';
 
 
 export interface SpendingScript {
@@ -15,12 +16,7 @@ export function generateSpendingScriptForGrail(
   requiredSignatures: number,
   network: Network
 ): SpendingScript {
-  const multisigScript = bitcoin.script.compile([
-    bitcoin.script.number.encode(requiredSignatures),
-    ...[...cosigners].sort().map((cosigner) => Buffer.from(cosigner, 'hex')),
-    bitcoin.script.number.encode(cosigners.length),
-    bitcoin.opcodes.OP_CHECKMULTISIG,
-  ]);
+  const multisigScript = generateMultisigScript(cosigners, requiredSignatures);
   const stt = new SimpleTapTree([multisigScript], network);
   return {
     script: multisigScript,
@@ -32,13 +28,20 @@ function generateSpendingScriptForUserPayment(
   cosigners: string[],
   requiredSignatures: number
 ): Buffer {
-  const multisigScript = bitcoin.script.compile([
-    bitcoin.script.number.encode(requiredSignatures),
-    ...[...cosigners].sort().map((cosigner) => Buffer.from(cosigner, 'hex')),
-    bitcoin.script.number.encode(cosigners.length),
-    bitcoin.opcodes.OP_CHECKMULTISIG,
-  ]);
-  return multisigScript;
+  return generateMultisigScript(cosigners, requiredSignatures);
+}
+
+function generateMultisigScript(cosigners: string[], requiredSignatures: number): Buffer {
+  const sortedCosigners = [...cosigners].sort();
+  const parts = sortedCosigners
+    .map((cosigner, index) => [
+      Buffer.from(cosigner, 'hex'),
+      index === 0 ? bitcoin.opcodes.OP_CHECKSIG : bitcoin.opcodes.OP_CHECKSIGADD,
+    ])
+    .flat();
+  parts.push(requiredSignatures);
+  parts.push(bitcoin.opcodes.OP_NUMEQUAL);
+  return bitcoin.script.compile(parts);
 }
 
 function generateSpendingScriptForUserRecovery(
@@ -101,11 +104,12 @@ export function generateGrailPaymentAddress(
 }
 
 export function grailSignTx(
+  commitmentTxHex: string,
   previousTxHex: string,
   rawTxHex: string,
   rosterPublicKeys: string[],
   threshold: number,
-  keyPairs: { publicKey: string; privateKey: Buffer }[],
+  keyPairs: { publicKey: string; privateKey: string }[],
   network: Network
 ): LabeledSignature[] {
 
@@ -118,6 +122,7 @@ export function grailSignTx(
   const inputIndex = 0; // Assuming we are signing the first input
   const outputIndex = 0; // Assuming we are spending the first output of the previous transaction
 
+  const commitmentTx = bitcoin.Transaction.fromHex(commitmentTxHex);
   const prevTx = bitcoin.Transaction.fromHex(previousTxHex);
 
   // Always use output 0 of previous tx
@@ -134,15 +139,11 @@ export function grailSignTx(
   const sighashType = bitcoin.Transaction.SIGHASH_DEFAULT || 0x00;
 
   // Tapleaf version for tapscript is always 0xc0
-  const leafVersion = 0xc0;
   // BitcoinJS v6+ exposes tapleafHash for this calculation
-  const tapleafHash = (bitcoin as any).crypto.tapleafHash({
-    output: spendingScript.script,
-    version: leafVersion,
-  });
+  const tapleafHash = getHash(spendingScript.script);
 
   // Compute sighash for this tapleaf spend (see https://github.com/bitcoinjs/bitcoinjs-lib/blob/master/test/integration/taproot.spec.ts)
-  const sighash = (tx as any).hashForWitnessV1(
+  const sighash = tx.hashForWitnessV1(
     inputIndex,
     [prevoutScriptPubKey],
     [prevoutValue],

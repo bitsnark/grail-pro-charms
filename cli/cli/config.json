@@ -5,5 +5,6 @@
     "deployerPrivateKey": "fd9e30ff6736c3cd85c80f2dae42924820906a2dd69c51b437427899c2284351",
     "network": "regtest",
     "feerate": 1000,
-    "userWalletAddress": "bcrt1qps462fpqvsyhlcmk43qmulyf9fataj8605lqaq"
+    "userWalletAddress": "bcrt1qps462fpqvsyhlcmk43qmulyf9fataj8605lqaq",
+    "firstNftTxid": "b673c4faf29fa20c8ef9c18c63403ded1ac554339a6cfe4de310ed687fc98ce2"
 }
