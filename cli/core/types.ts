@@ -36,6 +36,8 @@ export interface CharmerRequest {
     fundingUtxo: Utxo;
     fundingChangeAddress: string;
     feeRate: number;
+
+    toYamlObj(): any;
 }
 
 export interface NftRequest extends CharmerRequest {
@@ -49,7 +51,7 @@ export interface DeployRequest extends NftRequest {
 }
 
 export interface UpdateRequest extends NftRequest {
-    previousUtxo: Utxo;
+    previousNftTxid: string;
 }
 
 export interface MintRequest extends UpdateRequest {
@@ -57,19 +59,7 @@ export interface MintRequest extends UpdateRequest {
     userWalletAddress: string;
 }
 
-
-//     userBtcUtxo?: Utxo;
-//     userCharmsWalletAddress?: string;
-//     userCharmsUtxo?: Utxo;
-//     userBtcWalletAddress?: string;
-
-//     userPaymentCosignerState?: GrailState;    
-//     recoveryPublicKey?: Buffer;
-//     recoveryBlocks?: number;
-//     userPaymentAddress?: string;
-//     userPaymentSpendingScript?: Buffer;
-//     userPaymentControlBlock?: Buffer;
-
-//     lockedFundsCosignerState?: GrailState;
-//     lockedFundsAddress?: string;
-// }
+export interface LabeledSignature {
+    publicKey: string; // Public key in hex format
+    signature: Buffer; // Signature in hex format
+}

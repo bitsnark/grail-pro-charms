@@ -1,5 +1,6 @@
 import Client from 'bitcoin-core';
 import { Utxo } from './types';
+import { Network, Transaction } from 'bitcoinjs-lib';
 
 class ExtendedClient extends Client {
 
@@ -10,6 +11,9 @@ class ExtendedClient extends Client {
         this.walletName = process.env.BTC_WALLET_NAME || 'default';
     }
 
+    getRawTransaction(txid: string): Promise<any> {
+        return this.command('getrawtransaction', txid, true);
+    }
     sendRawTransaction(txHex: string): Promise<string> {
         return this.command('sendrawtransaction', txHex);
     }
@@ -53,8 +57,9 @@ export class BitcoinClient {
         return instance;
     }
 
-    public async getTransaction(txid: string): Promise<string> {
-        return await this.client!.getTransactionByHash(txid, { extension: 'hex' });
+    public async getTransactionHex(txid: string): Promise<string> {
+        const tx = await this.client!.getRawTransaction(txid) as { hex: string };
+        return tx.hex;
     }
 
     public async signTransaction(txHex: string, prevtxs?: string[], sighashType?: string): Promise<string> {

@@ -82,7 +82,6 @@ pub fn nft_update_satisfied(
     eprintln!("Cosigners vector: {:?}", cosigners);
 
     check!(cosigners.len() >= nft_data.current_threshold as usize); // Ensure there are enough cosigners
-    check!(cosigners[0].len() == 64); // Assuming cosigners are hex strings of length 64
 
     true
 }

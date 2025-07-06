@@ -35,3 +35,7 @@ export function chunk<T>(arr: T[], size: number): T[][] {
 export function isIn<T>(i: T, a: T[]): boolean {
   return a.find((t) => t == i) != undefined;
 }
+
+export function unique<T>(a: T[]): T[] {
+  return a.filter((item, index) => a.indexOf(item) === index);
+}

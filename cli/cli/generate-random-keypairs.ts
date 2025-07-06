@@ -3,6 +3,7 @@ import { randomBytes } from 'crypto';
 import minimist from 'minimist';
 import * as secp from '@bitcoinerlab/secp256k1';
 import { bufferReplacer } from '../core/json';
+import { array } from '../core/array-utils';
 
 interface Keypair {
     publicKey: Buffer;
@@ -10,8 +11,7 @@ interface Keypair {
 }
 
 export function generateRandomKeypairs(size: number): Keypair[] {
-    const roster: Keypair[] = [];
-    for (let i = 0; i < size; i++) {
+    return array(size).map(() => {
         // Generate a random private key
         const privateKey = randomBytes(32);
         // Ensure the private key is valid
@@ -23,9 +23,8 @@ export function generateRandomKeypairs(size: number): Keypair[] {
         if (!publicKey) {
             throw new Error('Failed to derive public key');
         }
-        roster.push({ publicKey: Buffer.from(publicKey), privateKey: privateKey });
-    }
-    return roster;
+        return ({ publicKey: Buffer.from(publicKey), privateKey: privateKey });
+    });
 }
 
 function main() {

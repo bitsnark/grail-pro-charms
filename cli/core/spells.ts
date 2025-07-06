@@ -1,45 +1,52 @@
-import Mustache from 'mustache';
-import { executeSpell, getVerificationKey } from './charms-sdk';
+import { executeSpell } from './charms-sdk';
 import { CharmerRequest } from './types';
 import { BitcoinClient } from './bitcoin';
+import * as yaml from 'js-yaml';
 
-const APP_ID = '54bcbe0b568bed707af3fb5e00f57d6948e19a3ef599bf35fac7632d76fbc203';
-let appVk: string | undefined = undefined;
+// function toYaml(obj: any, indent: string = ''): string {
+//   let str = '';
+//   Object.keys(obj).forEach(key => {
+//     if (typeof obj[key] === 'string') {
+//       str += `${indent}${key}: ${obj[key]}\n`;
+//     } else if (typeof obj[key] === 'number') {
+//       str += `${indent}${key}: ${obj[key]}\n`;
+//     } else if (typeof obj[key] === 'boolean') {
+//       str += `${indent}${key}: ${obj[key] ? 'true' : 'false'}\n`;
+//     } else if (Array.isArray(obj[key])) {
+//       str += `${indent}${key}:\n`;
+//       obj[key].forEach((item: any, index: number) => {
+//         if (typeof item === 'string') {
+//           str += `${indent}  - "${item}"\n`;
+//         } else if (typeof item === 'number') {
+//           str += `${indent}  - ${item}\n`;
+//         } else if (typeof item === 'boolean') {
+//           str += `${indent}  - ${item ? 'true' : 'false'}\n`;
+//         } else if (typeof item === 'object' && item !== null) {
+//           str += `${indent}  -\n`;
+//           str += toYaml(item, indent + '    ');
+//         }
+//       });
+//     } else if (typeof obj[key] === 'object' && obj[key] !== null) {
+//       str += `${indent}${key}:\n`;
+//       str += toYaml(obj[key], indent + '  ');
+//     }
+//   });
+//   return str;
+// }
 
-/**
- * Loads a Mustache template from a file, renders it with the provided data,
- * and returns the rendered string.
- *
- * @param template - The template string.
- * @param data - The data to render the template with.
- * @returns The rendered template as a string.
- * @throws If the template file does not exist.
- */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function renderTemplate(template: string, data: any): string {
-  return Mustache.render(template, data, {});
-}
 
 export async function createSpell(
   bitcoinClient: BitcoinClient,
-  template: string,
   previousTxids: string[],
-  request: CharmerRequest,
+  request: CharmerRequest
 ): Promise<Buffer[]> {
 
-  if (!appVk) {
-    appVk = await getVerificationKey();
-  }
-
-  request.appId = APP_ID;
-  request.appVk = appVk;
-
-  const renderedTemplate = renderTemplate(template, request);
-  const previousTransactions = await Promise.all(previousTxids.map(async (txid) => bitcoinClient.getTransaction(txid)));
+  const previousTransactions = await Promise.all(previousTxids.map(async (txid) => bitcoinClient.getTransactionHex(txid)));
+  const yamlStr = yaml.dump(request.toYamlObj()); // toYaml(request.toYamlObj());
   const output = await executeSpell(
     request.fundingUtxo,
     request.fundingChangeAddress,
-    renderedTemplate,
+    yamlStr,
     previousTransactions.map(tx => Buffer.from(tx, 'hex')));
 
   return output;

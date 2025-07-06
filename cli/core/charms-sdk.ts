@@ -1,14 +1,15 @@
 import { Utxo } from './types';
 import { exec } from 'child_process';
+import * as yaml from 'js-yaml';
 
 const CHARMS_PATH = './zkapp';
 const APP_BINS = './target/charms-app';
 const CHARMS_BIN = process.env['CHARMS_BIN'] || '~/workspace/charms/target/release/charms';
 
-function executeCommand(command: string[], stdin: string): Promise<string> {
+function executeCommand(command: string[], stdin: string = ''): Promise<string> {
   return new Promise<string>((resolve, reject) => {
     console.info(`Executing command: ${command.join(' ')}`);
-    const child = exec(`cd ${CHARMS_PATH} ; ${command.join(' ')}`, (error, stdout, stderr) => {
+    const child = exec(`cd ${CHARMS_PATH} ; export RUST_BACKTRACE=1 ; ${command.join(' ')}`, (error, stdout, stderr) => {
       if (error) {
         console.error(`Execution error: ${error.message}`);
         reject(error);
@@ -42,7 +43,7 @@ export async function getVerificationKey(): Promise<string> {
 export async function executeSpell(
   fundingUtxo: Utxo,
   changeAddress: string,
-  renderedSpellData: string,
+  yamlStr: any,
   previousTransactions: Buffer[] = [],
 ): Promise<Buffer[]> {
 
@@ -56,7 +57,7 @@ export async function executeSpell(
     previousTransactions?.length ? `--prev-txs ${previousTransactions.map(tx => tx.toString('hex')).join(',')}` : undefined
   ].filter(Boolean) as string[];
 
-  return await executeCommand(command, renderedSpellData)
+  return await executeCommand(command, yamlStr)
     .then(result => {
       // Result could have some irrelevant garbage?
       const resultLines = result.split('\n').filter(line => line.trim() !== '');
@@ -66,4 +67,20 @@ export async function executeSpell(
       }
       return obj.map((item: string) => Buffer.from(item, 'hex'));
     });
+}
+
+export async function showSpell(
+  transactionHex: string,
+  previousTransactions: Buffer[] = [],
+): Promise<any> {
+
+  const command = [
+    CHARMS_BIN,
+    'tx show-spell',
+    `--tx ${transactionHex}`,
+    previousTransactions?.length ? `--prev-txs ${previousTransactions.map(tx => tx.toString('hex')).join(',')}` : undefined
+  ].filter(Boolean) as string[];
+
+  const stdout = await executeCommand(command);
+  return yaml.load(stdout);
 }
