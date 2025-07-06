@@ -19,7 +19,7 @@ export function generateRandomKeypairs(size: number): Keypair[] {
             throw new Error('Invalid private key generated');
         }
         // Derive the public key from the private key
-        const publicKey = secp.pointFromScalar(privateKey, true);
+        const publicKey = secp.xOnlyPointFromScalar(privateKey);
         if (!publicKey) {
             throw new Error('Failed to derive public key');
         }

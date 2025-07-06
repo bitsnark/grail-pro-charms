@@ -7,8 +7,7 @@ import { DeployRequest } from '../core/types';
 import { getVerificationKey } from '../core/charms-sdk';
 
 import config from './config.json';
-
-const APP_ID = '54bcbe0b568bed707af3fb5e00f57d6948e19a3ef599bf35fac7632d76fbc203';
+import { sha256 } from 'bitcoinjs-lib/src/crypto';
 
 export async function deployNft(
     network: Network,
@@ -23,7 +22,11 @@ export async function deployNft(
     const fundingChangeAddress = await bitcoinClient.getAddress();
     const fundingUtxo = await bitcoinClient.getFundingUtxo();
 
-    const appVk = '1209ee41a332ba5e0fdf6510931b3b1b63df846e0a96333217046a19a18a4f0b'; // await getVerificationKey();
+    const appId = fundingUtxo.txid;
+    console.log('App ID:', appId);
+
+    const appVk = await getVerificationKey();
+    console.log('App Verification Key:', appVk);
 
     const request: DeployRequest = {
         fundingUtxo,
@@ -39,7 +42,7 @@ export async function deployNft(
             return ({
                 version: 4,
                 apps: {
-                    $00: `n/${APP_ID}/${appVk}`
+                    $00: `n/${appId}/${appVk}`
                 },
                 public_inputs: {
                     $00: {
@@ -69,7 +72,12 @@ export async function deployNft(
 
     if (transmit) {
         console.info('Spell created successfully, transmitting...');
-        await transmitSpell(bitcoinClient, spell);
+        const txids = await transmitSpell(bitcoinClient, spell);
+
+        console.log('Set your config:');;
+        console.log(`\t"appId": "${appId}",`);
+        console.log(`\t"appVk": "${appVk}",`);
+        console.log(`\t"firstNftTxid": "${txids[1]}",`);
     }
 }
 

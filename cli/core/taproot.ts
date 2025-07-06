@@ -33,13 +33,13 @@ function generateSpendingScriptForUserPayment(
 
 function generateMultisigScript(cosigners: string[], requiredSignatures: number): Buffer {
   const sortedCosigners = [...cosigners].sort();
-  const parts = sortedCosigners
+  const parts: any[] = sortedCosigners
     .map((cosigner, index) => [
       Buffer.from(cosigner, 'hex'),
       index === 0 ? bitcoin.opcodes.OP_CHECKSIG : bitcoin.opcodes.OP_CHECKSIGADD,
     ])
     .flat();
-  parts.push(requiredSignatures);
+  parts.push(bitcoin.script.number.encode(requiredSignatures));
   parts.push(bitcoin.opcodes.OP_NUMEQUAL);
   return bitcoin.script.compile(parts);
 }
@@ -123,6 +123,9 @@ export function grailSignTx(
   const outputIndex = 0; // Assuming we are spending the first output of the previous transaction
 
   const commitmentTx = bitcoin.Transaction.fromHex(commitmentTxHex);
+  const commitmentOutputScript = commitmentTx.outs[0].script;
+  const commitmentOutputValue = commitmentTx.outs[0].value;
+
   const prevTx = bitcoin.Transaction.fromHex(previousTxHex);
 
   // Always use output 0 of previous tx
@@ -145,8 +148,8 @@ export function grailSignTx(
   // Compute sighash for this tapleaf spend (see https://github.com/bitcoinjs/bitcoinjs-lib/blob/master/test/integration/taproot.spec.ts)
   const sighash = tx.hashForWitnessV1(
     inputIndex,
-    [prevoutScriptPubKey],
-    [prevoutValue],
+    [prevoutScriptPubKey, commitmentOutputScript],
+    [prevoutValue, commitmentOutputValue],
     sighashType,
     tapleafHash
   );
@@ -163,7 +166,7 @@ export function grailSignTx(
   });
 }
 
-export function injectGrailSignaturesIntoTxInut(
+export function injectGrailSignaturesIntoTxInput(
   rawTxHex: string,
   publicKeys: string[],
   threshold: number,
