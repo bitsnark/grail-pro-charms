@@ -5,27 +5,39 @@ use std::collections::HashMap;
 use charms_sdk::data::{app_datas, check, App, Data, Transaction, UtxoId, NFT, TOKEN};
 
 use crate::nft::{nft_deploy_satisfied, nft_update_satisfied};
+use crate::token::{token_mint_satisfied};
 
-pub mod nft;
 pub mod objects;
+pub mod nft;
+pub mod token;
 
-pub fn app_contract(app: &App, tx: &Transaction, x: &Data, w: &Data) -> bool {
+pub fn app_contract(app: &App, tx: &Transaction, pub_in: &Data, priv_in: &Data) -> bool {
     println!("app: {:?}", app);
     println!("tx.ins: {:?}", tx.ins);
     println!("tx.outs: {:?}", tx.outs);
-    let public_inputs: HashMap<String, String> = x.value().unwrap();
+    let public_inputs: HashMap<String, String> = pub_in.value().unwrap();
     println!("public_inputs: {:?}", public_inputs);
+
+    let action = public_inputs["action"].as_str();
 
     match app.tag {
         NFT => {
-            let action = public_inputs["action"].as_str();
-
             match action {
                 "deploy" => {
-                    check!(crate::nft_deploy_satisfied(app, tx))
+                    check!(crate::nft_deploy_satisfied(app, tx, pub_in, priv_in))
                 }
                 "update" => {
                     check!(crate::nft_update_satisfied(app, tx))
+                }
+                _ => {
+                    unreachable!("Unsupported action: {}", action);
+                }
+            }
+        }
+        TOKEN => {
+            match action {
+                "mint" => {
+                    check!(crate::token_mint_satisfied(app, tx));
                 }
                 _ => {
                     unreachable!("Unsupported action: {}", action);

@@ -213,6 +213,7 @@ version = "0.1.0"
 dependencies = [
  "charms-sdk",
  "serde",
+ "sha2",
 ]
 
 [[package]]

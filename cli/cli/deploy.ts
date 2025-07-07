@@ -22,7 +22,7 @@ export async function deployNft(
     const fundingChangeAddress = await bitcoinClient.getAddress();
     const fundingUtxo = await bitcoinClient.getFundingUtxo();
 
-    const appId = fundingUtxo.txid;
+    const appId = sha256(Buffer.from(`${fundingUtxo.txid}:${fundingUtxo.vout}`, 'ascii')).toString('hex');
     console.log('App ID:', appId);
 
     const appVk = await getVerificationKey();
@@ -41,26 +41,20 @@ export async function deployNft(
         toYamlObj: function () {
             return ({
                 version: 4,
-                apps: {
-                    $00: `n/${appId}/${appVk}`
-                },
-                public_inputs: {
-                    $00: {
-                        action: 'deploy'
-                    }
-                },
+                apps: { $00: `n/${appId}/${appVk}` },
+                private_inputs: { $00: `${fundingUtxo.txid}:${fundingUtxo.vout}` },
+                public_inputs: { $00: { action: 'deploy' } },
                 ins: [],
-                outs: [
-                    {
-                        address: this.nextNftAddress,
-                        charms: {
-                            $00: {
-                                current_cosigners: this.currentNftState.publicKeys,
-                                current_threshold: this.currentNftState.threshold
-                            }
+                outs: [{
+                    address: this.nextNftAddress,
+                    charms: {
+                        $00: {
+                            ticker: config.ticker,
+                            current_cosigners: this.currentNftState.publicKeys,
+                            current_threshold: this.currentNftState.threshold
                         }
                     }
-                ]
+                }]
             });
         }
     };

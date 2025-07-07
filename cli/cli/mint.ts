@@ -3,33 +3,19 @@ import { BitcoinClient } from '../core/bitcoin';
 import { createSpell, transmitSpell } from '../core/spells';
 import { generateGrailPaymentAddress, grailSignTx, injectGrailSignaturesIntoTxInput } from '../core/taproot';
 import { Network } from '../core/taproot/taptree';
-import { UpdateRequest } from '../core/types';
+import { MintRequest } from '../core/types';
 import { showSpell } from '../core/charms-sdk';
 
 import config from './config.json';
-import { deepEqual, SOME_STRING } from '../core/deep-equal';
 
-interface PreviousSpellData {
-  "version": number,
-  "apps": { "$0000": string },
-  "public_args": { "$0000": { "action": string } },
-  "ins": never[],
-  "outs": {
-    "charms": {
-      "$0000": {
-        "current_cosigners": string,
-        "current_threshold": number
-      }
-    }
-  }[]
-};
-
-export async function updateNft(
+export async function mintToken(
   network: Network,
   feeRate: number,
   previousNftTxid: string,
   currentPublicKeys: string[],
   currentThreshold: number,
+  amount: number,
+  userWalletAddress: string,
   deployerPublicKey: string,
   deployerPrivateKey: string,
   transmit: boolean
@@ -47,14 +33,11 @@ export async function updateNft(
   }
   const previousSpellData = await showSpell(previousNftTxhex);
   console.log('Previous NFT spell:', JSON.stringify(previousSpellData, null, '\t'));
-  if (!previousSpellData) {
-    throw new Error('Invalid previous NFT spell data');
-  }
 
   const previousPublicKeys = previousSpellData.outs[0].charms['$0000'].current_cosigners.split(',');
   const previousThreshold = previousSpellData.outs[0].charms['$0000'].current_threshold;
 
-  const request: UpdateRequest = {
+  const request: MintRequest = {
     fundingUtxo,
     fundingChangeAddress,
     feeRate,
@@ -64,12 +47,20 @@ export async function updateNft(
       publicKeys: currentPublicKeys.join(','),
       threshold: currentThreshold
     },
+    amount,
+    userWalletAddress,
 
     toYamlObj: function () {
       return ({
         version: 4,
-        apps: { $00: `n/${config.appId}/${config.appVk}` },
-        public_inputs: { $00: { action: 'update' } },
+        apps: {
+          $00: `n/${config.appId}/${config.appVk}`,
+          $01: `t/${config.appId}/${config.appVk}`
+        },
+        public_inputs: {
+          $00: { action: 'update' },
+          $01: { action: 'mint' }
+        },
         ins: [{
           utxo_id: `${previousNftTxid}:0`,
           charms: {
@@ -89,15 +80,22 @@ export async function updateNft(
               current_threshold: this.currentNftState.threshold
             }
           }
+        }, {
+          address: this.userWalletAddress,
+          charms: {
+            $01: {
+              amount: this.amount
+            }
+          }
         }]
       });
     }
   };
 
-  const spell = await createSpell(bitcoinClient, [previousNftTxid], request);
+  // const spell = await createSpell(bitcoinClient, [previousNftTxid], request);
 
-  // const spell = ["0200000001e1b6448704b3f0451d1f35eea58b5386ea111df495f0d1471daa0ef3c86c33960000000000ffffffff0122f80295000000002251207b71baf7bb233bd1312d6f9df5312ef19a7891148cb71a1782e3c5ee3bb2f2dc00000000","020000000001026cc7a1224192f845066ea87dd63c15d7b6131ab5ab8dde62e320377641a82a0f0000000000ffffffff97b47e1b07f50188391480007fe8d5a047708fd9adf15ab951b79362694ea53a0000000000ffffffff02e8030000000000002251205afec6d38f99b81d705510fc0ac4832e9b02296b9ef16af760378af66fa3a3e2a2f402950000000016001426ec35073b18c8ef9b1d0b7012a7e062de349e1f000341b0501a86b0dedb71edb66b65456840c28e56309da07e2f1db392ef64a8d62c4a6832a45d111b1e4243c315ed4546dc7278e24badedc5e2376a439616daaeaae681fd8c030063057370656c6c4d080282a36776657273696f6e04627478a2647265667380646f75747381a100a27163757272656e745f636f7369676e6572737881666636316530666333623735336163623463333239343334353264303962386636643165353861303565396565313430643765373634343161616237306334632c623935353532613666613631656135363137316536653236306364626135376432353062343462613132333464633932386131373736393866336630313664617163757272656e745f7468726573686f6c6401716170705f7075626c69635f696e70757473a183616e982018a0187d1829185218d618a118e318b118c418f518901862188318c0181c186a184418211820189d18a1183c18f218ca182618ec18ab181d12187d18fb18e198201826186a185f182f03185918ca185d1859188118d7183d184218991829186d18281893189c181d181818ba18371870185818790a1839188e18ac18b302a166616374696f6e6675706461746599010418a41859184c18590518fa18bf186f18b118f118b118ca184e11183011183b18b21830186b1865189c18241822188d1843185716189418ef183411184e183c18c118281418cc1418e1188718f6187d07181d189a18d518d3181d021895188218c218581889182e18da18aa1849182e18a3185218b5188018df1865181818c4181f186b101859186818681897184d187510187418c318bd18a8184d53013e18331892186a187b18b51880185d18a618d9182d18461853185610187b184e18e611186418ef18ea18ef183518a618cc18fd185818221827185d186f185818f21880181a185618c7184e18ba18a0186818d6181918ca1838184b1830184d18ae0418db18ba071861182c18f0011832181d189f188618eb1850186e184c18a6182818dc186018ac0d185018da185918d8181e189d18b3186118bf18ea1118d618a91118ad182018b218dc18f90318a718ec1889188d186e188618231897189e1878182318a8183d1864183c187c186a18ad184818321879189101184d18ff18b3187218c918b918be18f71856186f18cc18f118ea18de18911880189c18b418d918d718fe18e7183218331867181818f0185118a4182918820a18b618c418e618f418e61718981852186f187918e618ad184b187c1839181f0a0918a818e9184e18de182e18dc182d182418cc18300b11188f68202fae892a9cb243f996fb83d17f29850d027a4e63d2c27141e70068528e9ce6c6ac21c02fae892a9cb243f996fb83d17f29850d027a4e63d2c27141e70068528e9ce6c600000000"]
-  //   .map(hex => Buffer.from(hex, 'hex'));
+  const spell = ["02000000015f4e9e8fb17207bf5513741db26177213e8b4a494abdc168d11f993f54abde620100000000ffffffff01306c814a00000000225120b5c6a53295a9b11b0675a8913ee1dadbc5a3c1d34119c9a53e69d5d2e808e69300000000","02000000000102d7cfe3d3b46472b236cac8f9be3703b4faab7d0d5fa27916ab402e42401e54660000000000ffffffffe8c79bd2a3e65c5747f7c2312b8719316092449331c017c70f42182372cbbe410000000000ffffffff03e8030000000000002251205afec6d38f99b81d705510fc0ac4832e9b02296b9ef16af760378af66fa3a3e2e8030000000000001600140c2ba5242064097fe376ac41be7c892a7abec8fa2b64814a00000000160014eff6d25263a0f90992012313f2edb52f79b8f1d900034125322ccd375fce026ea86855f91ec7078ccada788502fff046e6fb33aef1b7e72d5ae35e229518743231e5bba61969c1bb487b0a6e4d40c2ce691efb8165c46381fd49040063057370656c6c4d080282a36776657273696f6e04627478a2647265667380646f75747382a100a3667469636b657269475241494c2d4e46547163757272656e745f636f7369676e6572737881666636316530666333623735336163623463333239343334353264303962386636643165353861303565396565313430643765373634343161616237306334632c623935353532613666613631656135363137316536653236306364626135376432353062343462613132333464633932386131373736393866336630313664617163757272656e745f7468726573686f6c6401a101a166616d6f756e741903e8716170705f7075626c69635f696e70757473a283616e982018d1185418b218f4187618ee183018df18c918a418c6189718aa18371848184d187318f718a918e618ca183818d11840183618c418c418c218a9181b18fb18d0982018a018df1838183218bb182718be184c182c18fe1840183418a9184818cd1843186a181e18f3187118bb188e18771849185818df18b5184118b718e81892181ba166616374696f6e66757064617465836174982018d1185418b218f4187618ee183018df18c918a418c6189718aa18371848184d187318f718a918e618ca183818d11840183618c418c418c218a9181b18fb18d0982018a018df1838183218bb182718be184c182c18fe1840183418a9184818cd1843186a181e18f3187118bb188e18771849185818df4d080218b5184118b718e81892181ba166616374696f6e646d696e7499010418a41859184c1859182e186d18d618a7183f18ea186d185b18d61848187118b1182618d5182418851818187c183a183d1843183f18fc18c818a91827187c183118ad18e9041853182218a7182b18e318b718ed18ee183c18d518ba18a31835185418a318e2188e181d187e18a516188a184518b1183a1871184a188f0d18df1833182718960e18ec18c018f018e3188518fe1866186b18bb181e182518a4188e182318f4186e182018db1823185f1848188818e018681863186a189418c518ae186518d305189a1862186a18cb186b1830189018ce183d182c181c1837185a1827188b18a018fa183818e6187d1897182d182000188e182d18f30518a71864185600186e09184418c418e6184b18a0189418cf18e618e518da0018ad18a818761836182e1850186f18a218ed1844186718430318ba18bf18b9186b091818186e183b186e18e01844184418ee18cf18f018de18e118cf18851862188d1866186a18fc18961879184218ed18ee18c718d318fa18d8188d1890183d18e706187418e118180f187518c0189d184518c9181a1894187f184118811858189d186518da186d18a518de18f01854188c1821186218d112183118e90e17185118fd18a418f418701865185901188e18a2188d0618631872188718ba184e18a518f818861875182e1840188118fd18d71807dc183a0718da136820b740c2b58e97c12f1bb015022d228734ad7673d47079080d8f692dc9cfd55a38ac21c0b740c2b58e97c12f1bb015022d228734ad7673d47079080d8f692dc9cfd55a3800000000"]
+    .map(hex => Buffer.from(hex, 'hex'));
 
   if (!spell || spell.length !== 2) {
     throw new Error('Spell creation failed');
@@ -129,9 +127,11 @@ async function main() {
       'feerate': config.feerate,
       'deployer-public-key': config.deployerPublicKey,
       'deployer-private-key': config.deployerPrivateKey,
-      'previous-nft-txid': config.firstNftTxid,
+      'previous-nft-txid': '66541e40422e40ab1679a25f0d7dabfab40337bef9c8ca36b27264b4d3e3cfd7',
       'current-public-keys': `ff61e0fc3b753acb4c32943452d09b8f6d1e58a05e9ee140d7e76441aab70c4c,${config.deployerPublicKey}`,
       'current-threshold': 1,
+      'amount': 1000,
+      'user-wallet-address': config.userWalletAddress,
       'transmit': true
     },
     '--': true
@@ -144,9 +144,12 @@ async function main() {
   const previousNftTxid = argv['previous-nft-txid'] as string;
   const currentPublicKeys = (argv['current-public-keys'] as string).split(',').map(pk => pk.trim());
   const currentThreshold = Number.parseInt(argv['current-threshold']);
+  const amuont = Number.parseInt(argv['amount']);
+  const userWalletAddress = argv['user-wallet-address'] as string;
   const transmit = !!argv['transmit'];
 
-  await updateNft(network, feeRate, previousNftTxid, currentPublicKeys, currentThreshold, deployerPublicKey, deployerPrivateKey, transmit);
+  await mintToken(network, feeRate, previousNftTxid, currentPublicKeys, currentThreshold,
+    amuont, userWalletAddress, deployerPublicKey, deployerPrivateKey, transmit);
   console.log('NFT update completed successfully');
 }
 

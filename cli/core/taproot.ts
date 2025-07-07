@@ -188,7 +188,7 @@ export function injectGrailSignaturesIntoTxInput(
   signatures.forEach(sig => {
     map[sig.publicKey] = sig.signature.toString('hex');
   });
-  const signaturesOrdered = publicKeys.map(pk => map[pk] || '0'.repeat(128)); // 64 bytes hex = 128 chars
+  const signaturesOrdered = publicKeys.map(pk => map[pk] || ''); // 64 bytes hex = 128 chars
 
   const spendingScript = generateSpendingScriptForGrail(publicKeys, threshold, network);
 
