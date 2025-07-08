@@ -30,8 +30,8 @@ export async function updateNft(
   previousNftTxid: string,
   currentPublicKeys: string[],
   currentThreshold: number,
-  deployerPublicKey: string,
-  deployerPrivateKey: string,
+  deployerPublicKey: Buffer,
+  deployerPrivateKey: Buffer,
   transmit: boolean
 ) {
 
@@ -139,15 +139,17 @@ async function main() {
 
   const network = argv['network'] as Network;
   const feeRate = Number.parseInt(argv['feerate']);
-  const deployerPublicKey = argv['deployer-public-key'];
-  const deployerPrivateKey = argv['deployer-private-key'];
+  const deployerPublicKey = argv['deployer-public-key'] as string;
+  const deployerPrivateKey = argv['deployer-private-key'] as string;
   const previousNftTxid = argv['previous-nft-txid'] as string;
   const currentPublicKeys = (argv['current-public-keys'] as string).split(',').map(pk => pk.trim());
   const currentThreshold = Number.parseInt(argv['current-threshold']);
   const transmit = !!argv['transmit'];
 
-  await updateNft(network, feeRate, previousNftTxid, currentPublicKeys, currentThreshold, deployerPublicKey, deployerPrivateKey, transmit);
-  console.log('NFT update completed successfully');
+  await updateNft(network, feeRate, previousNftTxid,
+    currentPublicKeys, currentThreshold,
+    Buffer.from(deployerPublicKey, 'hex'), Buffer.from(deployerPrivateKey, 'hex'),
+    transmit);
 }
 
 if (require.main === module) {

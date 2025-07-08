@@ -54,7 +54,12 @@ export interface UpdateRequest extends NftRequest {
     previousNftTxid: string;
 }
 
-export interface MintRequest extends UpdateRequest {
+export interface PegInRequest extends UpdateRequest {
+    amount: number;
+    userWalletAddress: string;
+}
+
+export interface PegOutRequest extends UpdateRequest {
     amount: number;
     userWalletAddress: string;
 }

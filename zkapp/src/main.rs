@@ -2,13 +2,13 @@
 
 use std::collections::HashMap;
 
-use charms_sdk::data::{app_datas, check, App, Data, Transaction, UtxoId, NFT, TOKEN};
+use charms_sdk::data::{check, App, Data, Transaction, NFT, TOKEN};
 
 use crate::nft::{nft_deploy_satisfied, nft_update_satisfied};
-use crate::token::{token_mint_satisfied};
+use crate::token::{token_burn_satisfied, token_mint_satisfied};
 
-pub mod objects;
 pub mod nft;
+pub mod objects;
 pub mod token;
 
 pub fn app_contract(app: &App, tx: &Transaction, pub_in: &Data, priv_in: &Data) -> bool {
@@ -21,29 +21,28 @@ pub fn app_contract(app: &App, tx: &Transaction, pub_in: &Data, priv_in: &Data) 
     let action = public_inputs["action"].as_str();
 
     match app.tag {
-        NFT => {
-            match action {
-                "deploy" => {
-                    check!(crate::nft_deploy_satisfied(app, tx, pub_in, priv_in))
-                }
-                "update" => {
-                    check!(crate::nft_update_satisfied(app, tx))
-                }
-                _ => {
-                    unreachable!("Unsupported action: {}", action);
-                }
+        NFT => match action {
+            "deploy" => {
+                check!(crate::nft_deploy_satisfied(app, tx, pub_in, priv_in))
             }
-        }
-        TOKEN => {
-            match action {
-                "mint" => {
-                    check!(crate::token_mint_satisfied(app, tx));
-                }
-                _ => {
-                    unreachable!("Unsupported action: {}", action);
-                }
+            "update" => {
+                check!(crate::nft_update_satisfied(app, tx))
             }
-        }
+            _ => {
+                unreachable!("Unsupported action: {}", action);
+            }
+        },
+        TOKEN => match action {
+            "mint" => {
+                check!(crate::token_mint_satisfied(app, tx));
+            }
+            "burn" => {
+                check!(crate::token_burn_satisfied(app, tx));
+            }
+            _ => {
+                unreachable!("Unsupported action: {}", action);
+            }
+        },
         _ => {
             unreachable!()
         }

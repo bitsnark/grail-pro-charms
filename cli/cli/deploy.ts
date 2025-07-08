@@ -94,7 +94,6 @@ async function main() {
     const transmit = !!argv['transmit'];
 
     await deployNft(network, feeRate, deployerPublicKey, transmit);
-    console.log('NFT deployment completed successfully');
 }
 
 if (require.main === module) {

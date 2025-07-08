@@ -5,6 +5,10 @@ import { schnorr } from "@noble/curves/secp256k1";
 import { LabeledSignature } from './types';
 import { getHash } from './taproot/taproot-common';
 
+export interface KeyPair {
+  publicKey: Buffer;
+  privateKey: Buffer;
+}
 
 export interface SpendingScript {
   script: Buffer;
@@ -109,7 +113,7 @@ export function grailSignTx(
   rawTxHex: string,
   rosterPublicKeys: string[],
   threshold: number,
-  keyPairs: { publicKey: string; privateKey: string }[],
+  keyPairs: KeyPair[],
   network: Network
 ): LabeledSignature[] {
 
@@ -160,7 +164,7 @@ export function grailSignTx(
   return requiredKeypairs.map(({ publicKey, privateKey }) => {
     const sig = schnorr.sign(sighash, privateKey);
     return {
-      publicKey,
+      publicKey: publicKey.toString('hex'),
       signature: Buffer.from(sig),
     } as LabeledSignature;
   });
