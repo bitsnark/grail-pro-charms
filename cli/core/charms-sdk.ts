@@ -9,7 +9,7 @@ const CHARMS_BIN = process.env['CHARMS_BIN'] || '~/workspace/charms/target/relea
 function executeCommand(command: string[], stdin: string = ''): Promise<string> {
   return new Promise<string>((resolve, reject) => {
     console.info(`Executing command: ${command.join(' ')}`);
-    const child = exec(`cd ${CHARMS_PATH} ; export RUST_BACKTRACE=1 ; ${command.join(' ')}`, (error, stdout, stderr) => {
+    const child = exec(`cd ${CHARMS_PATH} ; export RUST_BACKTRACE=full ; ${command.join(' ')}`, (error, stdout, stderr) => {
       if (error) {
         console.error(`Execution error: ${error.message}`);
         reject(error);

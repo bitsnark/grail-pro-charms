@@ -4,6 +4,8 @@ import { Network, SimpleTapTree } from './taproot/taptree';
 import { schnorr } from "@noble/curves/secp256k1";
 import { LabeledSignature } from './types';
 import { getHash } from './taproot/taproot-common';
+import { BitcoinClient } from './bitcoin';
+import { last } from './array-utils';
 
 export interface KeyPair {
   publicKey: Buffer;
@@ -107,15 +109,16 @@ export function generateGrailPaymentAddress(
   return stt.getTaprootAddress();
 }
 
-export function grailSignTx(
+export async function grailSignTx(
   commitmentTxHex: string,
-  previousTxHex: string,
   rawTxHex: string,
   rosterPublicKeys: string[],
   threshold: number,
   keyPairs: KeyPair[],
   network: Network
-): LabeledSignature[] {
+): Promise<LabeledSignature[]> {
+
+  const bitcoinClient = await BitcoinClient.create();
 
   if (keyPairs.length < threshold) {
     throw new Error(`Not enough key pairs provided. Required: ${threshold}, provided: ${keyPairs.length}`);
@@ -124,20 +127,6 @@ export function grailSignTx(
   const spendingScript = generateSpendingScriptForGrail(rosterPublicKeys, threshold, network);
 
   const inputIndex = 0; // Assuming we are signing the first input
-  const outputIndex = 0; // Assuming we are spending the first output of the previous transaction
-
-  const commitmentTx = bitcoin.Transaction.fromHex(commitmentTxHex);
-  const commitmentOutputScript = commitmentTx.outs[0].script;
-  const commitmentOutputValue = commitmentTx.outs[0].value;
-
-  const prevTx = bitcoin.Transaction.fromHex(previousTxHex);
-
-  // Always use output 0 of previous tx
-  const prevout = prevTx.outs[outputIndex];
-  if (!prevout) throw new Error(`No output ${outputIndex} in previous transaction`);
-
-  const prevoutScriptPubKey = prevout.script;
-  const prevoutValue = prevout.value;
 
   // Load the transaction to sign
   const tx = bitcoin.Transaction.fromHex(rawTxHex);
@@ -149,11 +138,29 @@ export function grailSignTx(
   // BitcoinJS v6+ exposes tapleafHash for this calculation
   const tapleafHash = getHash(spendingScript.script);
 
+  const commitmentTxHash = bitcoin.Transaction.fromHex(commitmentTxHex).getHash();
+
+  const previousTxs = [];
+  for (const input of tx.ins) {
+    let ttxhex: string;
+    if (input.hash.compare(commitmentTxHash) === 0) {
+      ttxhex = commitmentTxHex;
+    } else {
+      ttxhex = await bitcoinClient.getTransactionHex(input.hash.reverse().toString('hex'));
+    }
+    const ttx = bitcoin.Transaction.fromHex(ttxhex);
+    const out = ttx.outs[input.index];
+    previousTxs.push({
+      value: out.value, // Assuming the value is the same as the output being spent
+      script: out.script
+    });
+  }
+
   // Compute sighash for this tapleaf spend (see https://github.com/bitcoinjs/bitcoinjs-lib/blob/master/test/integration/taproot.spec.ts)
   const sighash = tx.hashForWitnessV1(
     inputIndex,
-    [prevoutScriptPubKey, commitmentOutputScript],
-    [prevoutValue, commitmentOutputValue],
+    previousTxs.map(tx => tx.script),
+    previousTxs.map(tx => tx.value),
     sighashType,
     tapleafHash
   );

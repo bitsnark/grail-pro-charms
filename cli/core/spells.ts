@@ -3,38 +3,6 @@ import { CharmerRequest } from './types';
 import { BitcoinClient } from './bitcoin';
 import * as yaml from 'js-yaml';
 
-// function toYaml(obj: any, indent: string = ''): string {
-//   let str = '';
-//   Object.keys(obj).forEach(key => {
-//     if (typeof obj[key] === 'string') {
-//       str += `${indent}${key}: ${obj[key]}\n`;
-//     } else if (typeof obj[key] === 'number') {
-//       str += `${indent}${key}: ${obj[key]}\n`;
-//     } else if (typeof obj[key] === 'boolean') {
-//       str += `${indent}${key}: ${obj[key] ? 'true' : 'false'}\n`;
-//     } else if (Array.isArray(obj[key])) {
-//       str += `${indent}${key}:\n`;
-//       obj[key].forEach((item: any, index: number) => {
-//         if (typeof item === 'string') {
-//           str += `${indent}  - "${item}"\n`;
-//         } else if (typeof item === 'number') {
-//           str += `${indent}  - ${item}\n`;
-//         } else if (typeof item === 'boolean') {
-//           str += `${indent}  - ${item ? 'true' : 'false'}\n`;
-//         } else if (typeof item === 'object' && item !== null) {
-//           str += `${indent}  -\n`;
-//           str += toYaml(item, indent + '    ');
-//         }
-//       });
-//     } else if (typeof obj[key] === 'object' && obj[key] !== null) {
-//       str += `${indent}${key}:\n`;
-//       str += toYaml(obj[key], indent + '  ');
-//     }
-//   });
-//   return str;
-// }
-
-
 export async function createSpell(
   bitcoinClient: BitcoinClient,
   previousTxids: string[],

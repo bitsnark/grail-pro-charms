@@ -9,6 +9,29 @@ import { getVerificationKey } from '../core/charms-sdk';
 import config from './config.json';
 import { sha256 } from 'bitcoinjs-lib/src/crypto';
 
+console.log = function (...args: any[]) {
+    const timestamp = new Date().toISOString();
+    const formattedArgs = args.map(arg => {
+        if (typeof arg === 'object') {
+            return JSON.stringify(arg, null, 2);
+        }
+        return String(arg);
+    }).join(' ');
+    process.stdout.write(`[${timestamp}] ${formattedArgs}\n`);
+}
+
+console.error = function (...args: any[]) {
+    const timestamp = new Date().toISOString();
+    const formattedArgs = args.map(arg => {
+        if (typeof arg === 'object') {
+            return JSON.stringify(arg, null, 2);
+        }
+        return String(arg);
+    }).join(' ');
+    process.stderr.write(`[${timestamp}] ${formattedArgs}\n`);
+}
+
+
 export async function deployNft(
     network: Network,
     feeRate: number,
@@ -51,7 +74,7 @@ export async function deployNft(
                         $00: {
                             ticker: config.ticker,
                             current_cosigners: this.currentNftState.publicKeys,
-                            current_threshold: this.currentNftState.threshold
+                            current_threshold: this.currentNftState.threshold,
                         }
                     }
                 }]

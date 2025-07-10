@@ -105,8 +105,8 @@ export async function updateNft(
   const commitmentTxHex = spell[0].toString('hex');
   const spellTxhex = spell[1].toString('hex');
 
-  const labeledSignatures = grailSignTx(
-    commitmentTxHex, previousNftTxhex, spellTxhex, previousPublicKeys, previousThreshold,
+  const labeledSignatures = await grailSignTx(
+    commitmentTxHex, spellTxhex, previousPublicKeys, previousThreshold,
     [{ publicKey: deployerPublicKey, privateKey: deployerPrivateKey }], network);
 
   const signedTransaction = injectGrailSignaturesIntoTxInput(

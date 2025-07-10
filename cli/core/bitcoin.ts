@@ -87,7 +87,7 @@ export class BitcoinClient {
     }
 
     public async getFundingUtxo(): Promise<Utxo> {
-        const unspent = (await this.listUnspent()).filter(utxo => utxo.spendable && utxo.value >= 1000);
+        const unspent = (await this.listUnspent()).filter(utxo => utxo.spendable && utxo.value >= 10000);
         if (unspent.length === 0) {
             throw new Error('No suitable funding UTXO found');
         }

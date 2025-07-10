@@ -1,20 +1,13 @@
-App ID: 95dc93ab2195da30f94c57a3cc96ccbacababcfab38e3a83b6178c05937e2357
+[2025-07-10T09:10:25.603Z] App ID: 403442b32e67ccd93a79b76b1cf3f99c7d46b3b3caaff4d7154aa9b51f6d31aa
 Executing command: ~/workspace/charms/target/release/charms app vk
-Stderr: cargo:warning=rustc +succinct --version: "rustc 1.82.0-dev\n"
-[sp1]     Compiling grail-pro-charms v0.1.0 (/Users/gadiguy/workspace/grail-pro-charms/zkapp)
-[sp1]  warning: unused imports: `UtxoId` and `app_datas`
-[sp1]   --> src/main.rs:5:24
-[sp1]    |
-[sp1]  5 | use charms_sdk::data::{app_datas, check, App, Data, Transaction, UtxoId, NFT, TOKEN};
-[sp1]    |                        ^^^^^^^^^                                 ^^^^^^
-[sp1]    |
-[sp1]    = note: `#[warn(unused_imports)]` on by default
-[sp1]  
+[2025-07-10T09:10:28.912Z] Stderr: cargo:warning=rustc +succinct --version: "rustc 1.82.0-dev\n"
 [sp1]  warning: unused imports: `NFT`, `TOKEN`, and `UtxoId`
 [sp1]   --> src/nft.rs:1:66
 [sp1]    |
 [sp1]  1 | use charms_sdk::data::{app_datas, check, App, Data, Transaction, UtxoId, B32, NFT, TOKEN};
 [sp1]    |                                                                  ^^^^^^       ^^^  ^^^^^
+[sp1]    |
+[sp1]    = note: `#[warn(unused_imports)]` on by default
 [sp1]  
 [sp1]  warning: unused imports: `TransactionType` and `XBTCData`
 [sp1]   --> src/nft.rs:4:31
@@ -22,11 +15,11 @@ Stderr: cargo:warning=rustc +succinct --version: "rustc 1.82.0-dev\n"
 [sp1]  4 | use crate::objects::{NftData, TransactionType, XBTCData};
 [sp1]    |                               ^^^^^^^^^^^^^^^  ^^^^^^^^
 [sp1]  
-[sp1]  warning: unused imports: `Data`, `NFT`, `TOKEN`, `UtxoId`, `app_datas`, and `check`
+[sp1]  warning: unused imports: `Data`, `NFT`, `TOKEN`, `UtxoId`, and `app_datas`
 [sp1]   --> src/token.rs:1:24
 [sp1]    |
 [sp1]  1 | use charms_sdk::data::{app_datas, check, App, Data, Transaction, UtxoId, NFT, TOKEN};
-[sp1]    |                        ^^^^^^^^^  ^^^^^       ^^^^               ^^^^^^  ^^^  ^^^^^
+[sp1]    |                        ^^^^^^^^^              ^^^^               ^^^^^^  ^^^  ^^^^^
 [sp1]  
 [sp1]  warning: unused imports: `NftData`, `TransactionType`, and `XBTCData`
 [sp1]   --> src/token.rs:3:22
@@ -48,103 +41,89 @@ Stderr: cargo:warning=rustc +succinct --version: "rustc 1.82.0-dev\n"
 [sp1]  7 |   token_app: &App,
 [sp1]    |   ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_token_app`
 [sp1]  
-[sp1]  warning: `grail-pro-charms` (bin "grail-pro-charms") generated 7 warnings (run `cargo fix --bin "grail-pro-charms"` to apply 5 suggestions)
-[sp1]      Finished `release` profile [optimized] target(s) in 2.57s
+[sp1]  warning: unused variable: `token_app`
+[sp1]    --> src/token.rs:19:3
+[sp1]     |
+[sp1]  19 |   token_app: &App,
+[sp1]     |   ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_token_app`
+[sp1]  
+[sp1]  warning: `grail-pro-charms` (bin "grail-pro-charms") generated 7 warnings (run `cargo fix --bin "grail-pro-charms"` to apply 4 suggestions)
+[sp1]      Finished `release` profile [optimized] target(s) in 0.11s
 cargo:rustc-env=SP1_ELF_grail-pro-charms=/Users/gadiguy/workspace/grail-pro-charms/zkapp/target/elf-compilation/riscv32im-succinct-zkvm-elf/release/grail-pro-charms
 detected old compiler flags: recompile the ELF for additional security
 
-Executed successfully: 3d0da3576e35a201b497da15becb813ceb5b4d037323b15beb2dd44b0db43058
+Executed successfully: 0ceca241d8613b0df84514041340466ff8272960278e89084537d9348054ef54
 
-App Verification Key: 3d0da3576e35a201b497da15becb813ceb5b4d037323b15beb2dd44b0db43058
-Executing command: ~/workspace/charms/target/release/charms spell prove --app-bins ./target/charms-app --funding-utxo cfd1c9122e2714469beaa22f15745208018c38e07e74798a271ab9f2648bd879:1 --funding-utxo-value 4999998034 --change-address bcrt1qphrqzh9xkr5rucmpsl4vqh86cqn9rtseklt8vc
+[2025-07-10T09:10:28.912Z] App Verification Key: 0ceca241d8613b0df84514041340466ff8272960278e89084537d9348054ef54
+Executing command: ~/workspace/charms/target/release/charms spell prove --app-bins ./target/charms-app --funding-utxo 67d1da267e86e0347877e8b5de49ce6ec350d51f83c0f659505cec1d77898cf4:0 --funding-utxo-value 2500000000 --change-address bcrt1qfx2cy4sjf6y4serddx58546mhjdughxwxrj9pc
 Sending stdin: version: 4
 apps:
   $00: >-
-    n/95dc93ab2195da30f94c57a3cc96ccbacababcfab38e3a83b6178c05937e2357/3d0da3576e35a201b497da15becb813ceb5b4d037323b15beb2dd44b0db43058
+    n/403442b32e67ccd93a79b76b1cf3f99c7d46b3b3caaff4d7154aa9b51f6d31aa/0ceca241d8613b0df84514041340466ff8272960278e89084537d9348054ef54
 private_inputs:
-  $00: cfd1c9122e2714469beaa22f15745208018c38e07e74798a271ab9f2648bd879:1
+  $00: 67d1da267e86e0347877e8b5de49ce6ec350d51f83c0f659505cec1d77898cf4:0
 public_inputs:
   $00:
     action: deploy
 ins: []
 outs:
   - address: bcrt1pqdlmlgzrnx59yp8ek9w3emlhu9u3e6g28nr7p578dr60atjcgsxqwrr2d9
+    amount: 1001
     charms:
       $00:
         ticker: GRAIL-NFT
         current_cosigners: b95552a6fa61ea56171e6e260cdba57d250b44ba1234dc928a177698f3f016da
         current_threshold: 1
 
-Stderr: detected old compiler flags: recompile the ELF for additional security
-[2m2025-07-07T13:29:25.117295Z[0m [32m INFO[0m [1mexecute[0m: new
+[2025-07-10T09:14:08.103Z] Stderr: detected old compiler flags: recompile the ELF for additional security
+[src/spell.rs:431:9] input_vec.len() = 466
 detected old compiler flags: recompile the ELF for additional security
-stdout: app: App(n/95dc93ab2195da30f94c57a3cc96ccbacababcfab38e3a83b6178c05937e2357/3d0da3576e35a201b497da15becb813ceb5b4d037323b15beb2dd44b0db43058)
+detected old compiler flags: recompile the ELF for additional security
+[2m2025-07-10T09:10:31.904579Z[0m [32m INFO[0m [1mprove_core[0m: new
+stdout: app: App(n/403442b32e67ccd93a79b76b1cf3f99c7d46b3b3caaff4d7154aa9b51f6d31aa/0ceca241d8613b0df84514041340466ff8272960278e89084537d9348054ef54)
 stdout: tx.ins: {}
-stdout: tx.outs: [{App(n/95dc93ab2195da30f94c57a3cc96ccbacababcfab38e3a83b6178c05937e2357/3d0da3576e35a201b497da15becb813ceb5b4d037323b15beb2dd44b0db43058): Data(Map([(Text("ticker"), Text("GRAIL-NFT")), (Text("current_cosigners"), Text("b95552a6fa61ea56171e6e260cdba57d250b44ba1234dc928a177698f3f016da")), (Text("current_threshold"), Integer(Integer(1)))]))}]
+stdout: tx.outs: [{App(n/403442b32e67ccd93a79b76b1cf3f99c7d46b3b3caaff4d7154aa9b51f6d31aa/0ceca241d8613b0df84514041340466ff8272960278e89084537d9348054ef54): Data(Map([(Text("ticker"), Text("GRAIL-NFT")), (Text("current_cosigners"), Text("b95552a6fa61ea56171e6e260cdba57d250b44ba1234dc928a177698f3f016da")), (Text("current_threshold"), Integer(Integer(1)))]))}]
 stderr: WARNING: Using insecure random number generator.
 stdout: public_inputs: {"action": "deploy"}
 stderr: Ticker: GRAIL-NFT
 stderr: Threshold: 1
 stderr: Cosigners: ["b95552a6fa61ea56171e6e260cdba57d250b44ba1234dc928a177698f3f016da"]
-[2m2025-07-07T13:29:25.123166Z[0m [32m INFO[0m [1mexecute[0m: gas: 1359625
-[2m2025-07-07T13:29:25.123272Z[0m [32m INFO[0m [1mexecute[0m: close [3mtime.busy[0m[2m=[0m5.65ms [3mtime.idle[0m[2m=[0m505µs
-✅  app contract satisfied: n/95dc93ab2195da30f94c57a3cc96ccbacababcfab38e3a83b6178c05937e2357/3d0da3576e35a201b497da15becb813ceb5b4d037323b15beb2dd44b0db43058
-[src/spell.rs:429:9] input_vec.len() = 466
-detected old compiler flags: recompile the ELF for additional security
-detected old compiler flags: recompile the ELF for additional security
-[2m2025-07-07T13:29:25.367907Z[0m [32m INFO[0m [1mprove_core[0m: new
-stdout: app: App(n/95dc93ab2195da30f94c57a3cc96ccbacababcfab38e3a83b6178c05937e2357/3d0da3576e35a201b497da15becb813ceb5b4d037323b15beb2dd44b0db43058)
+stdout: app: App(n/403442b32e67ccd93a79b76b1cf3f99c7d46b3b3caaff4d7154aa9b51f6d31aa/0ceca241d8613b0df84514041340466ff8272960278e89084537d9348054ef54)
 stdout: tx.ins: {}
-stdout: tx.outs: [{App(n/95dc93ab2195da30f94c57a3cc96ccbacababcfab38e3a83b6178c05937e2357/3d0da3576e35a201b497da15becb813ceb5b4d037323b15beb2dd44b0db43058): Data(Map([(Text("ticker"), Text("GRAIL-NFT")), (Text("current_cosigners"), Text("b95552a6fa61ea56171e6e260cdba57d250b44ba1234dc928a177698f3f016da")), (Text("current_threshold"), Integer(Integer(1)))]))}]
+stdout: tx.outs: [{App(n/403442b32e67ccd93a79b76b1cf3f99c7d46b3b3caaff4d7154aa9b51f6d31aa/0ceca241d8613b0df84514041340466ff8272960278e89084537d9348054ef54): Data(Map([(Text("ticker"), Text("GRAIL-NFT")), (Text("current_cosigners"), Text("b95552a6fa61ea56171e6e260cdba57d250b44ba1234dc928a177698f3f016da")), (Text("current_threshold"), Integer(Integer(1)))]))}]
 stderr: WARNING: Using insecure random number generator.
 stdout: public_inputs: {"action": "deploy"}
 stderr: Ticker: GRAIL-NFT
 stderr: Threshold: 1
 stderr: Cosigners: ["b95552a6fa61ea56171e6e260cdba57d250b44ba1234dc928a177698f3f016da"]
-stdout: app: App(n/95dc93ab2195da30f94c57a3cc96ccbacababcfab38e3a83b6178c05937e2357/3d0da3576e35a201b497da15becb813ceb5b4d037323b15beb2dd44b0db43058)
-stdout: tx.ins: {}
-stdout: tx.outs: [{App(n/95dc93ab2195da30f94c57a3cc96ccbacababcfab38e3a83b6178c05937e2357/3d0da3576e35a201b497da15becb813ceb5b4d037323b15beb2dd44b0db43058): Data(Map([(Text("ticker"), Text("GRAIL-NFT")), (Text("current_cosigners"), Text("b95552a6fa61ea56171e6e260cdba57d250b44ba1234dc928a177698f3f016da")), (Text("current_threshold"), Integer(Integer(1)))]))}]
-stderr: WARNING: Using insecure random number generator.
-stdout: public_inputs: {"action": "deploy"}
-stderr: Ticker: GRAIL-NFT
-stderr: Threshold: 1
-stderr: Cosigners: ["b95552a6fa61ea56171e6e260cdba57d250b44ba1234dc928a177698f3f016da"]
-[2m2025-07-07T13:29:33.500990Z[0m [32m INFO[0m [1mprove_core[0m: close [3mtime.busy[0m[2m=[0m7.93s [3mtime.idle[0m[2m=[0m200ms
-[2m2025-07-07T13:29:33.501014Z[0m [32m INFO[0m [1mcompress[0m: new
-[2m2025-07-07T13:29:59.235521Z[0m [32m INFO[0m [1mcompress[0m: close [3mtime.busy[0m[2m=[0m25.7s [3mtime.idle[0m[2m=[0m2.82ms
+[2m2025-07-10T09:10:39.875838Z[0m [32m INFO[0m [1mprove_core[0m: close [3mtime.busy[0m[2m=[0m7.80s [3mtime.idle[0m[2m=[0m170ms
+[2m2025-07-10T09:10:39.875861Z[0m [32m INFO[0m [1mcompress[0m: new
+[2m2025-07-10T09:11:05.287456Z[0m [32m INFO[0m [1mcompress[0m: close [3mtime.busy[0m[2m=[0m25.4s [3mtime.idle[0m[2m=[0m2.36ms
 detected old compiler flags: recompile the ELF for additional security
-[2m2025-07-07T13:30:02.328639Z[0m [32m INFO[0m [1mexecute[0m: new
 detected old compiler flags: recompile the ELF for additional security
-[2m2025-07-07T13:30:02.345567Z[0m [32m INFO[0m [1mexecute[0m:[1mverify[0m: new
-[2m2025-07-07T13:30:02.407456Z[0m [32m INFO[0m [1mexecute[0m:[1mverify[0m: close [3mtime.busy[0m[2m=[0m61.9ms [3mtime.idle[0m[2m=[0m13.9µs
-stderr: Spell is correct!
-stderr: about to commit
-[2m2025-07-07T13:30:02.411761Z[0m [32m INFO[0m [1mexecute[0m: gas: 3872676
-[2m2025-07-07T13:30:02.412517Z[0m [32m INFO[0m [1mexecute[0m: close [3mtime.busy[0m[2m=[0m83.9ms [3mtime.idle[0m[2m=[0m18.2µs
-detected old compiler flags: recompile the ELF for additional security
-[2m2025-07-07T13:30:02.429930Z[0m [32m INFO[0m [1mprove_core[0m: new
-[2m2025-07-07T13:30:02.437626Z[0m [32m INFO[0m [1mprove_core[0m:[1mverify[0m: new
-[2m2025-07-07T13:30:02.499654Z[0m [32m INFO[0m [1mprove_core[0m:[1mverify[0m: close [3mtime.busy[0m[2m=[0m62.0ms [3mtime.idle[0m[2m=[0m17.3µs
+[2m2025-07-10T09:11:08.387674Z[0m [32m INFO[0m [1mprove_core[0m: new
+[2m2025-07-10T09:11:08.395807Z[0m [32m INFO[0m [1mprove_core[0m:[1mverify[0m: new
+[2m2025-07-10T09:11:08.457773Z[0m [32m INFO[0m [1mprove_core[0m:[1mverify[0m: close [3mtime.busy[0m[2m=[0m62.0ms [3mtime.idle[0m[2m=[0m15.1µs
 stderr: Spell is correct!
 stderr: about to commit
 stderr: Spell is correct!
 stderr: about to commit
-[2m2025-07-07T13:30:35.127743Z[0m [32m INFO[0m [1mprove_core[0m: close [3mtime.busy[0m[2m=[0m31.4s [3mtime.idle[0m[2m=[0m1.25s
-[2m2025-07-07T13:30:35.128170Z[0m [32m INFO[0m [1mcompress[0m: new
-[2m2025-07-07T13:31:13.287454Z[0m [32m INFO[0m [1mcompress[0m: close [3mtime.busy[0m[2m=[0m38.2s [3mtime.idle[0m[2m=[0m6.71ms
-[2m2025-07-07T13:31:13.289757Z[0m [32m INFO[0m [1mshrink[0m: new
-[2m2025-07-07T13:31:14.016359Z[0m [32m INFO[0m [1mshrink[0m:[1mprove_shards[0m: new
-[2m2025-07-07T13:31:17.439083Z[0m [32m INFO[0m [1mshrink[0m:[1mprove_shards[0m: close [3mtime.busy[0m[2m=[0m3.42s [3mtime.idle[0m[2m=[0m30.8µs
-[2m2025-07-07T13:31:17.477724Z[0m [32m INFO[0m [1mshrink[0m: close [3mtime.busy[0m[2m=[0m4.19s [3mtime.idle[0m[2m=[0m6.83µs
-[2m2025-07-07T13:31:17.477737Z[0m [32m INFO[0m [1mwrap_bn254[0m: new
-[2m2025-07-07T13:31:42.618369Z[0m [32m INFO[0m [1mwrap_bn254[0m:[1mprove_shards[0m: new
-[2m2025-07-07T13:32:42.646912Z[0m [32m INFO[0m [1mwrap_bn254[0m:[1mprove_shards[0m: close [3mtime.busy[0m[2m=[0m60.0s [3mtime.idle[0m[2m=[0m18.3µs
-[2m2025-07-07T13:32:42.646935Z[0m [32m INFO[0m [1mwrap_bn254[0m:[1mverify[0m: new
-[2m2025-07-07T13:32:42.729676Z[0m [32m INFO[0m [1mwrap_bn254[0m:[1mverify[0m: close [3mtime.busy[0m[2m=[0m82.7ms [3mtime.idle[0m[2m=[0m3.96µs
-[2m2025-07-07T13:32:42.767390Z[0m [32m INFO[0m [1mwrap_bn254[0m: close [3mtime.busy[0m[2m=[0m85.3s [3mtime.idle[0m[2m=[0m2.79µs
+[2m2025-07-10T09:11:39.043108Z[0m [32m INFO[0m [1mprove_core[0m: close [3mtime.busy[0m[2m=[0m29.8s [3mtime.idle[0m[2m=[0m855ms
+[2m2025-07-10T09:11:39.043471Z[0m [32m INFO[0m [1mcompress[0m: new
+[2m2025-07-10T09:12:18.927805Z[0m [32m INFO[0m [1mcompress[0m: close [3mtime.busy[0m[2m=[0m39.9s [3mtime.idle[0m[2m=[0m7.38ms
+[2m2025-07-10T09:12:18.931234Z[0m [32m INFO[0m [1mshrink[0m: new
+[2m2025-07-10T09:12:19.689433Z[0m [32m INFO[0m [1mshrink[0m:[1mprove_shards[0m: new
+[2m2025-07-10T09:12:23.242081Z[0m [32m INFO[0m [1mshrink[0m:[1mprove_shards[0m: close [3mtime.busy[0m[2m=[0m3.55s [3mtime.idle[0m[2m=[0m16.2µs
+[2m2025-07-10T09:12:23.268470Z[0m [32m INFO[0m [1mshrink[0m: close [3mtime.busy[0m[2m=[0m4.34s [3mtime.idle[0m[2m=[0m6.46µs
+[2m2025-07-10T09:12:23.268500Z[0m [32m INFO[0m [1mwrap_bn254[0m: new
+[2m2025-07-10T09:12:49.027923Z[0m [32m INFO[0m [1mwrap_bn254[0m:[1mprove_shards[0m: new
+[2m2025-07-10T09:13:50.356057Z[0m [32m INFO[0m [1mwrap_bn254[0m:[1mprove_shards[0m: close [3mtime.busy[0m[2m=[0m61.3s [3mtime.idle[0m[2m=[0m15.1µs
+[2m2025-07-10T09:13:50.356079Z[0m [32m INFO[0m [1mwrap_bn254[0m:[1mverify[0m: new
+[2m2025-07-10T09:13:50.438842Z[0m [32m INFO[0m [1mwrap_bn254[0m:[1mverify[0m: close [3mtime.busy[0m[2m=[0m82.8ms [3mtime.idle[0m[2m=[0m3.33µs
+[2m2025-07-10T09:13:50.469645Z[0m [32m INFO[0m [1mwrap_bn254[0m: close [3mtime.busy[0m[2m=[0m87.2s [3mtime.idle[0m[2m=[0m3.46µs
 [sp1] groth16 circuit artifacts already seem to exist at /Users/gadiguy/.sp1/circuits/groth16/v5.0.0. if you want to re-download them, delete the directory
-[2m2025-07-07T13:32:42.768015Z[0m [32m INFO[0m [1mwrap_groth16_bn254[0m: new
-[2m2025-07-07T13:32:58.831935Z[0m [32m INFO[0m [1mwrap_groth16_bn254[0m: close [3mtime.busy[0m[2m=[0m16.1s [3mtime.idle[0m[2m=[0m8.25µs
+[2m2025-07-10T09:13:50.469742Z[0m [32m INFO[0m [1mwrap_groth16_bn254[0m: new
+[2m2025-07-10T09:14:05.972098Z[0m [32m INFO[0m [1mwrap_groth16_bn254[0m: close [3mtime.busy[0m[2m=[0m15.5s [3mtime.idle[0m[2m=[0m3.92µs
 [src/tx/bitcoin_tx.rs:127:27] tx.weight() + Weight::from_wu(2) = Weight(
     216,
 )
@@ -152,51 +131,52 @@ stderr: about to commit
     0,
 )
 [src/tx/bitcoin_tx.rs:129:11] script_input_weight = Weight(
-    1125,
+    1126,
 )
 [src/tx/bitcoin_tx.rs:130:11] change_output_weight = Weight(
     172,
 )
 [src/tx/bitcoin_tx.rs:132:31] total_tx_weight = Weight(
-    1513,
+    1514,
 )
 [src/tx/bitcoin_tx.rs:99:5] (tx.input[0].witness.size(), tx.input[0].base_size(),
 tx.input[0].total_size()) = (
-    961,
+    962,
     41,
-    1002,
+    1003,
 )
 [src/tx/bitcoin_tx.rs:104:5] (script_len, tx.input[spell_input_idx].witness.size(),
 tx.input[spell_input_idx].base_size(), tx.input[spell_input_idx].total_size()) = (
-    857,
-    961,
+    858,
+    962,
     41,
-    1002,
+    1003,
 )
 [src/tx/bitcoin_tx.rs:110:5] tx.output[tx.output.len() - 1].size() = 31
 
-Executed successfully: Setting environment variables took 373.041µs
-Reading R1CS took 6.236884041s
-Reading proving key took 993.398083ms
-Reading witness file took 629.666µs
-Deserializing JSON data took 4.078042ms
-Generating witness took 124.364708ms
-[90m16:32:51[0m DBG constraint system solver done [36mnbConstraints=[0m8382715 [36mtook=[0m1573.651209
-[90m16:32:58[0m DBG prover done [36macceleration=[0mnone [36mbackend=[0mgroth16 [36mcurve=[0mbn254 [36mnbConstraints=[0m8382715 [36mtook=[0m7103.528333
-Generating proof took 8.682070791s
+Executed successfully: Setting environment variables took 431.75µs
+Reading R1CS took 6.252770125s
+Reading proving key took 765.300333ms
+Reading witness file took 486.041µs
+Deserializing JSON data took 3.485208ms
+Generating witness took 115.425958ms
+[90m12:13:59[0m DBG constraint system solver done [36mnbConstraints=[0m8382715 [36mtook=[0m1424.107708
+[90m12:14:05[0m DBG prover done [36macceleration=[0mnone [36mbackend=[0mgroth16 [36mcurve=[0mbn254 [36mnbConstraints=[0m8382715 [36mtook=[0m6918.56
+Generating proof took 8.3429715s
 ignoring uninitialized slice: Vars []frontend.Variable
 ignoring uninitialized slice: Vars []frontend.Variable
 ignoring uninitialized slice: Vars []frontend.Variable
-[90m16:32:58[0m DBG verifier done [36mbackend=[0mgroth16 [36mcurve=[0mbn254 [36mtook=[0m0.981
-["020000000179d88b64f2b91a278a79747ee0388c01085274152fa2ea9b4614272e12c9d1cf0100000000ffffffff0174e9052a0100000022512011f165730a28474e53b2888cfac2e7fbfc96f59fc7f65800a6d36d1fed78b4c300000000","020000000001017b5727b969f8cfd9732a1b0b7e11e1763b1a59b5a0c4986ff80db5ac052b23920000000000ffffffff02e803000000000000225120037fbfa04399a85204f9b15d1ceff7e1791ce90a3cc7e0d3c768f4feae58440c97e2052a010000001600140dc6015ca6b0e83e636187eac05cfac02651ae19034100b701cf74abca83be31eb59bffd17a2672ceed81d874fb92eee2ab1d09d9a3ca9941a3248e353d5954fb57f9e2c747b09343ab54bfa5a6de46e14b1769bfecd81fd59030063057370656c6c4d080282a36776657273696f6e04627478a2647265667380646f75747381a100a3667469636b657269475241494c2d4e46547163757272656e745f636f7369676e6572737840623935353532613666613631656135363137316536653236306364626135376432353062343462613132333464633932386131373736393866336630313664617163757272656e745f7468726573686f6c6401716170705f7075626c69635f696e70757473a183616e9820189518dc189318ab1821189518da183018f9184c185718a318cc189618cc18ba18ca18ba18bc18fa18b3188e183a188318b617188c051893187e182318579820183d0d18a31857186e183518a20118b4189718da1518be18cb1881183c18eb185b184d031873182318b1185b18eb182d18d4184b0d18b418301858a166616374696f6e666465706c6f7999010418a41859184c1859181a186f186b090618a818d80f0b187018320a18ec18d1182618d118d118d418cb184818b818d918ba18f51818185a18c118511879189b186e1872182a18da18b2186818ed181918c01840181e18bd0e1825188718541518b0181f18d318191876187f183b1886184218bf1861183218f614182b186018c7181b1830182c1894182f18d4182e18ed18b318a51821184218ec183406187a18ac1852184618d7181b1851061869187618bc18b41889188b18ff188418220d18bf183618e3185f18ed18770f184d2001fc189118e318fa186118e318db18a41894187b186d12189a18f7184d18670318e818a11899161864188d18d20b182f182b18841864183a185a186018d9183518960f18be186c18e9181f184f184718f218db181b18af188d187918d718f8185c18b418ca18d818a4182118251873181818ea189f186118c618f1188b051826181b18e518be186c182d1822183b18a0187b189218990718a018df0c18251418bd18361841189b04186a18a518bf18d81851185d18b218a618f6183d181f18d118eb18fd0418541857181d18d818d418be18fa18570f18e018b618ef1840121831184118300b188a18fb18e418c218a218a318ee185b18f918db185d18f518c31848181c18d903183618b4184718c2188f1891189618a518a91843187c18b118a368203b954909de7b563697a76505972777c4451284b9b101cd8f8b76197ea5aa738dac21c13b954909de7b563697a76505972777c4451284b9b101cd8f8b76197ea5aa738d00000000"]
+[90m12:14:05[0m DBG verifier done [36mbackend=[0mgroth16 [36mcurve=[0mbn254 [36mtook=[0m0.799542
+!!!!!!!!!!!!! 1 Some(1001)
+!!!!!!!!!!!!! 2 1001 SAT
+["0200000001f48c89771dec5c5059f6c0831fd550c36ece49deb5e8777834e0867e26dad1670000000000ffffffff0122f802950000000022512060a0625450b7338d63317d2c597eb512dd5634e1bed07dddec8089e29adee6b500000000","02000000000101177b3d9799412bb024934f75b4258931c1f3bcb4a0335feb1c46d8f276e533330000000000ffffffff02e903000000000000225120037fbfa04399a85204f9b15d1ceff7e1791ce90a3cc7e0d3c768f4feae58440c44f102950000000016001449958256124e8958646d69a87a575bbc9bc45cce0341dcbab2b448f31c6ec198414df0f0cf778b51578e3f1e9dc0670c239466ba925a9e3db405e0190cac674484c2f9fd8598f4f57058505289d084f744892ba3968381fd5a030063057370656c6c4d080282a36776657273696f6e04627478a2647265667380646f75747381a100a3667469636b657269475241494c2d4e46547163757272656e745f636f7369676e6572737840623935353532613666613631656135363137316536653236306364626135376432353062343462613132333464633932386131373736393866336630313664617163757272656e745f7468726573686f6c6401716170705f7075626c69635f696e70757473a183616e982018401834184218b3182e186718cc18d9183a187918b7186b181c18f318f9189c187d184618b318b318ca18af18f418d715184a18a918b5181f186d183118aa98200c18ec18a2184118d81861183b0d18f8184514041318401846186f18f81827182918601827188e1889081845183718d918341880185418ef1854a166616374696f6e666465706c6f7999010418a41859184c1859140b189f18e6181d1018bc188c18a01896189818fb183718de185e185718a61886187f18c51849188e18f718d4189f18da18bc18d01859187b18f218980c1855184c1875183e18d718ac18921894185518b318fb18ee182918f7181a181a185b18e818a118e518fc187a185d186d184a0618ff18d618b5188618671821031854182c184b0718d6184a18cf18aa18ed185018d918a718301890189e187e189a18471872185f18c018931849182a186518e418a1187518bc01181e18bb1827187118a31866184d2101d0188518d21896187318781820188f18b8189b18ed187b18a71843188d188c1844184118bf18fc18d8184618b4183318d0181f02186418c818bf185e07184318911895188d188c189d18fe1886186e18b118c218e6184818b51833185f18e2182018790d186b18ff18ad1867183a18b218201857189d18c008186c18dc0f18be1879188618d718331847187b189a18ac184a18a51218e2185d1888189118e7188c18441318c518af0018c106183f184118e318b6189f011873189a18f218ac17184b181b184e18d3189a18c718b0187f18bc18c1187e188c18851869182d18c518fd186618770a09187618c018a816184318e50c18d1182f18f518a6184218e5187815131871182918d7186418d218a9187b18c31842189b18a0185a18ae182706682049b315d01aec862bf4bebe189a229f6baddacdff27cf8048d355a383b7616538ac21c149b315d01aec862bf4bebe189a229f6baddacdff27cf8048d355a383b761653800000000"]
 
 Spell created successfully, transmitting...
-Sending commitment transaction: 0200000000010179d88b64f2b91a278a79747ee0388c01085274152fa2ea9b4614272e12c9d1cf0100000000ffffffff0174e9052a0100000022512011f165730a28474e53b2888cfac2e7fbfc96f59fc7f65800a6d36d1fed78b4c30247304402207d5857b6f4344bb0d6cf65bee80a5443c3758b09816f010f9af588836787776e022054fe25662d1db4c845392577a43a779edfa69894de028ef76b05b79140416b1b812103afada3912bb700ee9384d7aee511382489f89523aa218833fc5dc074fce46fbe00000000
-commitmentTxid: 92232b05acb50df86f98c4a0b5591a3b76e1117e0b1b2a73d9cff869b927577b
-Sending spell transaction: 020000000001017b5727b969f8cfd9732a1b0b7e11e1763b1a59b5a0c4986ff80db5ac052b23920000000000ffffffff02e803000000000000225120037fbfa04399a85204f9b15d1ceff7e1791ce90a3cc7e0d3c768f4feae58440c97e2052a010000001600140dc6015ca6b0e83e636187eac05cfac02651ae19034100b701cf74abca83be31eb59bffd17a2672ceed81d874fb92eee2ab1d09d9a3ca9941a3248e353d5954fb57f9e2c747b09343ab54bfa5a6de46e14b1769bfecd81fd59030063057370656c6c4d080282a36776657273696f6e04627478a2647265667380646f75747381a100a3667469636b657269475241494c2d4e46547163757272656e745f636f7369676e6572737840623935353532613666613631656135363137316536653236306364626135376432353062343462613132333464633932386131373736393866336630313664617163757272656e745f7468726573686f6c6401716170705f7075626c69635f696e70757473a183616e9820189518dc189318ab1821189518da183018f9184c185718a318cc189618cc18ba18ca18ba18bc18fa18b3188e183a188318b617188c051893187e182318579820183d0d18a31857186e183518a20118b4189718da1518be18cb1881183c18eb185b184d031873182318b1185b18eb182d18d4184b0d18b418301858a166616374696f6e666465706c6f7999010418a41859184c1859181a186f186b090618a818d80f0b187018320a18ec18d1182618d118d118d418cb184818b818d918ba18f51818185a18c118511879189b186e1872182a18da18b2186818ed181918c01840181e18bd0e1825188718541518b0181f18d318191876187f183b1886184218bf1861183218f614182b186018c7181b1830182c1894182f18d4182e18ed18b318a51821184218ec183406187a18ac1852184618d7181b1851061869187618bc18b41889188b18ff188418220d18bf183618e3185f18ed18770f184d2001fc189118e318fa186118e318db18a41894187b186d12189a18f7184d18670318e818a11899161864188d18d20b182f182b18841864183a185a186018d9183518960f18be186c18e9181f184f184718f218db181b18af188d187918d718f8185c18b418ca18d818a4182118251873181818ea189f186118c618f1188b051826181b18e518be186c182d1822183b18a0187b189218990718a018df0c18251418bd18361841189b04186a18a518bf18d81851185d18b218a618f6183d181f18d118eb18fd0418541857181d18d818d418be18fa18570f18e018b618ef1840121831184118300b188a18fb18e418c218a218a318ee185b18f918db185d18f518c31848181c18d903183618b4184718c2188f1891189618a518a91843187c18b118a368203b954909de7b563697a76505972777c4451284b9b101cd8f8b76197ea5aa738dac21c13b954909de7b563697a76505972777c4451284b9b101cd8f8b76197ea5aa738d00000000
-spellTxid: b30ee73c3c8a863cd4a69e0538c76c2eefd8f7246d42a8612b6b19fcb394de47
-Set your config:
-	"appId": "95dc93ab2195da30f94c57a3cc96ccbacababcfab38e3a83b6178c05937e2357",
-	"appVk": "3d0da3576e35a201b497da15becb813ceb5b4d037323b15beb2dd44b0db43058",
-	"firstNftTxid": "b30ee73c3c8a863cd4a69e0538c76c2eefd8f7246d42a8612b6b19fcb394de47",
-NFT deployment completed successfully
+Sending commitment transaction: 02000000000101f48c89771dec5c5059f6c0831fd550c36ece49deb5e8777834e0867e26dad1670000000000ffffffff0122f802950000000022512060a0625450b7338d63317d2c597eb512dd5634e1bed07dddec8089e29adee6b50247304402206b4d169fcec643196c89d4e4a0bc88912b14df9dc2c09e1adf57ca1227838a69022046c85bbe8919b32243d09664b119a18e2fc5b4c192cb1f0e1cd021ffe6fadcea812103793de421ab58677126fdc0ac19cfbe2ee8601273bda5d2a2e4b6bbde585008e500000000
+commitmentTxid: 3333e576f2d8461ceb5f33a0b4bcf3c1318925b4754f9324b02b4199973d7b17
+Sending spell transaction: 02000000000101177b3d9799412bb024934f75b4258931c1f3bcb4a0335feb1c46d8f276e533330000000000ffffffff02e903000000000000225120037fbfa04399a85204f9b15d1ceff7e1791ce90a3cc7e0d3c768f4feae58440c44f102950000000016001449958256124e8958646d69a87a575bbc9bc45cce0341dcbab2b448f31c6ec198414df0f0cf778b51578e3f1e9dc0670c239466ba925a9e3db405e0190cac674484c2f9fd8598f4f57058505289d084f744892ba3968381fd5a030063057370656c6c4d080282a36776657273696f6e04627478a2647265667380646f75747381a100a3667469636b657269475241494c2d4e46547163757272656e745f636f7369676e6572737840623935353532613666613631656135363137316536653236306364626135376432353062343462613132333464633932386131373736393866336630313664617163757272656e745f7468726573686f6c6401716170705f7075626c69635f696e70757473a183616e982018401834184218b3182e186718cc18d9183a187918b7186b181c18f318f9189c187d184618b318b318ca18af18f418d715184a18a918b5181f186d183118aa98200c18ec18a2184118d81861183b0d18f8184514041318401846186f18f81827182918601827188e1889081845183718d918341880185418ef1854a166616374696f6e666465706c6f7999010418a41859184c1859140b189f18e6181d1018bc188c18a01896189818fb183718de185e185718a61886187f18c51849188e18f718d4189f18da18bc18d01859187b18f218980c1855184c1875183e18d718ac18921894185518b318fb18ee182918f7181a181a185b18e818a118e518fc187a185d186d184a0618ff18d618b5188618671821031854182c184b0718d6184a18cf18aa18ed185018d918a718301890189e187e189a18471872185f18c018931849182a186518e418a1187518bc01181e18bb1827187118a31866184d2101d0188518d21896187318781820188f18b8189b18ed187b18a71843188d188c1844184118bf18fc18d8184618b4183318d0181f02186418c818bf185e07184318911895188d188c189d18fe1886186e18b118c218e6184818b51833185f18e2182018790d186b18ff18ad1867183a18b218201857189d18c008186c18dc0f18be1879188618d718331847187b189a18ac184a18a51218e2185d1888189118e7188c18441318c518af0018c106183f184118e318b6189f011873189a18f218ac17184b181b184e18d3189a18c718b0187f18bc18c1187e188c18851869182d18c518fd186618770a09187618c018a816184318e50c18d1182f18f518a6184218e5187815131871182918d7186418d218a9187b18c31842189b18a0185a18ae182706682049b315d01aec862bf4bebe189a229f6baddacdff27cf8048d355a383b7616538ac21c149b315d01aec862bf4bebe189a229f6baddacdff27cf8048d355a383b761653800000000
+spellTxid: fd70804cbaa929cf9d04e32bdb9c72c5c2bbfa208fcf481ea39a7ef7ec813f15
+[2025-07-10T09:14:08.151Z] Set your config:
+[2025-07-10T09:14:08.151Z] 	"appId": "403442b32e67ccd93a79b76b1cf3f99c7d46b3b3caaff4d7154aa9b51f6d31aa",
+[2025-07-10T09:14:08.151Z] 	"appVk": "0ceca241d8613b0df84514041340466ff8272960278e89084537d9348054ef54",
+[2025-07-10T09:14:08.151Z] 	"firstNftTxid": "fd70804cbaa929cf9d04e32bdb9c72c5c2bbfa208fcf481ea39a7ef7ec813f15",
