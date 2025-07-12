@@ -27,7 +27,7 @@ async function main() {
   const bitcoinClient = await BitcoinClient.create();
 
   const recoveryKeypair = generateRandomKeypair();
-  console.log('Recovery Keypair:', recoveryKeypair);
+  console.log('Recovery public key:', recoveryKeypair.publicKey.toString('hex'));
   
   const userPaymentAddress = generateUserPaymentAddress(
     recoveryKeypair.publicKey.toString('hex'),
@@ -36,7 +36,9 @@ async function main() {
     currentThreshold,
     network);
 
-  await bitcoinClient.fundAddress(userPaymentAddress, amuont);
+  console.log('Sending funds to user payment address:', userPaymentAddress);
+  const txid = await bitcoinClient.fundAddress(userPaymentAddress, amuont);
+  console.log('Funds sent successfully, txid: ', txid);
 }
 
 if (require.main === module) {

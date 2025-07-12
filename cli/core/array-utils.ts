@@ -39,3 +39,7 @@ export function isIn<T>(i: T, a: T[]): boolean {
 export function unique<T>(a: T[]): T[] {
   return a.filter((item, index) => a.indexOf(item) === index);
 }
+
+export function reverse<T>(a: T[]): T[] {
+  return a.slice().reverse();
+}

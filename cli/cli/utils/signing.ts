@@ -1,11 +1,20 @@
 import { schnorr } from "@noble/curves/secp256k1";
 import * as bitcoin from "bitcoinjs-lib";
-import { BitcoinClient } from "../core/bitcoin";
-import { KeyPair, generateSpendingScriptForGrail, generateSpendingScriptsForUser } from "../core/taproot";
-import { LabeledSignature } from "../core/types";
-import { Network } from "../core/taproot/taptree";
-import { getHash } from "../core/taproot/taproot-common";
-import { showSpell } from "../core/charms-sdk";
+import { BitcoinClient } from "../../core/bitcoin";
+import { KeyPair, generateSpendingScriptForGrail, generateSpendingScriptsForUser } from "../../core/taproot";
+import { LabeledSignature } from "../../core/types";
+import { Network } from "../../core/taproot/taptree";
+import { getHash } from "../../core/taproot/taproot-common";
+import { showSpell } from "../../core/charms-sdk";
+
+export function txidToHash(txid: string): Buffer {
+  return Buffer.from(txid, 'hex').reverse();
+}
+
+export function hashToTxid(hash: Buffer): string {
+  // This is a hack to avoid Buffer.reverse() which behaves unexpectedly
+  return Buffer.from(Array.from(hash).reverse()).toString('hex');
+}
 
 export async function getStateFromNft(nftTxId: string): Promise<{ publicKeys: string[], threshold: number }> {
 
@@ -54,7 +63,8 @@ async function signTransactionInput(
   const previousTxs = [];
   for (const input of tx.ins) {
     let ttxhex: string;
-    ttxhex = await bitcoinClient.getTransactionHex(input.hash.reverse().toString('hex'));
+    const inputTxid = hashToTxid(input.hash);
+    ttxhex = await bitcoinClient.getTransactionHex(inputTxid);
     const ttx = bitcoin.Transaction.fromHex(ttxhex);
     const out = ttx.outs[input.index];
     previousTxs.push({

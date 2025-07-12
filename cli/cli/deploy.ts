@@ -8,29 +8,7 @@ import { getVerificationKey } from '../core/charms-sdk';
 
 import config from './config.json';
 import { sha256 } from 'bitcoinjs-lib/src/crypto';
-
-console.log = function (...args: any[]) {
-    const timestamp = new Date().toISOString();
-    const formattedArgs = args.map(arg => {
-        if (typeof arg === 'object') {
-            return JSON.stringify(arg, null, 2);
-        }
-        return String(arg);
-    }).join(' ');
-    process.stdout.write(`[${timestamp}] ${formattedArgs}\n`);
-}
-
-console.error = function (...args: any[]) {
-    const timestamp = new Date().toISOString();
-    const formattedArgs = args.map(arg => {
-        if (typeof arg === 'object') {
-            return JSON.stringify(arg, null, 2);
-        }
-        return String(arg);
-    }).join(' ');
-    process.stderr.write(`[${timestamp}] ${formattedArgs}\n`);
-}
-
+import { setupLog } from './utils/log';
 
 export async function deployNft(
     network: Network,
@@ -83,12 +61,8 @@ export async function deployNft(
     };
 
     const spell = await createSpell(bitcoinClient, [], request);
-    if (!spell || spell.length !== 2) {
-        throw new Error('Spell creation failed');
-    }
 
     if (transmit) {
-        console.info('Spell created successfully, transmitting...');
         const txids = await transmitSpell(bitcoinClient, spell);
 
         console.log('Set your config:');;
@@ -99,6 +73,8 @@ export async function deployNft(
 }
 
 async function main() {
+
+    setupLog();    
 
     const argv = minimist(process.argv.slice(2), {
         alias: {},

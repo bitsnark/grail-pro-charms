@@ -56,8 +56,8 @@ pub fn nft_deploy_satisfied(app: &App, tx: &Transaction, pub_in: &Data, priv_in:
 
 pub fn nft_update_satisfied(app: &App, tx: &Transaction) -> bool {
 
-    check!(tx.ins.len() == 1); // Ensure there is exactly one input
-    check!(tx.outs.len() == 1); // Ensure there is exactly one output
+    check!(tx.ins.len() >= 1);
+    check!(tx.outs.len() >= 1);
 
     let nft_charms = app_datas(app, tx.outs.iter()).collect::<Vec<_>>();
 
