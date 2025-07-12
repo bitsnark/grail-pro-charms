@@ -10,5 +10,6 @@
     "deployerPrivateKey": "12d3389de3ef6f86dbfd07aaff39c52c8ef1d7253b9ce2cc6312b53420707e6a",
     "network": "regtest",
     "feerate": 1000,
-    "userWalletAddress": "bcrt1qps462fpqvsyhlcmk43qmulyf9fataj8605lqaq"
+    "userWalletAddress": "bcrt1qps462fpqvsyhlcmk43qmulyf9fataj8605lqaq",
+    "userTimelockBlocks": 100
 }

@@ -10,21 +10,24 @@ interface Keypair {
     privateKey: Buffer;
 }
 
+export function generateRandomKeypair(): Keypair {
+    // Generate a random private key
+    const privateKey = randomBytes(32);
+    // Ensure the private key is valid
+    if (!secp.isPrivate(privateKey)) {
+        throw new Error('Invalid private key generated');
+    }
+    // Derive the public key from the private key
+    const publicKey = secp.xOnlyPointFromScalar(privateKey);
+    if (!publicKey) {
+        throw new Error('Failed to derive public key');
+    }
+    return ({ publicKey: Buffer.from(publicKey), privateKey: privateKey });
+}
+
+
 export function generateRandomKeypairs(size: number): Keypair[] {
-    return array(size).map(() => {
-        // Generate a random private key
-        const privateKey = randomBytes(32);
-        // Ensure the private key is valid
-        if (!secp.isPrivate(privateKey)) {
-            throw new Error('Invalid private key generated');
-        }
-        // Derive the public key from the private key
-        const publicKey = secp.xOnlyPointFromScalar(privateKey);
-        if (!publicKey) {
-            throw new Error('Failed to derive public key');
-        }
-        return ({ publicKey: Buffer.from(publicKey), privateKey: privateKey });
-    });
+    return array(size, generateRandomKeypair);
 }
 
 function main() {

@@ -1,6 +1,7 @@
 import Client from 'bitcoin-core';
 import { Utxo } from './types';
-import { Network, Transaction } from 'bitcoinjs-lib';
+import * as bitcoin from 'bitcoinjs-lib';
+
 
 class ExtendedClient extends Client {
 
@@ -28,6 +29,9 @@ class ExtendedClient extends Client {
     }
     loadWallet(): Promise<any> {
         return this.command('loadwallet', this.walletName);
+    }
+    sendToAddress(toAddress: string, amountBtc: number): Promise<string> {
+        return this.command('sendtoaddress', toAddress, amountBtc);
     }
 }
 
@@ -92,5 +96,10 @@ export class BitcoinClient {
             throw new Error('No suitable funding UTXO found');
         }
         return unspent[0];
+    }
+
+    public async fundAddress(address: string, amount: number): Promise<string> {
+        const txId: string = await this.client!.sendToAddress(address, amount / 1e8); // Convert satoshis to BTC
+        return txId;
     }
 }

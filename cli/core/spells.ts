@@ -7,7 +7,7 @@ export async function createSpell(
   bitcoinClient: BitcoinClient,
   previousTxids: string[],
   request: CharmerRequest
-): Promise<Buffer[]> {
+): Promise<[Buffer, Buffer]> {
 
   const previousTransactions = await Promise.all(previousTxids.map(async (txid) => bitcoinClient.getTransactionHex(txid)));
   const yamlStr = yaml.dump(request.toYamlObj()); // toYaml(request.toYamlObj());
@@ -20,7 +20,8 @@ export async function createSpell(
   return output;
 }
 
-export async function transmitSpell(bitcoinClient: BitcoinClient, transactions: Buffer[]): Promise<string[]> {
+export async function transmitSpell(bitcoinClient: BitcoinClient, transactions: Buffer[]): Promise<[string, string]> {
+
   const commitmentTxHex = transactions[0].toString('hex');
   const signedCommitmentTxHex = await bitcoinClient.signTransaction(commitmentTxHex, undefined, 'ALL|ANYONECANPAY');
 

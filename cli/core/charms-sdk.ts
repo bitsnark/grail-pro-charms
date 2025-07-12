@@ -45,7 +45,7 @@ export async function executeSpell(
   changeAddress: string,
   yamlStr: any,
   previousTransactions: Buffer[] = [],
-): Promise<Buffer[]> {
+): Promise<[Buffer, Buffer]> {
 
   const command = [
     CHARMS_BIN,
@@ -65,7 +65,7 @@ export async function executeSpell(
       if (!Array.isArray(obj)) {
         throw new Error('Spell execution did not return an array');
       }
-      return obj.map((item: string) => Buffer.from(item, 'hex'));
+      return obj.map((item: string) => Buffer.from(item, 'hex')) as [Buffer, Buffer];
     });
 }
 
