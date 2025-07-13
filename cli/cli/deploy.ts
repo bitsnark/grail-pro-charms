@@ -2,13 +2,12 @@ import minimist from 'minimist';
 import { BitcoinClient } from '../core/bitcoin';
 import { createSpell, transmitSpell } from '../core/spells';
 import { generateGrailPaymentAddress } from '../core/taproot';
-import { Network } from '../core/taproot/taptree';
 import { DeployRequest } from '../core/types';
 import { getVerificationKey } from '../core/charms-sdk';
-
-import config from './config.json';
+import config from '../config';
 import { sha256 } from 'bitcoinjs-lib/src/crypto';
 import { setupLog } from './utils/log';
+import { Network } from '../core/taproot/taproot-common';
 
 export async function deployNft(
     network: Network,
@@ -19,7 +18,12 @@ export async function deployNft(
 
     const bitcoinClient = await BitcoinClient.create();
 
-    const grailAddress = generateGrailPaymentAddress([deployerPublicKey.toString('hex')], 1, network);
+    const initialNftState = {
+        publicKeys: [deployerPublicKey.toString('hex')],
+        threshold: 1
+    };
+
+    const grailAddress = generateGrailPaymentAddress(initialNftState, network);
     const fundingChangeAddress = await bitcoinClient.getAddress();
     const fundingUtxo = await bitcoinClient.getFundingUtxo();
 
@@ -34,10 +38,7 @@ export async function deployNft(
         fundingChangeAddress,
         feeRate,
         nextNftAddress: grailAddress,
-        currentNftState: {
-            publicKeys: deployerPublicKey.toString('hex'),
-            threshold: 1
-        },
+        currentNftState: { publicKeysAsString: initialNftState.publicKeys.join(','), threshold: initialNftState.threshold },
 
         toYamlObj: function () {
             return ({
@@ -51,7 +52,7 @@ export async function deployNft(
                     charms: {
                         $00: {
                             ticker: config.ticker,
-                            current_cosigners: this.currentNftState.publicKeys,
+                            current_cosigners: this.currentNftState.publicKeysAsString,
                             current_threshold: this.currentNftState.threshold,
                         }
                     }
@@ -65,16 +66,17 @@ export async function deployNft(
     if (transmit) {
         const txids = await transmitSpell(bitcoinClient, spell);
 
-        console.log('Set your config:');;
-        console.log(`\t"appId": "${appId}",`);
-        console.log(`\t"appVk": "${appVk}",`);
-        console.log(`\t"firstNftTxid": "${txids[1]}",`);
+        config.appId = appId;
+        config.appVk = appVk;
+        config.firstNftTxid = txids[1];
+        config.latestNftTxid = txids[1];
+        console.log('Update your config: \n' + JSON.stringify(config, null, 2));
     }
 }
 
 async function main() {
 
-    setupLog();    
+    setupLog();
 
     const argv = minimist(process.argv.slice(2), {
         alias: {},

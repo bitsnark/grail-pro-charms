@@ -1,4 +1,4 @@
-import { Utxo } from './types';
+import { Spell, Utxo } from './types';
 import { exec } from 'child_process';
 import * as yaml from 'js-yaml';
 
@@ -45,7 +45,7 @@ export async function executeSpell(
   changeAddress: string,
   yamlStr: any,
   previousTransactions: Buffer[] = [],
-): Promise<[Buffer, Buffer]> {
+): Promise<Spell> {
 
   const command = [
     CHARMS_BIN,
@@ -65,7 +65,14 @@ export async function executeSpell(
       if (!Array.isArray(obj)) {
         throw new Error('Spell execution did not return an array');
       }
-      return obj.map((item: string) => Buffer.from(item, 'hex')) as [Buffer, Buffer];
+      const a = obj.map((item: string) => Buffer.from(item, 'hex'));
+      if (a.length !== 2) {
+        throw new Error('Spell execution did not return exactly two transactions');
+      }
+      return {
+        commitmentTxBytes: a[0],
+        spellTxBytes: a[1]
+      } as Spell;
     });
 }
 

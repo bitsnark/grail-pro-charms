@@ -1,8 +1,7 @@
 import minimist from 'minimist';
 import { BitcoinClient } from "../core/bitcoin";
 import { showSpell } from "../core/charms-sdk";
-
-import config from './config.json';
+import config from '../config';
 
 async function viewNft(nftTxid: string) {
 

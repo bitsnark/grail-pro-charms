@@ -1,13 +1,14 @@
 import { executeSpell } from './charms-sdk';
-import { CharmerRequest } from './types';
+import { CharmerRequest, Spell } from './types';
 import { BitcoinClient } from './bitcoin';
 import * as yaml from 'js-yaml';
+import { bufferReplacer } from './json';
 
 export async function createSpell(
   bitcoinClient: BitcoinClient,
   previousTxids: string[],
   request: CharmerRequest
-): Promise<[Buffer, Buffer]> {
+): Promise<Spell> {
 
   console.log('Creating spell...');
 
@@ -19,22 +20,22 @@ export async function createSpell(
     yamlStr,
     previousTransactions.map(tx => Buffer.from(tx, 'hex')));
 
-  console.log('Spell created successfully:', output.map(tx => tx.toString('hex')));
+  console.log('Spell created successfully:', JSON.stringify(output, bufferReplacer, '\t'));
 
   return output;
 }
 
-export async function transmitSpell(bitcoinClient: BitcoinClient, transactions: Buffer[]): Promise<[string, string]> {
+export async function transmitSpell(bitcoinClient: BitcoinClient, transactions: Spell): Promise<[string, string]> {
 
   console.log('Transmitting spell...');
 
-  const commitmentTxHex = transactions[0].toString('hex');
+  const commitmentTxHex = transactions.commitmentTxBytes.toString('hex');
   const signedCommitmentTxHex = await bitcoinClient.signTransaction(commitmentTxHex, undefined, 'ALL|ANYONECANPAY');
 
   console.info('Sending commitment transaction:', signedCommitmentTxHex);
   const commitmentTxid = await bitcoinClient.transmitTransaction(signedCommitmentTxHex);
 
-  const spellTransactionHex = transactions[1].toString('hex');
+  const spellTransactionHex = transactions.spellTxBytes.toString('hex');
 
   console.info('Sending spell transaction:', spellTransactionHex);
   const spellTxid = await bitcoinClient.transmitTransaction(spellTransactionHex);

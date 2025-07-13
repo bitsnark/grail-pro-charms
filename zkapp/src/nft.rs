@@ -1,14 +1,14 @@
-use charms_sdk::data::{app_datas, check, App, Data, Transaction, UtxoId, B32, NFT, TOKEN};
+use charms_sdk::data::{app_datas, check, App, Data, Transaction, B32};
 use sha2::{Digest, Sha256};
 
-use crate::objects::{NftData, TransactionType, XBTCData};
+use crate::objects::{NftData};
 
 pub(crate) fn hash(data: &str) -> B32 {
     let hash = Sha256::digest(data);
     B32(hash.into())
 }
 
-pub fn nft_deploy_satisfied(app: &App, tx: &Transaction, pub_in: &Data, priv_in: &Data) -> bool {
+pub fn nft_deploy_satisfied(app: &App, tx: &Transaction, _pub_in: &Data, priv_in: &Data) -> bool {
 
     // Deploy has no inputs and one output.
     check!(tx.ins.len() == 0);

@@ -1,10 +1,7 @@
-use charms_sdk::data::{app_datas, check, App, Data, Transaction, UtxoId, NFT, TOKEN};
-
-use crate::objects::{NftData, TransactionType, XBTCData};
-
+use charms_sdk::data::{check, App, Transaction};
 
 pub fn token_mint_satisfied(
-  token_app: &App,
+  _token_app: &App,
   tx: &Transaction
 ) -> bool {
 
@@ -16,7 +13,7 @@ pub fn token_mint_satisfied(
 }
 
 pub fn token_burn_satisfied(
-  token_app: &App,
+  _token_app: &App,
   tx: &Transaction
 ) -> bool {
 

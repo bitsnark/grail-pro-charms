@@ -1,10 +1,9 @@
 import minimist from 'minimist';
 import { BitcoinClient } from '../core/bitcoin';
 import { generateUserPaymentAddress } from '../core/taproot';
-import { Network } from '../core/taproot/taptree';
-
-import config from './config.json';
+import config from '../config';
 import { generateRandomKeypair } from './generate-random-keypairs';
+import { Network } from '../core/taproot/taproot-common';
 
 async function main() {
 
@@ -14,7 +13,7 @@ async function main() {
       'network': config.network,
       'current-public-keys': `ff61e0fc3b753acb4c32943452d09b8f6d1e58a05e9ee140d7e76441aab70c4c,${config.deployerPublicKey}`,
       'current-threshold': 1,
-      'amount': 1000
+      'amount': 666666
     },
     '--': true
   });
@@ -28,12 +27,13 @@ async function main() {
 
   const recoveryKeypair = generateRandomKeypair();
   console.log('Recovery public key:', recoveryKeypair.publicKey.toString('hex'));
-  
+
   const userPaymentAddress = generateUserPaymentAddress(
-    recoveryKeypair.publicKey.toString('hex'),
-    currentPublicKeys,
-    config.userTimelockBlocks,
-    currentThreshold,
+    { publicKeys: currentPublicKeys, threshold: currentThreshold },
+    {
+      recoveryPublicKey: recoveryKeypair.publicKey.toString('hex'),
+      timelockBlocks: config.userTimelockBlocks
+    },
     network);
 
   console.log('Sending funds to user payment address:', userPaymentAddress);

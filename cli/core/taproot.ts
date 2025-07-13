@@ -1,10 +1,8 @@
 /* eslint-disable no-console */
 import * as bitcoin from 'bitcoinjs-lib';
-import { Network, SimpleTapTree } from './taproot/taptree';
-import { schnorr } from "@noble/curves/secp256k1";
-import { LabeledSignature } from './types';
-import { getHash } from './taproot/taproot-common';
-import { BitcoinClient } from './bitcoin';
+import { SimpleTapTree } from './taproot/taptree';
+import { Network } from './taproot/taproot-common';
+import { GrailState, UserPaymentDetails } from './types';
 
 export interface KeyPair {
   publicKey: Buffer;
@@ -17,11 +15,10 @@ export interface SpendingScript {
 }
 
 export function generateSpendingScriptForGrail(
-  cosigners: string[],
-  requiredSignatures: number,
+  grailState: GrailState,
   network: Network
 ): SpendingScript {
-  const multisigScript = generateMultisigScript(cosigners, requiredSignatures);
+  const multisigScript = generateMultisigScript(grailState);
   const stt = new SimpleTapTree([multisigScript], network);
   return {
     script: multisigScript,
@@ -30,48 +27,44 @@ export function generateSpendingScriptForGrail(
 }
 
 function generateSpendingScriptForUserPayment(
-  cosigners: string[],
-  requiredSignatures: number
+  grailState: GrailState
 ): Buffer {
-  return generateMultisigScript(cosigners, requiredSignatures);
+  return generateMultisigScript(grailState);
 }
 
-function generateMultisigScript(cosigners: string[], requiredSignatures: number): Buffer {
-  const sortedCosigners = [...cosigners].sort();
+function generateMultisigScript(grailState: GrailState): Buffer {
+  const sortedCosigners = [...grailState.publicKeys].sort();
   const parts: any[] = sortedCosigners
     .map((cosigner, index) => [
       Buffer.from(cosigner, 'hex'),
       index === 0 ? bitcoin.opcodes.OP_CHECKSIG : bitcoin.opcodes.OP_CHECKSIGADD,
     ])
     .flat();
-  parts.push(bitcoin.script.number.encode(requiredSignatures));
+  parts.push(bitcoin.script.number.encode(grailState.threshold));
   parts.push(bitcoin.opcodes.OP_NUMEQUAL);
   return bitcoin.script.compile(parts);
 }
 
 function generateSpendingScriptForUserRecovery(
-  recoveryKey: string,
-  timelockBlocks: number
+  userPaymentDetails: UserPaymentDetails
 ): Buffer {
   const timelockScript = bitcoin.script.compile([
-    bitcoin.script.number.encode(timelockBlocks),
+    bitcoin.script.number.encode(userPaymentDetails.timelockBlocks),
     bitcoin.opcodes.OP_CHECKSEQUENCEVERIFY,
     bitcoin.opcodes.OP_DROP,
-    Buffer.from(recoveryKey, 'hex'),
+    Buffer.from(userPaymentDetails.recoveryPublicKey, 'hex'),
     bitcoin.opcodes.OP_CHECKSIG,
   ]);
   return timelockScript;
 }
 
 export function generateSpendingScriptsForUser(
-  cosigners: string[],
-  requiredSignatures: number,
-  recoveryKey: string,
-  timelockBlocks: number,
+  grailState: GrailState,
+  userPaymentDetails: UserPaymentDetails,
   network: Network
 ): { grail: SpendingScript; recovery: SpendingScript } {
-  const grailScript = generateSpendingScriptForUserPayment(cosigners, requiredSignatures);
-  const recoveryScript = generateSpendingScriptForUserRecovery(recoveryKey, timelockBlocks);
+  const grailScript = generateSpendingScriptForUserPayment(grailState);
+  const recoveryScript = generateSpendingScriptForUserRecovery(userPaymentDetails);
   const stt = new SimpleTapTree([grailScript, recoveryScript], network);
   return {
     grail: {
@@ -86,24 +79,21 @@ export function generateSpendingScriptsForUser(
 }
 
 export function generateUserPaymentAddress(
-  recoveryKey: string,
-  cosigners: string[],
-  timelockBlocks: number,
-  requiredSignatures: number,
+  grailState: GrailState,
+  userPaymentDetails: UserPaymentDetails,
   network: Network
 ): string {
-  const grailScript = generateSpendingScriptForUserPayment(cosigners, requiredSignatures);
-  const recoveryScript = generateSpendingScriptForUserRecovery(recoveryKey, timelockBlocks);
+  const grailScript = generateSpendingScriptForUserPayment(grailState);
+  const recoveryScript = generateSpendingScriptForUserRecovery(userPaymentDetails);
   const stt = new SimpleTapTree([grailScript, recoveryScript], network);
   return stt.getTaprootAddress();
 }
 
 export function generateGrailPaymentAddress(
-  cosigners: string[],
-  requiredSignatures: number,
+  grailState: GrailState,
   network: Network
 ): string {
-  const multisigScript = generateSpendingScriptForGrail(cosigners, requiredSignatures, network);
+  const multisigScript = generateSpendingScriptForGrail(grailState, network);
   const stt = new SimpleTapTree([multisigScript.script], network);
   return stt.getTaprootAddress();
 }

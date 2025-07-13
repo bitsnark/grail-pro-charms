@@ -19,11 +19,11 @@ export function utxoFromUtxoId(str: string): Utxo {
     return {
         txid: parts[0],
         vout: parseInt(parts[1], 10)
-    };  
+    };
 }
 
 export interface GrailState {
-    publicKeys: string; // Comma-separated list of public keys in hex format
+    publicKeys: string[];
     threshold: number;
 }
 
@@ -44,7 +44,7 @@ export interface NftRequest extends CharmerRequest {
     // NFT chain
     previousUtxo?: Utxo;
     nextNftAddress: string;
-    currentNftState: GrailState;
+    currentNftState: { publicKeysAsString: string, threshold: number };
 }
 
 export interface DeployRequest extends NftRequest {
@@ -67,4 +67,14 @@ export interface PegOutRequest extends UpdateRequest {
 export interface LabeledSignature {
     publicKey: string; // Public key in hex format
     signature: Buffer; // Signature in hex format
+}
+
+export interface UserPaymentDetails {
+    recoveryPublicKey: string;
+    timelockBlocks: number;
+}
+
+export interface Spell {
+    commitmentTxBytes: Buffer;
+    spellTxBytes: Buffer;
 }

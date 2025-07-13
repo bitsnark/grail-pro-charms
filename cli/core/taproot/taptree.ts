@@ -1,6 +1,7 @@
 import { hasEvenY, lift_x, pointAdd, pointMul } from './point';
 import {
   G,
+  Network,
   SECP256K1_ORDER,
   combineHashes as combineHashesCommon,
   getHash,
@@ -20,8 +21,6 @@ import * as ecc from 'tiny-secp256k1';
 import { array, last } from '../array-utils';
 
 bitcoin.initEccLib(ecc);
-
-export type Network = 'regtest' | 'testnet' | 'mainnet';
 
 export const DEAD_ROOT_HASH = getHash(Buffer.from([0x6a])); // always fail
 const DEAD_ROOT_PAIR = combineHashesCommon(DEAD_ROOT_HASH, DEAD_ROOT_HASH);
