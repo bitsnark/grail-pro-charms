@@ -45,7 +45,12 @@ export async function executeSpell(
   changeAddress: string,
   yamlStr: any,
   previousTransactions: Buffer[] = [],
+  temporarySecret?: Buffer
 ): Promise<Spell> {
+
+  if (temporarySecret && temporarySecret.length !== 32) {
+    throw new Error('Temporary secret must be a 32-byte buffer');
+  }
 
   const command = [
     CHARMS_BIN,
@@ -54,7 +59,8 @@ export async function executeSpell(
     `--funding-utxo ${fundingUtxo.txid}:${fundingUtxo.vout}`,
     `--funding-utxo-value ${fundingUtxo.value}`,
     `--change-address ${changeAddress}`,
-    previousTransactions?.length ? `--prev-txs ${previousTransactions.map(tx => tx.toString('hex')).join(',')}` : undefined
+    previousTransactions?.length ? `--prev-txs ${previousTransactions.map(tx => tx.toString('hex')).join(',')}` : undefined,
+    temporarySecret ? `--temporary-secret-str ${temporarySecret.toString('hex')}` : undefined,
   ].filter(Boolean) as string[];
 
   return await executeCommand(command, yamlStr)

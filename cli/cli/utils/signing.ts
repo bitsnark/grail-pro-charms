@@ -6,6 +6,9 @@ import { GrailState, LabeledSignature, Spell, UserPaymentDetails } from "../../c
 import { getHash, Network } from "../../core/taproot/taproot-common";
 import { showSpell } from "../../core/charms-sdk";
 
+// SIGHASH type for Taproot (BIP-342)
+const sighashType = bitcoin.Transaction.SIGHASH_DEFAULT || 0x00;
+
 export function txidToHash(txid: string): Buffer {
   return Buffer.from(txid, 'hex').reverse();
 }
@@ -62,9 +65,6 @@ async function signTransactionInput(
   // Load the transaction to sign
   const tx = bitcoin.Transaction.fromBuffer(txBytes);
 
-  // SIGHASH type for Taproot (BIP-342)
-  const sighashType = bitcoin.Transaction.SIGHASH_DEFAULT || 0x00;
-
   // Tapleaf version for tapscript is always 0xc0
   // BitcoinJS v6+ exposes tapleafHash for this calculation
   const tapleafHash = getHash(script);
@@ -111,8 +111,9 @@ async function signTransactionInput(
   });
 }
 
-export async function grailSignSpellTransaction(
+async function grailSignSpellNftInput(
   spell: Spell,
+  inputIndex: number,
   grailState: GrailState,
   keyPairs: KeyPair[],
   network: Network
@@ -120,9 +121,9 @@ export async function grailSignSpellTransaction(
 
   const spendingScript = generateSpendingScriptForGrail(grailState, network);
 
-  return signTransactionInput(
+  return await signTransactionInput(
     spell.spellTxBytes,
-    0,
+    inputIndex,
     spendingScript.script,
     { [txBytesToTxid(spell.commitmentTxBytes)]: spell.commitmentTxBytes },
     keyPairs,
@@ -130,8 +131,9 @@ export async function grailSignSpellTransaction(
   );
 }
 
-export async function grailSignCommitmentTransaction(
-  commitmentTxBytes: Buffer,
+async function grailSignSpellUserInput(
+  spell: Spell,
+  inputIndex: number,
   grailState: GrailState,
   userPaymentDetails: UserPaymentDetails,
   keyPairs: KeyPair[],
@@ -139,22 +141,19 @@ export async function grailSignCommitmentTransaction(
 ): Promise<LabeledSignature[]> {
 
   const spendingScript = generateSpendingScriptsForUser(grailState, userPaymentDetails, network);
-
   return signTransactionInput(
-    commitmentTxBytes,
-    1, // Assuming we are signing the second input (the user payment input)
+    spell.spellTxBytes,
+    inputIndex, // Assuming we are signing the second input (the user payment input)
     spendingScript.grail.script,
-    {},
+    { [txBytesToTxid(spell.commitmentTxBytes)]: spell.commitmentTxBytes },
     keyPairs,
     grailState.threshold
   );
 }
 
-export function injectGrailSignaturesIntoTxInput(
+function injectGrailSignaturesIntoTxInput(
   txBytes: Buffer,
   inputIndex: number,
-  script: Buffer,
-  controlBlock: Buffer,
   grailState: GrailState,
   signatures: LabeledSignature[]
 ): Buffer {
@@ -179,11 +178,63 @@ export function injectGrailSignaturesIntoTxInput(
   const tx = bitcoin.Transaction.fromBuffer(txBytes);
 
   // Witness: [signatures] [tapleaf script] [control block]
-  tx.setWitness(inputIndex, [
-    ...signaturesOrdered.map(sig => Buffer.from(sig, 'hex')),
-    script,
-    controlBlock
-  ]);
+  tx.ins[inputIndex].witness.unshift(...signaturesOrdered.map(sig => Buffer.from(sig, 'hex')));
+
+  return tx.toBuffer();
+}
+
+export async function resignSpellWithTemporarySecret(
+  spellTxBytes: Buffer,
+  previousTxBytesMap: { [txid: string]: Buffer },
+  temporarySecret: Buffer,
+): Promise<Buffer> {
+
+  const bitcoinClient = await BitcoinClient.create();
+
+  // Load the transaction to sign
+  const tx = bitcoin.Transaction.fromBuffer(spellTxBytes);
+  const inputIndex = tx.ins.length - 1; // Last input is the commitment
+
+  const previous: { value: number, script: Buffer }[] = [];
+  for (const input of tx.ins) {
+    let ttxBytes: Buffer;
+    const inputTxid = hashToTxid(input.hash);
+    if (previousTxBytesMap[inputTxid]) {
+      ttxBytes = previousTxBytesMap[inputTxid];
+    } else {
+      const ttxHex = await bitcoinClient.getTransactionHex(inputTxid);
+      if (!ttxHex) {
+        throw new Error(`Input transaction ${inputTxid} not found`);
+      }
+      ttxBytes = Buffer.from(ttxHex, 'hex');
+    }
+    const ttx = bitcoin.Transaction.fromBuffer(ttxBytes);
+    const out = ttx.outs[input.index];
+    previous.push({
+      value: out.value,
+      script: out.script
+    });
+  }
+
+  const script = tx.ins[inputIndex].witness[1]; // Tapleaf script
+  const tapleafHash = getHash(script);
+
+  // Compute sighash for this tapleaf spend (see https://github.com/bitcoinjs/bitcoinjs-lib/blob/master/test/integration/taproot.spec.ts)
+  const sighash = tx.hashForWitnessV1(
+    inputIndex,
+    previous.map(p => p.script),
+    previous.map(p => p.value),
+    sighashType,
+    tapleafHash
+  );
+
+  const signature = schnorr.sign(sighash, temporarySecret);
+  const temporaryPublicKey = schnorr.getPublicKey(temporarySecret);
+  if (!schnorr.verify(signature, sighash, temporaryPublicKey)) {
+    throw new Error('Temporary signature verification failed');
+  }
+
+  tx.ins[0].witness[0] = Buffer.from(signature);
 
   return tx.toBuffer();
 }
@@ -193,53 +244,88 @@ export async function prepareSpell(
   grailState: GrailState,
   userPaymentDetails: UserPaymentDetails | null,
   keyPairs: KeyPair[],
-  network: Network): Promise<Spell> {
+  network: Network,
+  temporarySecret: Buffer): Promise<Spell> {
 
-  let signedCommitmentTxBytes = spell.commitmentTxBytes;
+  // Clone it so we own it
+  spell = { ...spell };
+
+  const inputIndexNft = 0; // Assuming the first input is the NFT input
+
+  const spellTx = bitcoin.Transaction.fromBuffer(spell.spellTxBytes);
+
+  // First we create the missing input and the witnesses
+
+  const spendingScriptNft =  generateSpendingScriptForGrail(grailState, network);
+  spellTx.ins[inputIndexNft].witness = [
+    // Signatures for the NFT input will be injected later
+    ...Array(grailState.threshold).fill(Buffer.alloc(0)), // Placeholder for signatures
+    spendingScriptNft.script, // Tapleaf script for the NFT input
+    spendingScriptNft.controlBlock // Control block for the NFT input
+  ];
+  if (userPaymentDetails) {
+    const inputIndexUser = 1; // Assuming the second input is the user payment input
+    const spendingScriptUser = generateSpendingScriptsForUser(grailState, userPaymentDetails, network);
+    spellTx.ins.splice(inputIndexUser, 0, {
+      hash: txidToHash(userPaymentDetails.txid), // Placeholder, will be set later
+      index: userPaymentDetails.vout,
+      script: Buffer.alloc(0), // Placeholder, will be set later
+      sequence: 0xffffffff, // Default sequence
+      witness: [] // Will be filled later
+    });
+    spellTx.ins[inputIndexUser].witness = [
+      // Signatures for the user payment input will be injected later
+      ...Array(grailState.threshold).fill(Buffer.alloc(0)), // Placeholder for signatures
+      spendingScriptUser.grail.script, // Tapleaf script for the user payment input
+      spendingScriptUser.grail.controlBlock // Control block for the user payment input
+    ];
+  }
+
+  // Now we can sign and inject the signatures into the transaction inputs
+
+  const nftInputSignatures = await grailSignSpellNftInput(
+    spell,
+    inputIndexNft,
+    grailState,
+    keyPairs,
+    network
+  );
+  spell.spellTxBytes = injectGrailSignaturesIntoTxInput(
+    spell.spellTxBytes,
+    inputIndexNft,
+    grailState,
+    nftInputSignatures
+  );
 
   if (userPaymentDetails) {
 
-    const commitmentSignatures = await grailSignCommitmentTransaction(
-      spell.commitmentTxBytes,
+    const inputIndexUser = 1; // Assuming the second input is the user payment input
+
+    const userInputSignatures = await grailSignSpellUserInput(
+      spell,
+      1,
       grailState,
       userPaymentDetails,
       keyPairs,
       network
     );
-    const commitmentSpendingScript = generateSpendingScriptsForUser(grailState, userPaymentDetails, network);
-    signedCommitmentTxBytes = injectGrailSignaturesIntoTxInput(
-      spell.commitmentTxBytes,
-      1,
-      commitmentSpendingScript.grail.script,
-      commitmentSpendingScript.grail.controlBlock,
+    spell.spellTxBytes = injectGrailSignaturesIntoTxInput(
+      spell.spellTxBytes,
+      inputIndexUser,
       grailState,
-      commitmentSignatures,
+      userInputSignatures
     );
-    spell.commitmentTxBytes = signedCommitmentTxBytes;
   }
 
-  // Make sure the last input of the spell transaction is the commitment transaction
-  const commitmentTxid = txBytesToTxid(signedCommitmentTxBytes);
-  const spellTx = bitcoin.Transaction.fromBuffer(spell.spellTxBytes);
-  spellTx.ins[spellTx.ins.length - 1].hash = txidToHash(commitmentTxid);
-  spell.spellTxBytes = spellTx.toBuffer();
+  const commitmentTxid = txBytesToTxid(spell.commitmentTxBytes);
 
-  const grailSignatures = await grailSignSpellTransaction(
-    spell,
-    grailState,
-    keyPairs,
-    network
-  );
+  if (temporarySecret) {
+    spell.spellTxBytes = await resignSpellWithTemporarySecret(
+      spell.spellTxBytes,
+      { [commitmentTxid]: spell.commitmentTxBytes },
+      temporarySecret
+    );
+  }
 
-  const spellSpendingScript = generateSpendingScriptForGrail(grailState, network);
-  const signedSpellTxBytes = injectGrailSignaturesIntoTxInput(
-    spell.commitmentTxBytes,
-    0,
-    spellSpendingScript.script,
-    spellSpendingScript.controlBlock,
-    grailState,
-    grailSignatures
-  );
-
-  return { commitmentTxBytes: signedCommitmentTxBytes, spellTxBytes: signedSpellTxBytes };
+  return spell;
 }

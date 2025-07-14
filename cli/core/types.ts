@@ -70,6 +70,8 @@ export interface LabeledSignature {
 }
 
 export interface UserPaymentDetails {
+    txid: string;
+    vout: number;
     recoveryPublicKey: string;
     timelockBlocks: number;
 }

@@ -1,7 +1,5 @@
 import Client from 'bitcoin-core';
 import { Utxo } from './types';
-import * as bitcoin from 'bitcoinjs-lib';
-
 
 class ExtendedClient extends Client {
 
@@ -35,6 +33,9 @@ class ExtendedClient extends Client {
     }
 }
 
+let ___instance: BitcoinClient | null = null;
+let ___promise: Promise<BitcoinClient> | null = null;
+
 export class BitcoinClient {
 
     private client: ExtendedClient | null = null;
@@ -43,22 +44,36 @@ export class BitcoinClient {
         // Private constructor
     }
 
-    public static async create() {
-        const instance = new BitcoinClient();
-        instance.client = new ExtendedClient({
+    public static async create(): Promise<BitcoinClient> {
+        if (___instance != null && ___promise == null) {
+            return ___instance;
+        } 
+        if (___promise != null) {
+            return ___promise;
+        }
+        ___instance = new BitcoinClient();
+        ___promise = ___instance.initialize().then(instance => {
+            ___promise = null;
+            return instance;
+        });
+        return ___promise;
+    }
+
+    private async initialize(): Promise<BitcoinClient> {
+        this.client = new ExtendedClient({
             username: process.env.BTC_NODE_USERNAME || 'bitcoin',
             password: process.env.BTC_NODE_PASSWORD || '1234',
             host: process.env.BTC_NODE_HOST || 'http://localhost:18443', // default for regtest
             timeout: 30000 // 30 seconds
         });
         try {
-            await instance.client.loadWallet();
+            await this.client.loadWallet();
         } catch (error: any) {
             if (!error.message.includes('is already loaded')) {
                 throw new Error(`Failed to load wallet: ${error.message}`);
             }
         }
-        return instance;
+        return this;
     }
 
     public async getTransactionHex(txid: string): Promise<string> {

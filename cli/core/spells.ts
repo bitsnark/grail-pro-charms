@@ -7,7 +7,8 @@ import { bufferReplacer } from './json';
 export async function createSpell(
   bitcoinClient: BitcoinClient,
   previousTxids: string[],
-  request: CharmerRequest
+  request: CharmerRequest,
+  temporarySecret?: Buffer
 ): Promise<Spell> {
 
   console.log('Creating spell...');
@@ -18,7 +19,8 @@ export async function createSpell(
     request.fundingUtxo,
     request.fundingChangeAddress,
     yamlStr,
-    previousTransactions.map(tx => Buffer.from(tx, 'hex')));
+    previousTransactions.map(tx => Buffer.from(tx, 'hex')),
+    temporarySecret);
 
   console.log('Spell created successfully:', JSON.stringify(output, bufferReplacer, '\t'));
 
