@@ -1,16 +1,15 @@
-
 export interface IConfig {
-    "appId": string,
-    "appVk": string,
-    "firstNftTxid": string,
-    "latestNftTxid": string,
+	appId: string;
+	appVk: string;
+	firstNftTxid: string;
+	latestNftTxid: string;
 
-    "ticker": string,
+	ticker: string;
 
-    "deployerPublicKey": string,
-    "deployerPrivateKey": string,
-    "network": string,
-    "feerate": number,
-    "userWalletAddress": string,
-    "userTimelockBlocks": number
+	deployerPublicKey: string;
+	deployerPrivateKey: string;
+	network: string;
+	feerate: number;
+	userWalletAddress: string;
+	userTimelockBlocks: number;
 }
