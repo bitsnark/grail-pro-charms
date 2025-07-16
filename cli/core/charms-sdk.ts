@@ -1,6 +1,7 @@
 import { Spell, Utxo } from './types';
 import { exec } from 'child_process';
 import * as yaml from 'js-yaml';
+import config from '../config';
 
 const CHARMS_PATH = './zkapp';
 const APP_BINS = './target/charms-app';
@@ -14,7 +15,10 @@ function executeCommand(
 	return new Promise<string>((resolve, reject) => {
 		console.info(`Executing command: ${command.join(' ')}`);
 		const child = exec(
-			`cd ${CHARMS_PATH} ; export RUST_BACKTRACE=full ; ${command.join(' ')}`,
+			`cd ${CHARMS_PATH}; 
+			export RUST_BACKTRACE=full;
+			export USE_MOCK_PROOF=${config.mockProof ? 'true' : 'false'};
+			${command.join(' ')}`,
 			(error, stdout, stderr) => {
 				if (error) {
 					console.error(`Execution error: ${error.message}`);

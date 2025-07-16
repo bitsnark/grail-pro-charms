@@ -11,7 +11,9 @@ export const config: IConfig = {
   "network": "regtest",
   "feerate": 1000,
   "userWalletAddress": "bcrt1qps462fpqvsyhlcmk43qmulyf9fataj8605lqaq",
-  "userTimelockBlocks": 100
+  "userTimelockBlocks": 100,
+
+  "mockProof": true
 };
 
 export default config;

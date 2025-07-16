@@ -12,4 +12,6 @@ export interface IConfig {
 	feerate: number;
 	userWalletAddress: string;
 	userTimelockBlocks: number;
+
+	mockProof: boolean
 }
