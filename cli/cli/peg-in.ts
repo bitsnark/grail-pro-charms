@@ -111,12 +111,13 @@ async function prepareSpell(
 		const userPaymentOutput = userPaymentTx.outs[userPaymentDetails.vout];
 
 		const inputIndexUser = 1; // Assuming the second input is the user payment input
+
 		const spendingScriptUser = generateSpendingScriptsForUser(
 			nextGrailState,
 			userPaymentDetails,
 			network
 		);
-		spellTx.ins.splice(inputIndexUser, 0, {
+		spellTx.ins[inputIndexUser] = {
 			hash: txidToHash(userPaymentDetails.txid),
 			index: userPaymentDetails.vout,
 			script: Buffer.from(''),
@@ -126,7 +127,7 @@ async function prepareSpell(
 				spendingScriptUser.grail.script,
 				spendingScriptUser.grail.controlBlock,
 			],
-		});
+		};
 	}
 
 	spell.spellTxBytes = spellTx.toBuffer();
@@ -261,6 +262,9 @@ export async function createPegInSpell(
 							},
 						},
 					},
+					{
+						utxo_id: `${userPaymentDetails.txid}:${userPaymentDetails.vout}`,
+					},
 				],
 				outs: [
 					{
@@ -292,7 +296,7 @@ export async function createPegInSpell(
 
 	const spell = await createSpell(
 		bitcoinClient,
-		[previousNftTxid],
+		[previousNftTxid, userPaymentDetails?.txid].filter(t => t),
 		request,
 		temporarySecret
 	);
@@ -358,9 +362,9 @@ async function main() {
 			'current-public-keys': `ff61e0fc3b753acb4c32943452d09b8f6d1e58a05e9ee140d7e76441aab70c4c,${config.deployerPublicKey}`,
 			'current-threshold': 1,
 			'user-payment-txid':
-				'42f7415455ad1cf5684ad900a4202e4f7a22eb896bdb7566ecb1bc12dd577980',
+				'cfadce94834844eb91ee72813b76cc08b2aef214ecf942e0a32e22e0d8c4d54e',
 			'recovery-public-key':
-				'248e15b9eaceb40fdc497c533d9db1ec4d95011e17d387b8a6b4b3415ad30189',
+				'684286d7e610c168e498d5f2dea3be262cc25385d8d74b9415a9090f8b94d592',
 			'user-wallet-address': config.userWalletAddress,
 			transmit: true,
 		},
