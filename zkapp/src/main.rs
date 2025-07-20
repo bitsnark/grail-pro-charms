@@ -10,6 +10,7 @@ use crate::token::{token_burn_satisfied, token_mint_satisfied};
 pub mod nft;
 pub mod objects;
 pub mod token;
+pub mod common;
 
 pub fn app_contract(app: &App, tx: &Transaction, pub_in: &Data, priv_in: &Data) -> bool {
     println!("app: {:?}", app);
