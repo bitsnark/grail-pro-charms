@@ -1,8 +1,3 @@
-export enum PegType {
-	DEPLOY = 0,
-	MINT = 1,
-	BURN = 2,
-}
 
 export interface Utxo {
 	txid: string;
@@ -65,6 +60,8 @@ export interface LabeledSignature {
 	publicKey: string; // Public key in hex format
 	signature: Buffer; // Signature in hex format
 }
+
+export type SignaturePackage = LabeledSignature[][];
 
 export interface UserPaymentDetails {
 	recoveryPublicKey: string;

@@ -1,24 +1,26 @@
 import { Spell, Utxo } from './types';
 import { exec } from 'child_process';
 import * as yaml from 'js-yaml';
-import config from '../config';
-
-const CHARMS_PATH = './zkapp';
-const APP_BINS = './target/charms-app';
-const CHARMS_BIN =
-	process.env['CHARMS_BIN'] || '~/workspace/charms/target/release/charms';
+import { IContext } from './i-context';
+import { parse } from './env-parser';
 
 function executeCommand(
+	context: IContext,
 	command: string[],
-	stdin: string = ''
+	stdin: string = '',
+	pwd?: string
 ): Promise<string> {
 	return new Promise<string>((resolve, reject) => {
 		console.info(`Executing command: ${command.join(' ')}`);
 		const child = exec(
-			`cd ${CHARMS_PATH}; 
-			export RUST_BACKTRACE=full;
-			export USE_MOCK_PROOF=${config.mockProof ? 'true' : 'false'};
-			${command.join(' ')}`,
+			[
+				pwd ? `cd ${pwd}` : '',
+				'export RUST_BACKTRACE=full',
+				`export USE_MOCK_PROOF=${context.mockProof ? 'true' : 'false'}`,
+				command.filter(Boolean).join(' '),
+			]
+				.filter(Boolean)
+				.join(' && '),
 			(error, stdout, stderr) => {
 				if (error) {
 					console.error(`Execution error: ${error.message}`);
@@ -42,38 +44,35 @@ function executeCommand(
 	});
 }
 
-export async function getVerificationKey(): Promise<string> {
-	const command = [CHARMS_BIN, 'app vk'];
-	return (await executeCommand(command, '')).trim();
+export async function getVerificationKey(context: IContext): Promise<string> {
+	const command = [context.charmsBin, 'app vk'];
+	const zkappFolder = parse.string('ZKAPP_FOLDER', './zkapp');
+	return (await executeCommand(context, command, '', zkappFolder)).trim();
 }
 
 export async function executeSpell(
+	context: IContext,
 	fundingUtxo: Utxo,
 	changeAddress: string,
 	yamlStr: any,
-	previousTransactions: Buffer[] = [],
-	temporarySecret?: Buffer
+	previousTransactions: Buffer[] = []
 ): Promise<Spell> {
-	if (temporarySecret && temporarySecret.length !== 32) {
-		throw new Error('Temporary secret must be a 32-byte buffer');
-	}
-
 	const command = [
-		CHARMS_BIN,
+		context.charmsBin,
 		'spell prove',
-		`--app-bins ${APP_BINS}`,
+		`--app-bins ${context.zkAppBin}`,
 		`--funding-utxo ${fundingUtxo.txid}:${fundingUtxo.vout}`,
 		`--funding-utxo-value ${fundingUtxo.value}`,
 		`--change-address ${changeAddress}`,
 		previousTransactions?.length
 			? `--prev-txs ${previousTransactions.map(tx => tx.toString('hex')).join(',')}`
 			: undefined,
-		temporarySecret
-			? `--temporary-secret-str ${temporarySecret.toString('hex')}`
+		context.temporarySecret
+			? `--temporary-secret-str ${context.temporarySecret.toString('hex')}`
 			: undefined,
 	].filter(Boolean) as string[];
 
-	return await executeCommand(command, yamlStr).then(result => {
+	return await executeCommand(context, command, yamlStr).then(result => {
 		// Result could have some irrelevant garbage?
 		const resultLines = result.split('\n').filter(line => line.trim() !== '');
 		const obj = JSON.parse(resultLines.pop() ?? '');
@@ -94,11 +93,12 @@ export async function executeSpell(
 }
 
 export async function showSpell(
+	context: IContext,
 	transactionHex: string,
 	previousTransactions: Buffer[] = []
 ): Promise<any> {
 	const command = [
-		CHARMS_BIN,
+		context.charmsBin,
 		'tx show-spell',
 		`--tx ${transactionHex}`,
 		previousTransactions?.length
@@ -106,6 +106,6 @@ export async function showSpell(
 			: undefined,
 	].filter(Boolean) as string[];
 
-	const stdout = await executeCommand(command);
+	const stdout = await executeCommand(context, command);
 	return yaml.load(stdout);
 }

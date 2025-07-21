@@ -1,19 +1,20 @@
-import { schnorr } from '@noble/curves/secp256k1';
 import * as bitcoin from 'bitcoinjs-lib';
-import { BitcoinClient } from '../../core/bitcoin';
+import * as yaml from 'js-yaml';
+import { schnorr } from '@noble/curves/secp256k1';
+import { executeSpell } from './charms-sdk';
+import { CharmerRequest, DeployRequest, Spell, UpdateRequest } from './types';
+import { BitcoinClient } from './bitcoin';
+import { bufferReplacer } from './json';
+
 import {
 	KeyPair,
 	generateSpendingScriptForGrail,
 	generateSpendingScriptsForUser,
-} from '../../core/taproot';
-import {
-	GrailState,
-	LabeledSignature,
-	Spell,
-	UserPaymentDetails,
-} from '../../core/types';
-import { getHash, Network } from '../../core/taproot/taproot-common';
-import { showSpell } from '../../core/charms-sdk';
+} from './taproot';
+import { GrailState, LabeledSignature, UserPaymentDetails } from './types';
+import { getHash, Network } from './taproot/taproot-common';
+import { showSpell } from './charms-sdk';
+import { IContext } from './i-context';
 
 // SIGHASH type for Taproot (BIP-342)
 const sighashType = bitcoin.Transaction.SIGHASH_DEFAULT;
@@ -37,6 +38,7 @@ export function txHexToTxid(txHex: string): string {
 }
 
 export async function getStateFromNft(
+	context: IContext,
 	nftTxId: string
 ): Promise<{ publicKeys: string[]; threshold: number }> {
 	const bitcoinClient = await BitcoinClient.create();
@@ -46,7 +48,7 @@ export async function getStateFromNft(
 		throw new Error(`Previous NFT transaction ${nftTxId} not found`);
 	}
 
-	const previousSpellData = await showSpell(previousNftTxhex);
+	const previousSpellData = await showSpell(context, previousNftTxhex);
 	console.log(
 		'Previous NFT spell:',
 		JSON.stringify(previousSpellData, null, '\t')
@@ -193,7 +195,7 @@ export function injectGrailSignaturesIntoTxInput(
 		map[sig.publicKey] = sig.signature;
 	});
 	const signaturesOrdered = grailState.publicKeys.map(
-		pk => map[pk] || Buffer.from([])
+		(pk: string | number) => map[pk] || Buffer.from([])
 	);
 
 	// Load the transaction to sign
@@ -261,4 +263,36 @@ export async function resignSpellWithTemporarySecret(
 	tx.ins[inputIndex].witness[0] = Buffer.from(signature);
 
 	return tx.toBuffer();
+}
+
+export async function createSpell(
+	context: IContext,
+	previousTxids: string[],
+	request: CharmerRequest
+): Promise<Spell> {
+	console.log('Creating spell...');
+
+	const previousTransactions = await Promise.all(
+		previousTxids.map(async txid =>
+			context.bitcoinClient.getTransactionHex(txid)
+		)
+	);
+	const yamlStr = yaml.dump(request.toYamlObj()); // toYaml(request.toYamlObj());
+	const output = await executeSpell(
+		context,
+		request.fundingUtxo,
+		request.fundingChangeAddress,
+		yamlStr,
+		previousTransactions.map(tx => Buffer.from(tx, 'hex'))
+	);
+
+	console.log(
+		'Spell created successfully:',
+		JSON.stringify(output, bufferReplacer, '\t')
+	);
+
+	return {
+		commitmentTxBytes: output.commitmentTxBytes,
+		spellTxBytes: output.spellTxBytes,
+	};
 }
