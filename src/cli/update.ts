@@ -13,6 +13,7 @@ import {
 	signSpell,
 	transmitSpell,
 } from '../api/spell-operations';
+import { bufferReplacer } from '../core/json';
 
 function prepareKeypairs(privateKeys: string[]): KeyPair[] {
 	return privateKeys.map(priv => ({
@@ -46,7 +47,16 @@ async function main() {
 	const bitcoinClient = await BitcoinClient.create();
 	const fundingUtxo = await bitcoinClient.getFundingUtxo();
 
+	const appId = argv['app-id'] as string;
+	if (!appId) {
+		console.error('--app-id is required');
+		return;
+	}
+	const appVk = argv['app-vk'] as string;
+
 	const context = await Context.create({
+		appId,
+		appVk,
 		charmsBin: parse.string('CHARMS_BIN'),
 		zkAppBin: './zkapp/target/charms-app',
 		network: argv['network'] as Network,
@@ -99,7 +109,7 @@ async function main() {
 		},
 		fundingUtxo
 	);
-	console.log('Spell created:', JSON.stringify(spell, null, '\t'));
+	console.log('Spell created:', JSON.stringify(spell, bufferReplacer, '\t'));
 
 	const signaturePackage = await signSpell(
 		context,
@@ -119,7 +129,7 @@ async function main() {
 		previousNftTxid,
 		signaturePackage
 	);
-	console.log('Signed spell:', JSON.stringify(signedSpell, null, '\t'));
+	console.log('Signed spell:', JSON.stringify(signedSpell, bufferReplacer, '\t'));
 
 	if (transmit) {
 		await transmitSpell(context, signedSpell);

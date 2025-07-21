@@ -10,6 +10,7 @@ import { IContext } from '../core/i-context';
 import { createSpell } from '../core/spells';
 import { transmitSpell } from '../api/spell-operations';
 import { parse } from '../core/env-parser';
+import { bufferReplacer } from '../core/json';
 
 export async function deployNft(
 	context: IContext,
@@ -63,6 +64,7 @@ export async function deployNft(
 	};
 
 	const spell = await createSpell(context, [], request);
+	console.log('Spell created:', JSON.stringify(spell, bufferReplacer, '\t'));
 
 	if (transmit) {
 		await transmitSpell(context, spell);
