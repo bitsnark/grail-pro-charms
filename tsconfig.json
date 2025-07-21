@@ -6,5 +6,6 @@
         "esModuleInterop": true,
         "resolveJsonModule": true
     },
-    "module": "esnext"
+    "module": "esnext",
+    "outDir": "./dist"
 }

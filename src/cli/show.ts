@@ -1,9 +1,17 @@
 import minimist from 'minimist';
+import dotenv from 'dotenv';
+
 import { BitcoinClient } from '../core/bitcoin';
 import { showSpell } from '../core/charms-sdk';
-import config from '../config';
+import { IContext } from '../core/i-context';
+import { setupLog } from '../core/log';
+import { parse } from '../core/env-parser';
+import { Context } from '../core/context';
+import { Network } from '../core/taproot/taproot-common';
 
-async function viewNft(nftTxid: string) {
+async function viewNft(context: IContext, nftTxid: string) {
+	dotenv.config({ path: ['.env.test', '.env.local', '.env'] });
+
 	const bitcoinClient = await BitcoinClient.create();
 
 	const txhex = await bitcoinClient.getTransactionHex(nftTxid);
@@ -11,11 +19,14 @@ async function viewNft(nftTxid: string) {
 		console.error(`Transaction ${nftTxid} not found`);
 		return;
 	}
-	const spell = await showSpell(txhex);
+	const spell = await showSpell(context, txhex);
 	console.log('spell: ' + JSON.stringify(spell, null, '\t'));
 }
 
-if (require.main === module) {
+async function main() {
+	dotenv.config({ path: ['.env.test', '.env.local', '.env'] });
+	setupLog();
+
 	const argv = minimist(process.argv.slice(2), {
 		alias: {},
 		default: {
@@ -31,7 +42,21 @@ if (require.main === module) {
 		process.exit(1);
 	}
 
-	viewNft(nftTxid).catch(error => {
+	const context = await Context.create({
+		charmsBin: parse.string('CHARMS_BIN'),
+		zkAppBin: './zkapp/target/charms-app',
+		network: argv['network'] as Network,
+		mockProof: argv['mock-proof'],
+		ticker: 'GRAIL-NFT',
+	});
+
+	await viewNft(context, nftTxid).catch(error => {
 		console.error('Error viewing NFT:', error);
+	});
+}
+
+if (require.main === module) {
+	main().catch(error => {
+		console.error('Error during NFT view:', error);
 	});
 }
