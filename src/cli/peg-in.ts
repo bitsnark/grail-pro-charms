@@ -3,26 +3,14 @@ import dotenv from 'dotenv';
 import { BitcoinClient } from '../core/bitcoin';
 import { Network } from '../core/taproot/taproot-common';
 import { setupLog } from '../core/log';
-import { Context } from '../core/context';
-import { parse } from '../core/env-parser';
-import { createUpdateNftSpell } from '../api/create-update-nft-spell';
-import { KeyPair } from '../core/taproot';
-import { publicFromPrivate } from './generate-random-keypairs';
-import {
-	injectSignaturesIntoSpell,
-	signSpell,
-	transmitSpell,
-} from '../api/spell-operations';
 import { bufferReplacer } from '../core/json';
-
-export function prepareKeypairs(privateKeys: string[]): KeyPair[] {
-	return privateKeys.map(priv => ({
-		publicKey: publicFromPrivate(
-			Buffer.from(priv.trim().replace('0x', ''), 'hex')
-		),
-		privateKey: Buffer.from(priv.trim().replace('0x', ''), 'hex'),
-	}));
-}
+import { Context } from '../core/context';
+import { parse } from '../../dist/core/env-parser';
+import { createPegInSpell } from '../api/create-pegin-spell';
+import { UserPaymentDetails } from '../core/types';
+import { randomBytes } from 'crypto';
+import { injectSignaturesIntoSpell, signSpell, transmitSpell } from '../api/spell-operations';
+import { prepareKeypairs } from './update';
 
 async function main() {
 	dotenv.config({ path: ['.env.test', '.env.local', '.env'] });
@@ -39,6 +27,7 @@ async function main() {
 				feerate: 0.002,
 				transmit: true,
 				'mock-proof': false,
+				'user-payment-vout': 0,
 			},
 		},
 		'--': true,
@@ -99,7 +88,23 @@ async function main() {
 		.split(',')
 		.map(s => s.trim().replace('0x', ''));
 
-	const spell = await createUpdateNftSpell(
+	if (!argv['user-payment-txid']) {
+		console.error('--user-payment-txid is required');
+		return;
+	}
+	const userPaymentDetails: UserPaymentDetails = {
+		txid: argv['user-payment-txid'] as string,
+		vout: Number.parseInt(argv['user-payment-vout'] as string),
+		recoveryPublicKey: randomBytes(32).toString('hex'),
+		timelockBlocks: 100
+	};
+
+	let userWalletAddress = argv['user-wallet-address'] as string;
+	if (!userWalletAddress) {
+		userWalletAddress = await bitcoinClient.getAddress();
+	}
+
+	const spell = await createPegInSpell(
 		context,
 		Number(argv['feerate']),
 		previousNftTxid,
@@ -107,9 +112,11 @@ async function main() {
 			publicKeys: newPublicKeys,
 			threshold: newThreshold,
 		},
+		userPaymentDetails,
+		userWalletAddress,
 		fundingUtxo
 	);
-	console.log('Spell created:', JSON.stringify(spell, null, '\t'));
+	console.log('Spell created:', JSON.stringify(spell, bufferReplacer, '\t'));
 
 	const signaturePackage = await signSpell(
 		context,
@@ -119,7 +126,7 @@ async function main() {
 			publicKeys: newPublicKeys,
 			threshold: newThreshold,
 		},
-		null,
+		userPaymentDetails,
 		prepareKeypairs(privateKeys)
 	);
 
@@ -129,7 +136,10 @@ async function main() {
 		previousNftTxid,
 		signaturePackage
 	);
-	console.log('Signed spell:', JSON.stringify(signedSpell, bufferReplacer, '\t'));
+	console.log(
+		'Signed spell:',
+		JSON.stringify(signedSpell, bufferReplacer, '\t')
+	);
 
 	if (transmit) {
 		await transmitSpell(context, signedSpell);
@@ -137,7 +147,7 @@ async function main() {
 }
 
 if (require.main === module) {
-	main().catch(error => {
-		console.error('Error during NFT update:', error);
+	main().catch(err => {
+		console.error(err);
 	});
 }
