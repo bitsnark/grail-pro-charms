@@ -1,8 +1,8 @@
 {
     "name": "grail-pro-charms",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "This is a [Charms](https://charms.dev) app.",
-    "main": "index.js",
+    "main": "index.ts",
     "scripts": {
         "prettier-fix": "prettier --write \"**/*.ts\""
     },
