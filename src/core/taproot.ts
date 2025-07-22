@@ -6,11 +6,28 @@ import { Network } from './taproot/taproot-common';
 import { GrailState, UserPaymentDetails } from './types';
 import { bufferReplacer } from './json';
 
+if (!!process.env.DEBUG_TAPROOT) {
+	try {
+		if (!fs.existsSync('./debuglog/taproot')) {
+			fs.mkdirSync('./debuglog/taproot', { recursive: true });
+		}
+	} catch (e) {
+		console.error('Error in debugLog:', e);
+	}
+}
+
 function debugLog(obj: any) {
-	fs.writeFileSync(
-		`./debuglog/taproot/${new Date()}`,
-		JSON.stringify(obj, bufferReplacer, 2)
-	);
+	if (!process.env.DEBUG_TAPROOT) {
+		return;
+	}
+	try {
+		fs.writeFileSync(
+			`./debuglog/taproot/${new Date()}`,
+			JSON.stringify(obj, bufferReplacer, 2)
+		);
+	} catch (e) {
+		console.error('Error writing debug log:', e);
+	}
 }
 
 export interface KeyPair {
@@ -27,7 +44,6 @@ export function generateSpendingScriptForGrail(
 	grailState: GrailState,
 	network: Network
 ): SpendingScript {
-
 	debugLog({ grailState, network });
 
 	const multisigScript = generateMultisigScript(grailState);
@@ -78,7 +94,6 @@ export function generateSpendingScriptsForUserPayment(
 	userPaymentDetails: UserPaymentDetails,
 	network: Network
 ): { grail: SpendingScript; recovery: SpendingScript } {
-
 	debugLog({ grailState, userPaymentDetails, network });
 
 	const grailScript = generateSpendingScriptForUserPayment(grailState);
@@ -105,7 +120,6 @@ export function generateUserPaymentAddress(
 	>,
 	network: Network
 ): string {
-
 	debugLog({ grailState, userPaymentDetails, network });
 
 	const grailScript = generateSpendingScriptForUserPayment(grailState);
@@ -119,7 +133,6 @@ export function generateGrailPaymentAddress(
 	grailState: GrailState,
 	network: Network
 ): string {
-
 	debugLog({ grailState, network });
 
 	const multisigScript = generateSpendingScriptForGrail(grailState, network);

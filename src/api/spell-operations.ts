@@ -11,6 +11,7 @@ import {
 	KeyPair,
 	generateSpendingScriptForGrail,
 	generateSpendingScriptsForUserPayment,
+	generateUserPaymentAddress,
 } from '../core/taproot';
 import { GrailState, UserPaymentDetails } from '../core/types';
 import { IContext } from '../core/i-context';
@@ -23,6 +24,7 @@ import {
 } from '../core/spells';
 import { showSpell } from '../core/charms-sdk';
 import { hashToTxid } from '../core/spells';
+import { bitcoinjslibNetworks } from '../core/taproot/taproot-common';
 
 export async function getPreviousGrailState(
 	context: IContext,
@@ -230,4 +232,39 @@ export function signAsCosigner(
 		),
 	}));
 	return sigs;
+}
+
+export async function findUserPaymentVout(
+	context: IContext,
+	grailState: GrailState,
+	userPaymentDetails: UserPaymentDetails
+): Promise<number> {
+	const userPaymentTxHex = await context.bitcoinClient.getTransactionHex(
+		userPaymentDetails.txid
+	);
+	if (!userPaymentTxHex) {
+		throw new Error(
+			`User payment transaction ${userPaymentDetails.txid} not found`
+		);
+	}
+	const userPaymentTx = bitcoin.Transaction.fromHex(userPaymentTxHex);
+	const userPaymentAddress = generateUserPaymentAddress(
+		grailState,
+		userPaymentDetails,
+		context.network
+	);
+	const index = userPaymentTx.outs.findIndex(out => {
+		// Convert address to script and compare
+		const outScript = bitcoin.address.toOutputScript(
+			userPaymentAddress,
+			bitcoinjslibNetworks[context.network]
+		);
+		return out.script.compare(outScript) == 0;
+	});
+	if (index === -1) {
+		throw new Error(
+			`User payment address ${userPaymentAddress} not found in transaction ${userPaymentDetails.txid}`
+		);
+	}
+	return index;
 }

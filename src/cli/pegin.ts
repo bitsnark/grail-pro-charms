@@ -13,6 +13,7 @@ import {
 	UserPaymentDetails,
 } from '../core/types';
 import {
+	findUserPaymentVout,
 	getPreviousGrailState,
 	getPreviousTransactions,
 	injectSignaturesIntoSpell,
@@ -113,6 +114,12 @@ async function main() {
 		'0x',
 		''
 	);
+
+	const newGrailState = {
+		publicKeys: newPublicKeys,
+		threshold: newThreshold,
+	};
+
 	const userPaymentDetails: UserPaymentDetails = {
 		txid: argv['user-payment-txid'] as string,
 		vout: Number.parseInt(argv['user-payment-vout'] as string) || 0,
@@ -120,15 +127,22 @@ async function main() {
 		timelockBlocks: 100,
 	};
 
+	let userPaymentVout = 0;
+	if (!argv['user-payment-vout']) {
+		console.warn('--user-payment-vout not provided, auto detecting...');
+		userPaymentVout = await findUserPaymentVout(
+			context,
+			newGrailState,
+			userPaymentDetails
+		);
+		userPaymentDetails.vout = userPaymentVout;
+		console.warn(`Detected user payment vout: ${userPaymentVout}`);
+	}
+
 	let userWalletAddress = argv['user-wallet-address'] as string;
 	if (!userWalletAddress) {
 		userWalletAddress = await bitcoinClient.getAddress();
 	}
-
-	const newGrailState = {
-		publicKeys: newPublicKeys,
-		threshold: newThreshold,
-	};
 
 	const spell = await createPeginSpell(
 		context,
