@@ -99,7 +99,7 @@ async function main() {
 	const feeRate = Number.parseFloat(argv['feerate']);
 	const transmit = !!argv['transmit'];
 
-	const bitcoinClient = await BitcoinClient.create();
+	const bitcoinClient = await BitcoinClient.initialize();
 	const fundingUtxo = await bitcoinClient.getFundingUtxo();
 
 	const context = await Context.createForDeploy(

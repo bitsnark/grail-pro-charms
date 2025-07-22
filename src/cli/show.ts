@@ -1,6 +1,5 @@
 import minimist from 'minimist';
 import dotenv from 'dotenv';
-
 import { BitcoinClient } from '../core/bitcoin';
 import { showSpell } from '../core/charms-sdk';
 import { IContext } from '../core/i-context';
@@ -10,9 +9,7 @@ import { Context } from '../core/context';
 import { Network } from '../core/taproot/taproot-common';
 
 async function viewNft(context: IContext, nftTxid: string) {
-	dotenv.config({ path: ['.env.test', '.env.local', '.env'] });
-
-	const bitcoinClient = await BitcoinClient.create();
+	const bitcoinClient = await BitcoinClient.initialize();
 
 	const txhex = await bitcoinClient.getTransactionHex(nftTxid);
 	if (!txhex) {

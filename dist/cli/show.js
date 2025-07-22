@@ -11,8 +11,7 @@ const log_1 = require("../core/log");
 const env_parser_1 = require("../core/env-parser");
 const context_1 = require("../core/context");
 async function viewNft(context, nftTxid) {
-    dotenv_1.default.config({ path: ['.env.test', '.env.local', '.env'] });
-    const bitcoinClient = await bitcoin_1.BitcoinClient.create();
+    const bitcoinClient = await bitcoin_1.BitcoinClient.initialize();
     const txhex = await bitcoinClient.getTransactionHex(nftTxid);
     if (!txhex) {
         console.error(`Transaction ${nftTxid} not found`);

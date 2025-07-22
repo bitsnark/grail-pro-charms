@@ -1,3 +1,4 @@
+import * as bitcoin from 'bitcoinjs-lib';
 import { generateGrailPaymentAddress } from '../core/taproot';
 import {
 	GrailState,
@@ -7,7 +8,6 @@ import {
 	Utxo,
 } from '../core/types';
 import { showSpell } from '../core/charms-sdk';
-import * as bitcoin from 'bitcoinjs-lib';
 import { bufferReplacer } from '../core/json';
 import { IContext } from '../core/i-context';
 import { createUpdatingSpell } from './spell-operations';
@@ -53,8 +53,8 @@ export async function createPeginSpell(
 			`User payment transaction ${userPaymentDetails.txid} not found`
 		);
 	}
-	const userPaymenTx = bitcoin.Transaction.fromHex(userPaymentTxHex);
-	const userPaymentAmount = userPaymenTx.outs[0].value;
+	const userPaymentTx = bitcoin.Transaction.fromHex(userPaymentTxHex);
+	const userPaymentAmount = userPaymentTx.outs[userPaymentDetails.vout].value;
 	console.log('User payment transaction amount:', userPaymentAmount);
 
 	const request: PegInRequest = {

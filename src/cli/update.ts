@@ -6,14 +6,20 @@ import { setupLog } from '../core/log';
 import { Context } from '../core/context';
 import { parse } from '../core/env-parser';
 import { createUpdateNftSpell } from '../api/create-update-nft-spell';
-import { KeyPair } from '../core/taproot';
-import { publicFromPrivate } from './generate-random-keypairs';
+import { generateSpendingScriptForGrail, KeyPair } from '../core/taproot';
 import {
+	privateToKeypair,
+	publicFromPrivate,
+} from './generate-random-keypairs';
+import {
+	getPreviousGrailState,
+	getPreviousTransactions,
 	injectSignaturesIntoSpell,
-	signSpell,
+	signAsCosigner,
 	transmitSpell,
 } from '../api/spell-operations';
 import { bufferReplacer } from '../core/json';
+import { SignatureRequest, SignatureResponse } from '../core/types';
 
 export function prepareKeypairs(privateKeys: string[]): KeyPair[] {
 	return privateKeys.map(priv => ({
@@ -44,7 +50,7 @@ async function main() {
 		'--': true,
 	});
 
-	const bitcoinClient = await BitcoinClient.create();
+	const bitcoinClient = await BitcoinClient.initialize();
 	const fundingUtxo = await bitcoinClient.getFundingUtxo();
 
 	const appId = argv['app-id'] as string;
@@ -111,25 +117,44 @@ async function main() {
 	);
 	console.log('Spell created:', JSON.stringify(spell, bufferReplacer, '\t'));
 
-	const signaturePackage = await signSpell(
+	const previousGrailState = await getPreviousGrailState(
 		context,
-		spell,
-		previousNftTxid,
-		{
-			publicKeys: newPublicKeys,
-			threshold: newThreshold,
-		},
-		null,
-		prepareKeypairs(privateKeys)
+		previousNftTxid
 	);
+
+	const signatureRequest: SignatureRequest = {
+		transactionBytes: spell.spellTxBytes,
+		previousTransactions: await getPreviousTransactions(context, spell),
+		inputs: [
+			{
+				index: 0,
+				state: previousGrailState,
+				script: generateSpendingScriptForGrail(
+					previousGrailState,
+					context.network
+				).script,
+			},
+		],
+	};
+
+	const fromCosigners: SignatureResponse[] = privateKeys
+		.map(pk => Buffer.from(pk, 'hex'))
+		.map(privateKey => {
+			const keypair = privateToKeypair(privateKey);
+			const signatures = signAsCosigner(context, signatureRequest, keypair);
+			return { publicKey: keypair.publicKey.toString('hex'), signatures };
+		});
 
 	const signedSpell = await injectSignaturesIntoSpell(
 		context,
 		spell,
-		previousNftTxid,
-		signaturePackage
+		signatureRequest,
+		fromCosigners
 	);
-	console.log('Signed spell:', JSON.stringify(signedSpell, bufferReplacer, '\t'));
+	console.log(
+		'Signed spell:',
+		JSON.stringify(signedSpell, bufferReplacer, '\t')
+	);
 
 	if (transmit) {
 		await transmitSpell(context, signedSpell);

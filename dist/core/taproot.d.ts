@@ -9,7 +9,7 @@ export interface SpendingScript {
     controlBlock: Buffer;
 }
 export declare function generateSpendingScriptForGrail(grailState: GrailState, network: Network): SpendingScript;
-export declare function generateSpendingScriptsForUser(grailState: GrailState, userPaymentDetails: UserPaymentDetails, network: Network): {
+export declare function generateSpendingScriptsForUserPayment(grailState: GrailState, userPaymentDetails: UserPaymentDetails, network: Network): {
     grail: SpendingScript;
     recovery: SpendingScript;
 };

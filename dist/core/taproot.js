@@ -32,15 +32,24 @@ var __importStar = (this && this.__importStar) || (function () {
         return result;
     };
 })();
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.generateSpendingScriptForGrail = generateSpendingScriptForGrail;
-exports.generateSpendingScriptsForUser = generateSpendingScriptsForUser;
+exports.generateSpendingScriptsForUserPayment = generateSpendingScriptsForUserPayment;
 exports.generateUserPaymentAddress = generateUserPaymentAddress;
 exports.generateGrailPaymentAddress = generateGrailPaymentAddress;
 /* eslint-disable no-console */
+const node_fs_1 = __importDefault(require("node:fs"));
 const bitcoin = __importStar(require("bitcoinjs-lib"));
 const taptree_1 = require("./taproot/taptree");
+const json_1 = require("./json");
+function debugLog(obj) {
+    node_fs_1.default.writeFileSync(`./debuglog/taproot/${new Date()}`, JSON.stringify(obj, json_1.bufferReplacer, 2));
+}
 function generateSpendingScriptForGrail(grailState, network) {
+    debugLog({ grailState, network });
     const multisigScript = generateMultisigScript(grailState);
     const stt = new taptree_1.SimpleTapTree([multisigScript], network);
     return {
@@ -75,7 +84,8 @@ function generateSpendingScriptForUserRecovery(userPaymentDetails) {
     ]);
     return timelockScript;
 }
-function generateSpendingScriptsForUser(grailState, userPaymentDetails, network) {
+function generateSpendingScriptsForUserPayment(grailState, userPaymentDetails, network) {
+    debugLog({ grailState, userPaymentDetails, network });
     const grailScript = generateSpendingScriptForUserPayment(grailState);
     const recoveryScript = generateSpendingScriptForUserRecovery(userPaymentDetails);
     const stt = new taptree_1.SimpleTapTree([grailScript, recoveryScript], network);
@@ -91,12 +101,14 @@ function generateSpendingScriptsForUser(grailState, userPaymentDetails, network)
     };
 }
 function generateUserPaymentAddress(grailState, userPaymentDetails, network) {
+    debugLog({ grailState, userPaymentDetails, network });
     const grailScript = generateSpendingScriptForUserPayment(grailState);
     const recoveryScript = generateSpendingScriptForUserRecovery(userPaymentDetails);
     const stt = new taptree_1.SimpleTapTree([grailScript, recoveryScript], network);
     return stt.getTaprootAddress();
 }
 function generateGrailPaymentAddress(grailState, network) {
+    debugLog({ grailState, network });
     const multisigScript = generateSpendingScriptForGrail(grailState, network);
     const stt = new taptree_1.SimpleTapTree([multisigScript.script], network);
     return stt.getTaprootAddress();

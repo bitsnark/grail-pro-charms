@@ -62,7 +62,7 @@ export class Context implements IContext {
 		if (obj.bitcoinClient) {
 			thus.bitcoinClient = obj.bitcoinClient;
 		} else {
-			thus.bitcoinClient = await BitcoinClient.create();
+			thus.bitcoinClient = await BitcoinClient.initialize();
 		}
 
 		return thus;

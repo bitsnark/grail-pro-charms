@@ -2,17 +2,13 @@ import * as bitcoin from 'bitcoinjs-lib';
 import * as yaml from 'js-yaml';
 import { schnorr } from '@noble/curves/secp256k1';
 import { executeSpell } from './charms-sdk';
-import { CharmerRequest, DeployRequest, Spell, UpdateRequest } from './types';
+import { CharmerRequest, Spell } from './types';
 import { BitcoinClient } from './bitcoin';
 import { bufferReplacer } from './json';
 
-import {
-	KeyPair,
-	generateSpendingScriptForGrail,
-	generateSpendingScriptsForUserPayment,
-} from './taproot';
-import { GrailState, LabeledSignature, UserPaymentDetails } from './types';
-import { getHash, Network } from './taproot/taproot-common';
+import { KeyPair } from './taproot';
+import { GrailState, LabeledSignature } from './types';
+import { getHash } from './taproot/taproot-common';
 import { showSpell } from './charms-sdk';
 import { IContext } from './i-context';
 
@@ -41,9 +37,8 @@ export async function getStateFromNft(
 	context: IContext,
 	nftTxId: string
 ): Promise<{ publicKeys: string[]; threshold: number }> {
-	const bitcoinClient = await BitcoinClient.create();
-
-	const previousNftTxhex = await bitcoinClient.getTransactionHex(nftTxId);
+	const previousNftTxhex =
+		await context.bitcoinClient.getTransactionHex(nftTxId);
 	if (!previousNftTxhex) {
 		throw new Error(`Previous NFT transaction ${nftTxId} not found`);
 	}
@@ -65,22 +60,14 @@ export async function getStateFromNft(
 	};
 }
 
-export async function signTransactionInput(
+export function signTransactionInput(
+	context: IContext,
 	txBytes: Buffer,
 	inputIndex: number,
 	script: Buffer,
 	previousTxBytesMap: { [txid: string]: Buffer },
-	keyPairs: KeyPair[],
-	threshold: number
-): Promise<LabeledSignature[]> {
-	if (keyPairs.length < threshold) {
-		throw new Error(
-			`Not enough key pairs provided. Required: ${threshold}, provided: ${keyPairs.length}`
-		);
-	}
-
-	const bitcoinClient = await BitcoinClient.create();
-
+	keypair: KeyPair
+): Buffer {
 	// Load the transaction to sign
 	const tx = bitcoin.Transaction.fromBuffer(txBytes);
 
@@ -94,13 +81,7 @@ export async function signTransactionInput(
 		const inputTxid = hashToTxid(input.hash);
 		if (previousTxBytesMap[inputTxid]) {
 			ttxBytes = previousTxBytesMap[inputTxid];
-		} else {
-			const ttxHex = await bitcoinClient.getTransactionHex(inputTxid);
-			if (!ttxHex) {
-				throw new Error(`Input transaction ${inputTxid} not found`);
-			}
-			ttxBytes = Buffer.from(ttxHex, 'hex');
-		}
+		} else throw new Error(`Input transaction ${inputTxid} not found`);
 		const ttx = bitcoin.Transaction.fromBuffer(ttxBytes);
 		const out = ttx.outs[input.index];
 		previous.push({
@@ -118,105 +99,15 @@ export async function signTransactionInput(
 		tapleafHash
 	);
 
-	// We only need threshold signatures, so we can ignore the rest
-	const requiredKeypairs = keyPairs.slice(0, threshold);
-
-	return requiredKeypairs.map(({ publicKey, privateKey }) => {
-		const sig = schnorr.sign(sighash, privateKey);
-		return {
-			publicKey: publicKey.toString('hex'),
-			signature: Buffer.from(sig),
-		} as LabeledSignature;
-	});
-}
-
-export async function grailSignSpellNftInput(
-	spell: Spell,
-	inputIndex: number,
-	grailState: GrailState,
-	keyPairs: KeyPair[],
-	network: Network
-): Promise<LabeledSignature[]> {
-	const spendingScript = generateSpendingScriptForGrail(grailState, network);
-
-	return await signTransactionInput(
-		spell.spellTxBytes,
-		inputIndex,
-		spendingScript.script,
-		{ [txBytesToTxid(spell.commitmentTxBytes)]: spell.commitmentTxBytes },
-		keyPairs,
-		grailState.threshold
-	);
-}
-
-export async function grailSignSpellUserInput(
-	spell: Spell,
-	inputIndex: number,
-	grailState: GrailState,
-	userPaymentDetails: UserPaymentDetails,
-	keyPairs: KeyPair[],
-	network: Network
-): Promise<LabeledSignature[]> {
-	const spendingScript = generateSpendingScriptsForUserPayment(
-		grailState,
-		userPaymentDetails,
-		network
-	);
-	return signTransactionInput(
-		spell.spellTxBytes,
-		inputIndex, // Assuming we are signing the second input (the user payment input)
-		spendingScript.grail.script,
-		{ [txBytesToTxid(spell.commitmentTxBytes)]: spell.commitmentTxBytes },
-		keyPairs,
-		grailState.threshold
-	);
-}
-
-export function injectGrailSignaturesIntoTxInput(
-	txBytes: Buffer,
-	inputIndex: number,
-	grailState: GrailState,
-	signatures: LabeledSignature[]
-): Buffer {
-	if (signatures.length != grailState.threshold) {
-		throw new Error(
-			`Wrong number of signatures provided. Required: ${grailState.threshold}, provided: ${signatures.length}`
-		);
-	}
-
-	if (signatures.some(sig => !grailState.publicKeys.includes(sig.publicKey))) {
-		throw new Error(`Some signatures do not match the provided public keys.`);
-	}
-
-	// Order the signagures by public key to ensure deterministic ordering
-	// leave 0 where missing signatures
-	const map: { [key: string]: Buffer } = {};
-	signatures.forEach(sig => {
-		map[sig.publicKey] = sig.signature;
-	});
-	const signaturesOrdered = grailState.publicKeys.map(
-		(pk: string | number) => map[pk] || Buffer.from([])
-	);
-
-	// Load the transaction to sign
-	const tx = bitcoin.Transaction.fromBuffer(txBytes);
-
-	// Witness: [signatures] [tapleaf script] [control block]
-	tx.ins[inputIndex].witness = [
-		...signaturesOrdered,
-		...tx.ins[inputIndex].witness,
-	];
-
-	return tx.toBuffer();
+	return Buffer.from(schnorr.sign(sighash, keypair.privateKey));
 }
 
 export async function resignSpellWithTemporarySecret(
+	context: IContext,
 	spellTxBytes: Buffer,
 	previousTxBytesMap: { [txid: string]: Buffer },
 	temporarySecret: Buffer
 ): Promise<Buffer> {
-	const bitcoinClient = await BitcoinClient.create();
-
 	// Load the transaction to sign
 	const tx = bitcoin.Transaction.fromBuffer(spellTxBytes);
 	const inputIndex = tx.ins.length - 1; // Last input is the commitment
@@ -228,7 +119,7 @@ export async function resignSpellWithTemporarySecret(
 		if (previousTxBytesMap[inputTxid]) {
 			ttxBytes = previousTxBytesMap[inputTxid];
 		} else {
-			const ttxHex = await bitcoinClient.getTransactionHex(inputTxid);
+			const ttxHex = await context.bitcoinClient.getTransactionHex(inputTxid);
 			if (!ttxHex) {
 				throw new Error(`Input transaction ${inputTxid} not found`);
 			}

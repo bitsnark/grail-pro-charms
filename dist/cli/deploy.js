@@ -80,7 +80,7 @@ async function main() {
     const deployerPublicKey = Buffer.from(argv['deployerPublicKey'].trim().replace('0x', ''), 'hex');
     const feeRate = Number.parseFloat(argv['feerate']);
     const transmit = !!argv['transmit'];
-    const bitcoinClient = await bitcoin_1.BitcoinClient.create();
+    const bitcoinClient = await bitcoin_1.BitcoinClient.initialize();
     const fundingUtxo = await bitcoinClient.getFundingUtxo();
     const context = await context_1.Context.createForDeploy({
         charmsBin: env_parser_1.parse.string('CHARMS_BIN'),

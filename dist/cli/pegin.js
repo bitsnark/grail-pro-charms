@@ -3,24 +3,17 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.prepareKeypairs = prepareKeypairs;
 const minimist_1 = __importDefault(require("minimist"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const bitcoin_1 = require("../core/bitcoin");
 const log_1 = require("../core/log");
+const json_1 = require("../core/json");
 const context_1 = require("../core/context");
 const env_parser_1 = require("../core/env-parser");
-const create_update_nft_spell_1 = require("../api/create-update-nft-spell");
+const create_pegin_spell_1 = require("../api/create-pegin-spell");
+const spell_operations_1 = require("../api/spell-operations");
 const taproot_1 = require("../core/taproot");
 const generate_random_keypairs_1 = require("./generate-random-keypairs");
-const spell_operations_1 = require("../api/spell-operations");
-const json_1 = require("../core/json");
-function prepareKeypairs(privateKeys) {
-    return privateKeys.map(priv => ({
-        publicKey: (0, generate_random_keypairs_1.publicFromPrivate)(Buffer.from(priv.trim().replace('0x', ''), 'hex')),
-        privateKey: Buffer.from(priv.trim().replace('0x', ''), 'hex'),
-    }));
-}
 async function main() {
     dotenv_1.default.config({ path: ['.env.test', '.env.local', '.env'] });
     (0, log_1.setupLog)();
@@ -35,6 +28,7 @@ async function main() {
                 feerate: 0.002,
                 transmit: true,
                 'mock-proof': false,
+                'user-payment-vout': 0,
             },
         },
         '--': true,
@@ -83,10 +77,30 @@ async function main() {
     const privateKeys = argv['private-keys']
         .split(',')
         .map(s => s.trim().replace('0x', ''));
-    const spell = await (0, create_update_nft_spell_1.createUpdateNftSpell)(context, Number(argv['feerate']), previousNftTxid, {
+    if (!argv['user-payment-txid']) {
+        console.error('--user-payment-txid is required');
+        return;
+    }
+    if (!argv['recovery-public-key']) {
+        console.error('--recovery-public-key is required');
+        return;
+    }
+    const recoveryPublicKey = argv['recovery-public-key'].replace('0x', '');
+    const userPaymentDetails = {
+        txid: argv['user-payment-txid'],
+        vout: Number.parseInt(argv['user-payment-vout']) || 0,
+        recoveryPublicKey,
+        timelockBlocks: 100,
+    };
+    let userWalletAddress = argv['user-wallet-address'];
+    if (!userWalletAddress) {
+        userWalletAddress = await bitcoinClient.getAddress();
+    }
+    const newGrailState = {
         publicKeys: newPublicKeys,
         threshold: newThreshold,
-    }, fundingUtxo);
+    };
+    const spell = await (0, create_pegin_spell_1.createPeginSpell)(context, Number(argv['feerate']), previousNftTxid, newGrailState, userPaymentDetails, userWalletAddress, fundingUtxo);
     console.log('Spell created:', JSON.stringify(spell, json_1.bufferReplacer, '\t'));
     const previousGrailState = await (0, spell_operations_1.getPreviousGrailState)(context, previousNftTxid);
     const signatureRequest = {
@@ -97,6 +111,11 @@ async function main() {
                 index: 0,
                 state: previousGrailState,
                 script: (0, taproot_1.generateSpendingScriptForGrail)(previousGrailState, context.network).script,
+            },
+            {
+                index: 1,
+                state: newGrailState,
+                script: (0, taproot_1.generateSpendingScriptsForUserPayment)(newGrailState, userPaymentDetails, context.network).grail.script,
             },
         ],
     };
@@ -114,7 +133,7 @@ async function main() {
     }
 }
 if (require.main === module) {
-    main().catch(error => {
-        console.error('Error during NFT update:', error);
+    main().catch(err => {
+        console.error(err);
     });
 }

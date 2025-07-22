@@ -1,4 +1,3 @@
-
 export interface Utxo {
 	txid: string;
 	vout: number;
@@ -73,4 +72,19 @@ export interface UserPaymentDetails {
 export interface Spell {
 	commitmentTxBytes: Buffer;
 	spellTxBytes: Buffer;
+}
+
+export type PreviousTransactions = { [key: string]: Buffer };
+
+export interface SignatureRequest {
+	transactionBytes: Buffer;
+	previousTransactions: PreviousTransactions;
+	inputs: { index: number; state: GrailState, script: Buffer }[];
+}
+
+export type CosignerSignatures = { index: number, signature: Buffer };
+
+export interface SignatureResponse {
+	publicKey: string;
+	signatures: CosignerSignatures[];
 }

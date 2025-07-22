@@ -5,15 +5,25 @@ import { Network } from '../core/taproot/taproot-common';
 import { setupLog } from '../core/log';
 import { bufferReplacer } from '../core/json';
 import { Context } from '../core/context';
-import { parse } from '../../dist/core/env-parser';
+import { parse } from '../core/env-parser';
 import { createPeginSpell } from '../api/create-pegin-spell';
-import { UserPaymentDetails } from '../core/types';
 import {
+	SignatureRequest,
+	SignatureResponse,
+	UserPaymentDetails,
+} from '../core/types';
+import {
+	getPreviousGrailState,
+	getPreviousTransactions,
 	injectSignaturesIntoSpell,
-	signSpell,
+	signAsCosigner,
 	transmitSpell,
 } from '../api/spell-operations';
-import { prepareKeypairs } from './update';
+import {
+	generateSpendingScriptForGrail,
+	generateSpendingScriptsForUserPayment,
+} from '../core/taproot';
+import { privateToKeypair } from './generate-random-keypairs';
 
 async function main() {
 	dotenv.config({ path: ['.env.test', '.env.local', '.env'] });
@@ -36,7 +46,7 @@ async function main() {
 		'--': true,
 	});
 
-	const bitcoinClient = await BitcoinClient.create();
+	const bitcoinClient = await BitcoinClient.initialize();
 	const fundingUtxo = await bitcoinClient.getFundingUtxo();
 
 	const appId = argv['app-id'] as string;
@@ -99,8 +109,10 @@ async function main() {
 		console.error('--recovery-public-key is required');
 		return;
 	}
-	const recoveryPublicKey = (argv['recovery-public-key'] as string)
-	.replace('0x', '');
+	const recoveryPublicKey = (argv['recovery-public-key'] as string).replace(
+		'0x',
+		''
+	);
 	const userPaymentDetails: UserPaymentDetails = {
 		txid: argv['user-payment-txid'] as string,
 		vout: Number.parseInt(argv['user-payment-vout'] as string) || 0,
@@ -113,37 +125,64 @@ async function main() {
 		userWalletAddress = await bitcoinClient.getAddress();
 	}
 
+	const newGrailState = {
+		publicKeys: newPublicKeys,
+		threshold: newThreshold,
+	};
+
 	const spell = await createPeginSpell(
 		context,
 		Number(argv['feerate']),
 		previousNftTxid,
-		{
-			publicKeys: newPublicKeys,
-			threshold: newThreshold,
-		},
+		newGrailState,
 		userPaymentDetails,
 		userWalletAddress,
 		fundingUtxo
 	);
 	console.log('Spell created:', JSON.stringify(spell, bufferReplacer, '\t'));
 
-	const signaturePackage = await signSpell(
+	const previousGrailState = await getPreviousGrailState(
 		context,
-		spell,
-		previousNftTxid,
-		{
-			publicKeys: newPublicKeys,
-			threshold: newThreshold,
-		},
-		userPaymentDetails,
-		prepareKeypairs(privateKeys)
+		previousNftTxid
 	);
+
+	const signatureRequest: SignatureRequest = {
+		transactionBytes: spell.spellTxBytes,
+		previousTransactions: await getPreviousTransactions(context, spell),
+		inputs: [
+			{
+				index: 0,
+				state: previousGrailState,
+				script: generateSpendingScriptForGrail(
+					previousGrailState,
+					context.network
+				).script,
+			},
+			{
+				index: 1,
+				state: newGrailState,
+				script: generateSpendingScriptsForUserPayment(
+					newGrailState,
+					userPaymentDetails,
+					context.network
+				).grail.script,
+			},
+		],
+	};
+
+	const fromCosigners: SignatureResponse[] = privateKeys
+		.map(pk => Buffer.from(pk, 'hex'))
+		.map(privateKey => {
+			const keypair = privateToKeypair(privateKey);
+			const signatures = signAsCosigner(context, signatureRequest, keypair);
+			return { publicKey: keypair.publicKey.toString('hex'), signatures };
+		});
 
 	const signedSpell = await injectSignaturesIntoSpell(
 		context,
 		spell,
-		previousNftTxid,
-		signaturePackage
+		signatureRequest,
+		fromCosigners
 	);
 	console.log(
 		'Signed spell:',

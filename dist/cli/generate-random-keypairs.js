@@ -37,14 +37,17 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.publicFromPrivate = publicFromPrivate;
+exports.privateToKeypair = privateToKeypair;
 exports.generateRandomKeypair = generateRandomKeypair;
 exports.generateRandomKeypairs = generateRandomKeypairs;
+const minimist_1 = __importDefault(require("minimist"));
+const dotenv_1 = __importDefault(require("dotenv"));
 const secp = __importStar(require("@bitcoinerlab/secp256k1"));
 const node_buffer_1 = require("node:buffer");
 const crypto_1 = require("crypto");
-const minimist_1 = __importDefault(require("minimist"));
 const json_1 = require("../core/json");
 const array_utils_1 = require("../core/array-utils");
+const log_1 = require("../core/log");
 function publicFromPrivate(privateKey) {
     if (!secp.isPrivate(privateKey)) {
         throw new Error('Invalid private key');
@@ -55,21 +58,27 @@ function publicFromPrivate(privateKey) {
     }
     return node_buffer_1.Buffer.from(publicKey);
 }
+function privateToKeypair(privateKey) {
+    if (!secp.isPrivate(privateKey)) {
+        throw new Error('Invalid private key');
+    }
+    const publicKey = publicFromPrivate(privateKey);
+    return {
+        publicKey: node_buffer_1.Buffer.from(publicKey),
+        privateKey: node_buffer_1.Buffer.from(privateKey),
+    };
+}
 function generateRandomKeypair() {
     // Generate a random private key
     const privateKey = (0, crypto_1.randomBytes)(32);
-    // Ensure the private key is valid
-    if (!secp.isPrivate(privateKey)) {
-        throw new Error('Invalid private key generated');
-    }
-    // Derive the public key from the private key
-    const publicKey = publicFromPrivate(privateKey);
-    return { publicKey: node_buffer_1.Buffer.from(publicKey), privateKey: privateKey };
+    return privateToKeypair(privateKey);
 }
 function generateRandomKeypairs(size) {
     return (0, array_utils_1.array)(size, generateRandomKeypair);
 }
 function main() {
+    dotenv_1.default.config({ path: ['.env.test', '.env.local', '.env'] });
+    (0, log_1.setupLog)();
     const argv = (0, minimist_1.default)(process.argv.slice(2), {
         alias: { c: 'count' },
         '--': true,

@@ -28,8 +28,8 @@ class Context {
             throw new Error('App ID is required');
         thus.appId = obj.appId;
         console.log('App ID:', thus.appId);
-        thus.network = obj.network || thus.network;
-        thus.mockProof = obj.mockProof || thus.mockProof;
+        thus.network = obj.network || 'regtest';
+        thus.mockProof = obj.mockProof || false;
         if (!obj.appVk) {
             console.warn('App VK is not provided, using charms app vk command to retrieve it');
             thus.appVk = await (0, charms_sdk_1.getVerificationKey)(thus);
@@ -45,7 +45,7 @@ class Context {
             thus.bitcoinClient = obj.bitcoinClient;
         }
         else {
-            thus.bitcoinClient = await bitcoin_1.BitcoinClient.create();
+            thus.bitcoinClient = await bitcoin_1.BitcoinClient.initialize();
         }
         return thus;
     }

@@ -46,10 +46,13 @@ async function main() {
 		return;
 	}
 
-	const bitcoinClient = await BitcoinClient.create();
+	const bitcoinClient = await BitcoinClient.initialize();
 
 	const recoveryKeypair = generateRandomKeypair();
-	console.log('Recovery keypair generated:', JSON.stringify(recoveryKeypair, bufferReplacer, 2));
+	console.log(
+		'Recovery keypair generated:',
+		JSON.stringify(recoveryKeypair, bufferReplacer, 2)
+	);
 
 	const userPaymentAddress = generateUserPaymentAddress(
 		{ publicKeys: currentPublicKeys, threshold: currentThreshold },

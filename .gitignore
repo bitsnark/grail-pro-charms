@@ -5,3 +5,4 @@ target
 coverage
 .vscode
 .idea
+debuglog/taproot/*

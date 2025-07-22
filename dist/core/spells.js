@@ -39,18 +39,13 @@ exports.txBytesToTxid = txBytesToTxid;
 exports.txHexToTxid = txHexToTxid;
 exports.getStateFromNft = getStateFromNft;
 exports.signTransactionInput = signTransactionInput;
-exports.grailSignSpellNftInput = grailSignSpellNftInput;
-exports.grailSignSpellUserInput = grailSignSpellUserInput;
-exports.injectGrailSignaturesIntoTxInput = injectGrailSignaturesIntoTxInput;
 exports.resignSpellWithTemporarySecret = resignSpellWithTemporarySecret;
 exports.createSpell = createSpell;
 const bitcoin = __importStar(require("bitcoinjs-lib"));
 const yaml = __importStar(require("js-yaml"));
 const secp256k1_1 = require("@noble/curves/secp256k1");
 const charms_sdk_1 = require("./charms-sdk");
-const bitcoin_1 = require("./bitcoin");
 const json_1 = require("./json");
-const taproot_1 = require("./taproot");
 const taproot_common_1 = require("./taproot/taproot-common");
 const charms_sdk_2 = require("./charms-sdk");
 // SIGHASH type for Taproot (BIP-342)
@@ -70,8 +65,7 @@ function txHexToTxid(txHex) {
     return txBytesToTxid(txBytes);
 }
 async function getStateFromNft(context, nftTxId) {
-    const bitcoinClient = await bitcoin_1.BitcoinClient.create();
-    const previousNftTxhex = await bitcoinClient.getTransactionHex(nftTxId);
+    const previousNftTxhex = await context.bitcoinClient.getTransactionHex(nftTxId);
     if (!previousNftTxhex) {
         throw new Error(`Previous NFT transaction ${nftTxId} not found`);
     }
@@ -84,11 +78,7 @@ async function getStateFromNft(context, nftTxId) {
         threshold: previousThreshold,
     };
 }
-async function signTransactionInput(txBytes, inputIndex, script, previousTxBytesMap, keyPairs, threshold) {
-    if (keyPairs.length < threshold) {
-        throw new Error(`Not enough key pairs provided. Required: ${threshold}, provided: ${keyPairs.length}`);
-    }
-    const bitcoinClient = await bitcoin_1.BitcoinClient.create();
+function signTransactionInput(context, txBytes, inputIndex, script, previousTxBytesMap, keypair) {
     // Load the transaction to sign
     const tx = bitcoin.Transaction.fromBuffer(txBytes);
     // Tapleaf version for tapscript is always 0xc0
@@ -101,13 +91,8 @@ async function signTransactionInput(txBytes, inputIndex, script, previousTxBytes
         if (previousTxBytesMap[inputTxid]) {
             ttxBytes = previousTxBytesMap[inputTxid];
         }
-        else {
-            const ttxHex = await bitcoinClient.getTransactionHex(inputTxid);
-            if (!ttxHex) {
-                throw new Error(`Input transaction ${inputTxid} not found`);
-            }
-            ttxBytes = Buffer.from(ttxHex, 'hex');
-        }
+        else
+            throw new Error(`Input transaction ${inputTxid} not found`);
         const ttx = bitcoin.Transaction.fromBuffer(ttxBytes);
         const out = ttx.outs[input.index];
         previous.push({
@@ -117,50 +102,9 @@ async function signTransactionInput(txBytes, inputIndex, script, previousTxBytes
     }
     // Compute sighash for this tapleaf spend (see https://github.com/bitcoinjs/bitcoinjs-lib/blob/master/test/integration/taproot.spec.ts)
     const sighash = tx.hashForWitnessV1(inputIndex, previous.map(p => p.script), previous.map(p => p.value), sighashType, tapleafHash);
-    // We only need threshold signatures, so we can ignore the rest
-    const requiredKeypairs = keyPairs.slice(0, threshold);
-    return requiredKeypairs.map(({ publicKey, privateKey }) => {
-        const sig = secp256k1_1.schnorr.sign(sighash, privateKey);
-        return {
-            publicKey: publicKey.toString('hex'),
-            signature: Buffer.from(sig),
-        };
-    });
+    return Buffer.from(secp256k1_1.schnorr.sign(sighash, keypair.privateKey));
 }
-async function grailSignSpellNftInput(spell, inputIndex, grailState, keyPairs, network) {
-    const spendingScript = (0, taproot_1.generateSpendingScriptForGrail)(grailState, network);
-    return await signTransactionInput(spell.spellTxBytes, inputIndex, spendingScript.script, { [txBytesToTxid(spell.commitmentTxBytes)]: spell.commitmentTxBytes }, keyPairs, grailState.threshold);
-}
-async function grailSignSpellUserInput(spell, inputIndex, grailState, userPaymentDetails, keyPairs, network) {
-    const spendingScript = (0, taproot_1.generateSpendingScriptsForUser)(grailState, userPaymentDetails, network);
-    return signTransactionInput(spell.spellTxBytes, inputIndex, // Assuming we are signing the second input (the user payment input)
-    spendingScript.grail.script, { [txBytesToTxid(spell.commitmentTxBytes)]: spell.commitmentTxBytes }, keyPairs, grailState.threshold);
-}
-function injectGrailSignaturesIntoTxInput(txBytes, inputIndex, grailState, signatures) {
-    if (signatures.length != grailState.threshold) {
-        throw new Error(`Wrong number of signatures provided. Required: ${grailState.threshold}, provided: ${signatures.length}`);
-    }
-    if (signatures.some(sig => !grailState.publicKeys.includes(sig.publicKey))) {
-        throw new Error(`Some signatures do not match the provided public keys.`);
-    }
-    // Order the signagures by public key to ensure deterministic ordering
-    // leave 0 where missing signatures
-    const map = {};
-    signatures.forEach(sig => {
-        map[sig.publicKey] = sig.signature;
-    });
-    const signaturesOrdered = grailState.publicKeys.map((pk) => map[pk] || Buffer.from([]));
-    // Load the transaction to sign
-    const tx = bitcoin.Transaction.fromBuffer(txBytes);
-    // Witness: [signatures] [tapleaf script] [control block]
-    tx.ins[inputIndex].witness = [
-        ...signaturesOrdered,
-        ...tx.ins[inputIndex].witness,
-    ];
-    return tx.toBuffer();
-}
-async function resignSpellWithTemporarySecret(spellTxBytes, previousTxBytesMap, temporarySecret) {
-    const bitcoinClient = await bitcoin_1.BitcoinClient.create();
+async function resignSpellWithTemporarySecret(context, spellTxBytes, previousTxBytesMap, temporarySecret) {
     // Load the transaction to sign
     const tx = bitcoin.Transaction.fromBuffer(spellTxBytes);
     const inputIndex = tx.ins.length - 1; // Last input is the commitment
@@ -172,7 +116,7 @@ async function resignSpellWithTemporarySecret(spellTxBytes, previousTxBytesMap, 
             ttxBytes = previousTxBytesMap[inputTxid];
         }
         else {
-            const ttxHex = await bitcoinClient.getTransactionHex(inputTxid);
+            const ttxHex = await context.bitcoinClient.getTransactionHex(inputTxid);
             if (!ttxHex) {
                 throw new Error(`Input transaction ${inputTxid} not found`);
             }

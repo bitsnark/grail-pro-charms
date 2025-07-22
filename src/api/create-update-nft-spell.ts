@@ -12,7 +12,7 @@ export async function createUpdateNftSpell(
 	grailState: GrailState,
 	fundingUtxo?: Utxo
 ): Promise<Spell> {
-	const bitcoinClient = await BitcoinClient.create();
+	const bitcoinClient = await BitcoinClient.initialize();
 
 	const grailAddress = generateGrailPaymentAddress(grailState, context.network);
 	const fundingChangeAddress = await bitcoinClient.getAddress();

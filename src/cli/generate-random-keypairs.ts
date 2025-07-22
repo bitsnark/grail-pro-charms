@@ -1,9 +1,11 @@
+import minimist from 'minimist';
+import dotenv from 'dotenv';
 import * as secp from '@bitcoinerlab/secp256k1';
 import { Buffer } from 'node:buffer';
 import { randomBytes } from 'crypto';
-import minimist from 'minimist';
 import { bufferReplacer } from '../core/json';
 import { array } from '../core/array-utils';
+import { setupLog } from '../core/log';
 
 interface Keypair {
 	publicKey: Buffer;
@@ -21,16 +23,21 @@ export function publicFromPrivate(privateKey: Buffer): Buffer {
 	return Buffer.from(publicKey);
 }
 
+export function privateToKeypair(privateKey: Buffer): Keypair {
+	if (!secp.isPrivate(privateKey)) {
+		throw new Error('Invalid private key');
+	}
+	const publicKey = publicFromPrivate(privateKey);
+	return {
+		publicKey: Buffer.from(publicKey),
+		privateKey: Buffer.from(privateKey),
+	};
+}
+
 export function generateRandomKeypair(): Keypair {
 	// Generate a random private key
 	const privateKey = randomBytes(32);
-	// Ensure the private key is valid
-	if (!secp.isPrivate(privateKey)) {
-		throw new Error('Invalid private key generated');
-	}
-	// Derive the public key from the private key
-	const publicKey = publicFromPrivate(privateKey);
-	return { publicKey: Buffer.from(publicKey), privateKey: privateKey };
+	return privateToKeypair(privateKey);
 }
 
 export function generateRandomKeypairs(size: number): Keypair[] {
@@ -38,6 +45,9 @@ export function generateRandomKeypairs(size: number): Keypair[] {
 }
 
 function main() {
+	dotenv.config({ path: ['.env.test', '.env.local', '.env'] });
+	setupLog();
+
 	const argv = minimist(process.argv.slice(2), {
 		alias: { c: 'count' },
 		'--': true,
