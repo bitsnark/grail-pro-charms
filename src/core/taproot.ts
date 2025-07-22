@@ -1,8 +1,17 @@
 /* eslint-disable no-console */
+import fs from 'node:fs';
 import * as bitcoin from 'bitcoinjs-lib';
 import { SimpleTapTree } from './taproot/taptree';
 import { Network } from './taproot/taproot-common';
 import { GrailState, UserPaymentDetails } from './types';
+import { bufferReplacer } from './json';
+
+function debugLog(obj: any) {
+	fs.writeFileSync(
+		`./debuglog/taproot/${new Date()}`,
+		JSON.stringify(obj, bufferReplacer, 2)
+	);
+}
 
 export interface KeyPair {
 	publicKey: Buffer;
@@ -18,6 +27,9 @@ export function generateSpendingScriptForGrail(
 	grailState: GrailState,
 	network: Network
 ): SpendingScript {
+
+	debugLog({ grailState, network });
+
 	const multisigScript = generateMultisigScript(grailState);
 	const stt = new SimpleTapTree([multisigScript], network);
 	return {
@@ -61,11 +73,14 @@ function generateSpendingScriptForUserRecovery(
 	return timelockScript;
 }
 
-export function generateSpendingScriptsForUser(
+export function generateSpendingScriptsForUserPayment(
 	grailState: GrailState,
 	userPaymentDetails: UserPaymentDetails,
 	network: Network
 ): { grail: SpendingScript; recovery: SpendingScript } {
+
+	debugLog({ grailState, userPaymentDetails, network });
+
 	const grailScript = generateSpendingScriptForUserPayment(grailState);
 	const recoveryScript =
 		generateSpendingScriptForUserRecovery(userPaymentDetails);
@@ -90,6 +105,9 @@ export function generateUserPaymentAddress(
 	>,
 	network: Network
 ): string {
+
+	debugLog({ grailState, userPaymentDetails, network });
+
 	const grailScript = generateSpendingScriptForUserPayment(grailState);
 	const recoveryScript =
 		generateSpendingScriptForUserRecovery(userPaymentDetails);
@@ -101,6 +119,9 @@ export function generateGrailPaymentAddress(
 	grailState: GrailState,
 	network: Network
 ): string {
+
+	debugLog({ grailState, network });
+
 	const multisigScript = generateSpendingScriptForGrail(grailState, network);
 	const stt = new SimpleTapTree([multisigScript.script], network);
 	return stt.getTaprootAddress();

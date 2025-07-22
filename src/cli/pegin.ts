@@ -6,10 +6,13 @@ import { setupLog } from '../core/log';
 import { bufferReplacer } from '../core/json';
 import { Context } from '../core/context';
 import { parse } from '../../dist/core/env-parser';
-import { createPegInSpell } from '../api/create-pegin-spell';
+import { createPeginSpell } from '../api/create-pegin-spell';
 import { UserPaymentDetails } from '../core/types';
-import { randomBytes } from 'crypto';
-import { injectSignaturesIntoSpell, signSpell, transmitSpell } from '../api/spell-operations';
+import {
+	injectSignaturesIntoSpell,
+	signSpell,
+	transmitSpell,
+} from '../api/spell-operations';
 import { prepareKeypairs } from './update';
 
 async function main() {
@@ -92,11 +95,17 @@ async function main() {
 		console.error('--user-payment-txid is required');
 		return;
 	}
+	if (!argv['recovery-public-key']) {
+		console.error('--recovery-public-key is required');
+		return;
+	}
+	const recoveryPublicKey = (argv['recovery-public-key'] as string)
+	.replace('0x', '');
 	const userPaymentDetails: UserPaymentDetails = {
 		txid: argv['user-payment-txid'] as string,
-		vout: Number.parseInt(argv['user-payment-vout'] as string),
-		recoveryPublicKey: randomBytes(32).toString('hex'),
-		timelockBlocks: 100
+		vout: Number.parseInt(argv['user-payment-vout'] as string) || 0,
+		recoveryPublicKey,
+		timelockBlocks: 100,
 	};
 
 	let userWalletAddress = argv['user-wallet-address'] as string;
@@ -104,7 +113,7 @@ async function main() {
 		userWalletAddress = await bitcoinClient.getAddress();
 	}
 
-	const spell = await createPegInSpell(
+	const spell = await createPeginSpell(
 		context,
 		Number(argv['feerate']),
 		previousNftTxid,

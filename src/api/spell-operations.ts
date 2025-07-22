@@ -5,7 +5,7 @@ import { BitcoinClient } from '../core/bitcoin';
 import {
 	KeyPair,
 	generateSpendingScriptForGrail,
-	generateSpendingScriptsForUser,
+	generateSpendingScriptsForUserPayment,
 } from '../core/taproot';
 import {
 	GrailState,
@@ -68,9 +68,8 @@ export async function createUpdatingSpell(
 	];
 
 	if (userPaymentDetails) {
-		const bitcoinClient = await BitcoinClient.create();
 
-		const userPaymentTxHex = await bitcoinClient.getTransactionHex(
+		const userPaymentTxHex = await context.bitcoinClient.getTransactionHex(
 			userPaymentDetails.txid
 		);
 		const userPaymentTx = bitcoin.Transaction.fromHex(userPaymentTxHex);
@@ -78,7 +77,7 @@ export async function createUpdatingSpell(
 
 		const inputIndexUser = 1; // Assuming the second input is the user payment input
 
-		const spendingScriptUser = generateSpendingScriptsForUser(
+		const spendingScriptUser = generateSpendingScriptsForUserPayment(
 			nextGrailState,
 			userPaymentDetails,
 			context.network
@@ -89,7 +88,6 @@ export async function createUpdatingSpell(
 			script: Buffer.from(''),
 			sequence: 0xffffffff,
 			witness: [
-				// bitcoin.script.compile([bitcoin.opcodes.OP_CODESEPARATOR]),
 				spendingScriptUser.grail.script,
 				spendingScriptUser.grail.controlBlock,
 			],

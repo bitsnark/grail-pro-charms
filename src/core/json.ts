@@ -1,6 +1,6 @@
 // This is a hideous hack to overcome no proper support for Buffer in JSON.stringify/parse
 export function bufferReplacer(key: string, value: any): any {
-	if (value['type'] === 'Buffer' && Array.isArray(value['data'])) {
+	if (value && value['type'] === 'Buffer' && Array.isArray(value['data'])) {
 		return '0x' + Buffer.from(value.data).toString('hex');
 	}
 	return value;

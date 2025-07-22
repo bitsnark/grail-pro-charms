@@ -109,7 +109,7 @@ async function main() {
 		},
 		fundingUtxo
 	);
-	console.log('Spell created:', JSON.stringify(spell, null, '\t'));
+	console.log('Spell created:', JSON.stringify(spell, bufferReplacer, '\t'));
 
 	const signaturePackage = await signSpell(
 		context,

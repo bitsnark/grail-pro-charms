@@ -12,7 +12,7 @@ import { bufferReplacer } from '../core/json';
 import { IContext } from '../core/i-context';
 import { createUpdatingSpell } from './spell-operations';
 
-export async function createPegInSpell(
+export async function createPeginSpell(
 	context: IContext,
 	feeRate: number,
 	previousNftTxid: string,
@@ -128,7 +128,7 @@ export async function createPegInSpell(
 		context,
 		request,
 		[previousNftTxid, userPaymentDetails.txid],
-		previousSpellData,
+		{ publicKeys: previousPublicKeys, threshold: previousThreshold },
 		nextGrailState,
 		userPaymentDetails
 	);

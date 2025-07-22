@@ -43,8 +43,8 @@ export class Context implements IContext {
 		thus.appId = obj.appId;
 		console.log('App ID:', thus.appId);
 
-		thus.network = obj.network || thus.network;
-		thus.mockProof = obj.mockProof || thus.mockProof;
+		thus.network = obj.network || 'regtest';
+		thus.mockProof = obj.mockProof || false;
 
 		if (!obj.appVk) {
 			console.warn(

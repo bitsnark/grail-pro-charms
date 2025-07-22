@@ -9,7 +9,7 @@ import { bufferReplacer } from './json';
 import {
 	KeyPair,
 	generateSpendingScriptForGrail,
-	generateSpendingScriptsForUser,
+	generateSpendingScriptsForUserPayment,
 } from './taproot';
 import { GrailState, LabeledSignature, UserPaymentDetails } from './types';
 import { getHash, Network } from './taproot/taproot-common';
@@ -157,7 +157,7 @@ export async function grailSignSpellUserInput(
 	keyPairs: KeyPair[],
 	network: Network
 ): Promise<LabeledSignature[]> {
-	const spendingScript = generateSpendingScriptsForUser(
+	const spendingScript = generateSpendingScriptsForUserPayment(
 		grailState,
 		userPaymentDetails,
 		network
