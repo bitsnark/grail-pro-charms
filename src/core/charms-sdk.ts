@@ -12,32 +12,31 @@ function executeCommand(
 ): Promise<string> {
 	return new Promise<string>((resolve, reject) => {
 		console.info(`Executing command: ${command.join(' ')}`);
-		const child = exec(
-			[
-				pwd ? `cd ${pwd}` : '',
-				'export RUST_BACKTRACE=full',
-				`export USE_MOCK_PROOF=${context.mockProof ? 'true' : 'false'}`,
-				command.filter(Boolean).join(' '),
-			]
-				.filter(Boolean)
-				.join(' && '),
-			(error, stdout, stderr) => {
-				if (error) {
-					console.error(`Execution error: ${error.message}`);
-					reject(error);
-				}
-				if (stderr) {
-					console.error(`Stderr: ${stderr}`);
-				}
-				console.info(`Executed successfully: ${stdout}`);
-				resolve(stdout);
-			}
-		);
+		let commandString = command.join(' ');
 		if (stdin) {
-			console.info(`Sending stdin: ${stdin}`);
-			child.stdin!.write(stdin);
-			child.stdin!.end();
+			console.info(`Stdin provided: ${stdin}`);
+			commandString += ` <<'EOF'\n${stdin}\nEOF`;
 		}
+		const options = {
+			cwd: pwd,
+			stdio: 'pipe',
+			env: {
+				...process.env,
+				RUST_BACKTRACE: 'full',
+				USE_MOCK_PROOF: context.mockProof ? 'true' : 'false'
+			}
+		};
+		exec(commandString, options, (error, stdout, stderr) => {
+			if (error) {
+				console.error(`Execution error: ${error.message}`);
+				return reject(error);
+			}
+			if (stderr) {
+				console.error(`Stderr: ${stderr}`);
+			}
+			console.info(`Executed successfully: ${stdout}`);
+			resolve(stdout);
+		});
 	}).catch((error: Error) => {
 		console.error('Execution error:', error);
 		throw error;
