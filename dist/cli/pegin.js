@@ -19,17 +19,14 @@ async function main() {
     (0, log_1.setupLog)();
     const argv = (0, minimist_1.default)(process.argv.slice(2), {
         alias: {},
+        string: ['new-public-keys', 'private-keys'],
+        boolean: ['transmit', 'mock-proof'],
         default: {
-            alias: {},
-            string: ['new-public-keys', 'private-keys'],
-            boolean: ['transmit', 'mock-proof'],
-            default: {
-                network: 'regtest',
-                feerate: 0.002,
-                transmit: true,
-                'mock-proof': false,
-                'user-payment-vout': 0,
-            },
+            network: 'regtest',
+            feerate: 0.00002,
+            transmit: true,
+            'mock-proof': false,
+            'user-payment-vout': 0,
         },
         '--': true,
     });
@@ -86,21 +83,33 @@ async function main() {
         return;
     }
     const recoveryPublicKey = argv['recovery-public-key'].replace('0x', '');
+    const newGrailState = {
+        publicKeys: newPublicKeys,
+        threshold: newThreshold,
+    };
     const userPaymentDetails = {
         txid: argv['user-payment-txid'],
         vout: Number.parseInt(argv['user-payment-vout']) || 0,
         recoveryPublicKey,
         timelockBlocks: 100,
     };
+    let userPaymentVout = 0;
+    if (!argv['user-payment-vout']) {
+        console.warn('--user-payment-vout not provided, auto detecting...');
+        userPaymentVout = await (0, spell_operations_1.findUserPaymentVout)(context, newGrailState, userPaymentDetails);
+        userPaymentDetails.vout = userPaymentVout;
+        console.warn(`Detected user payment vout: ${userPaymentVout}`);
+    }
     let userWalletAddress = argv['user-wallet-address'];
     if (!userWalletAddress) {
         userWalletAddress = await bitcoinClient.getAddress();
     }
-    const newGrailState = {
-        publicKeys: newPublicKeys,
-        threshold: newThreshold,
-    };
-    const spell = await (0, create_pegin_spell_1.createPeginSpell)(context, Number(argv['feerate']), previousNftTxid, newGrailState, userPaymentDetails, userWalletAddress, fundingUtxo);
+    if (!argv['feerate']) {
+        console.error('--feerate is required');
+        return;
+    }
+    const feerate = Number.parseFloat(argv['feerate']);
+    const spell = await (0, create_pegin_spell_1.createPeginSpell)(context, feerate, previousNftTxid, newGrailState, userPaymentDetails, userWalletAddress, fundingUtxo);
     console.log('Spell created:', JSON.stringify(spell, json_1.bufferReplacer, '\t'));
     const previousGrailState = await (0, spell_operations_1.getPreviousGrailState)(context, previousNftTxid);
     const signatureRequest = {
@@ -126,7 +135,7 @@ async function main() {
         const signatures = (0, spell_operations_1.signAsCosigner)(context, signatureRequest, keypair);
         return { publicKey: keypair.publicKey.toString('hex'), signatures };
     });
-    const signedSpell = await (0, spell_operations_1.injectSignaturesIntoSpell)(context, spell, previousNftTxid, signatureRequest, fromCosigners);
+    const signedSpell = await (0, spell_operations_1.injectSignaturesIntoSpell)(context, spell, signatureRequest, fromCosigners);
     console.log('Signed spell:', JSON.stringify(signedSpell, json_1.bufferReplacer, '\t'));
     if (transmit) {
         await (0, spell_operations_1.transmitSpell)(context, signedSpell);

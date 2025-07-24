@@ -39,7 +39,7 @@ const taproot_1 = require("../core/taproot");
 const charms_sdk_1 = require("../core/charms-sdk");
 const json_1 = require("../core/json");
 const spell_operations_1 = require("./spell-operations");
-async function createPeginSpell(context, feeRate, previousNftTxid, nextGrailState, userPaymentDetails, userWalletAddress, fundingUtxo) {
+async function createPeginSpell(context, feerate, previousNftTxid, nextGrailState, userPaymentDetails, userWalletAddress, fundingUtxo) {
     const previousNftTxhex = await context.bitcoinClient.getTransactionHex(previousNftTxid);
     if (!previousNftTxhex) {
         throw new Error(`Previous NFT transaction ${previousNftTxid} not found`);
@@ -55,13 +55,13 @@ async function createPeginSpell(context, feeRate, previousNftTxid, nextGrailStat
     if (!userPaymentTxHex) {
         throw new Error(`User payment transaction ${userPaymentDetails.txid} not found`);
     }
-    const userPaymenTx = bitcoin.Transaction.fromHex(userPaymentTxHex);
-    const userPaymentAmount = userPaymenTx.outs[0].value;
+    const userPaymentTx = bitcoin.Transaction.fromHex(userPaymentTxHex);
+    const userPaymentAmount = userPaymentTx.outs[userPaymentDetails.vout].value;
     console.log('User payment transaction amount:', userPaymentAmount);
     const request = {
         fundingUtxo,
         fundingChangeAddress,
-        feeRate,
+        feerate,
         previousNftTxid,
         nextNftAddress: grailAddress,
         currentNftState: {

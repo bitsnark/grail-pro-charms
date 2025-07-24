@@ -32,17 +32,23 @@ var __importStar = (this && this.__importStar) || (function () {
         return result;
     };
 })();
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getVerificationKey = getVerificationKey;
 exports.executeSpell = executeSpell;
 exports.showSpell = showSpell;
-const child_process_1 = require("child_process");
+const node_fs_1 = __importDefault(require("node:fs"));
+const node_os_1 = __importDefault(require("node:os"));
+const node_path_1 = __importDefault(require("node:path"));
 const yaml = __importStar(require("js-yaml"));
+const child_process_1 = require("child_process");
 const env_parser_1 = require("./env-parser");
-function executeCommand(context, command, stdin = '', pwd) {
+function executeCommand(context, command, pwd) {
     return new Promise((resolve, reject) => {
         console.info(`Executing command: ${command.join(' ')}`);
-        const child = (0, child_process_1.exec)([
+        (0, child_process_1.exec)([
             pwd ? `cd ${pwd}` : '',
             'export RUST_BACKTRACE=full',
             `export USE_MOCK_PROOF=${context.mockProof ? 'true' : 'false'}`,
@@ -60,11 +66,6 @@ function executeCommand(context, command, stdin = '', pwd) {
             console.info(`Executed successfully: ${stdout}`);
             resolve(stdout);
         });
-        if (stdin) {
-            console.info(`Sending stdin: ${stdin}`);
-            child.stdin.write(stdin);
-            child.stdin.end();
-        }
     }).catch((error) => {
         console.error('Execution error:', error);
         throw error;
@@ -73,12 +74,17 @@ function executeCommand(context, command, stdin = '', pwd) {
 async function getVerificationKey(context) {
     const command = [context.charmsBin, 'app vk'];
     const zkappFolder = env_parser_1.parse.string('ZKAPP_FOLDER', './zkapp');
-    return (await executeCommand(context, command, '', zkappFolder)).trim();
+    return (await executeCommand(context, command, zkappFolder)).trim();
 }
-async function executeSpell(context, fundingUtxo, changeAddress, yamlStr, previousTransactions = []) {
+async function executeSpell(context, fundingUtxo, feerate, changeAddress, yamlStr, previousTransactions = []) {
+    const tempDir = node_fs_1.default.mkdtempSync(node_path_1.default.join(node_os_1.default.tmpdir(), 'charms-'));
+    const tempFile = node_path_1.default.join(tempDir, 'spell.yaml');
+    node_fs_1.default.writeFileSync(tempFile, yamlStr, 'utf8');
     const command = [
         context.charmsBin,
         'spell prove',
+        `--spell ${tempFile}`,
+        `--fee-rate ${Math.round(feerate * 1e8)}`, // Convert to satoshis
         `--app-bins ${context.zkAppBin}`,
         `--funding-utxo ${fundingUtxo.txid}:${fundingUtxo.vout}`,
         `--funding-utxo-value ${fundingUtxo.value}`,
@@ -90,9 +96,12 @@ async function executeSpell(context, fundingUtxo, changeAddress, yamlStr, previo
             ? `--temporary-secret-str ${context.temporarySecret.toString('hex')}`
             : undefined,
     ].filter(Boolean);
-    return await executeCommand(context, command, yamlStr).then(result => {
+    return await executeCommand(context, command).then(result => {
         // Result could have some irrelevant garbage?
-        const resultLines = result.split('\n').filter(line => line.trim() !== '');
+        const resultLines = result
+            .split('\n')
+            .map(s => s.trim())
+            .filter(Boolean);
         const obj = JSON.parse(resultLines.pop() ?? '');
         if (!Array.isArray(obj)) {
             throw new Error('Spell execution did not return an array');

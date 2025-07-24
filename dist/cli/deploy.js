@@ -14,7 +14,7 @@ const spells_1 = require("../core/spells");
 const spell_operations_1 = require("../api/spell-operations");
 const env_parser_1 = require("../core/env-parser");
 const json_1 = require("../core/json");
-async function deployNft(context, deployerPublicKey, feeRate, fundingUtxo, transmit = false) {
+async function deployNft(context, deployerPublicKey, feerate, fundingUtxo, transmit = false) {
     const initialNftState = {
         publicKeys: [deployerPublicKey.toString('hex')],
         threshold: 1,
@@ -24,7 +24,7 @@ async function deployNft(context, deployerPublicKey, feeRate, fundingUtxo, trans
     const request = {
         fundingUtxo,
         fundingChangeAddress,
-        feeRate,
+        feerate,
         nextNftAddress: grailAddress,
         currentNftState: {
             publicKeysAsString: initialNftState.publicKeys.join(','),
@@ -63,11 +63,10 @@ async function main() {
     (0, log_1.setupLog)();
     const argv = (0, minimist_1.default)(process.argv.slice(2), {
         alias: {},
-        string: ['deployerPublicKey'],
         boolean: ['transmit', 'mock-proof'],
         default: {
             network: 'regtest',
-            feerate: 0.002,
+            feerate: 0.00002,
             transmit: true,
             'mock-proof': false,
         },
@@ -78,7 +77,11 @@ async function main() {
         return;
     }
     const deployerPublicKey = Buffer.from(argv['deployerPublicKey'].trim().replace('0x', ''), 'hex');
-    const feeRate = Number.parseFloat(argv['feerate']);
+    if (!argv['feerate']) {
+        console.error('--feerate is required');
+        return;
+    }
+    const feerate = Number.parseFloat(argv['feerate']);
     const transmit = !!argv['transmit'];
     const bitcoinClient = await bitcoin_1.BitcoinClient.initialize();
     const fundingUtxo = await bitcoinClient.getFundingUtxo();
@@ -89,7 +92,7 @@ async function main() {
         mockProof: argv['mock-proof'],
         ticker: 'GRAIL-NFT',
     }, fundingUtxo);
-    await deployNft(context, deployerPublicKey, feeRate, fundingUtxo, transmit);
+    await deployNft(context, deployerPublicKey, feerate, fundingUtxo, transmit);
 }
 if (require.main === module) {
     main().catch(error => {

@@ -26,16 +26,12 @@ async function main() {
     (0, log_1.setupLog)();
     const argv = (0, minimist_1.default)(process.argv.slice(2), {
         alias: {},
+        boolean: ['transmit', 'mock-proof'],
         default: {
-            alias: {},
-            string: ['new-public-keys', 'private-keys'],
-            boolean: ['transmit', 'mock-proof'],
-            default: {
-                network: 'regtest',
-                feerate: 0.002,
-                transmit: true,
-                'mock-proof': false,
-            },
+            network: 'regtest',
+            feerate: 0.00002,
+            transmit: true,
+            'mock-proof': false,
         },
         '--': true,
     });
@@ -83,7 +79,12 @@ async function main() {
     const privateKeys = argv['private-keys']
         .split(',')
         .map(s => s.trim().replace('0x', ''));
-    const spell = await (0, create_update_nft_spell_1.createUpdateNftSpell)(context, Number(argv['feerate']), previousNftTxid, {
+    if (!argv['feerate']) {
+        console.error('--feerate is required: ', argv);
+        return;
+    }
+    const feerate = Number.parseFloat(argv['feerate']);
+    const spell = await (0, create_update_nft_spell_1.createUpdateNftSpell)(context, feerate, previousNftTxid, {
         publicKeys: newPublicKeys,
         threshold: newThreshold,
     }, fundingUtxo);
@@ -107,7 +108,7 @@ async function main() {
         const signatures = (0, spell_operations_1.signAsCosigner)(context, signatureRequest, keypair);
         return { publicKey: keypair.publicKey.toString('hex'), signatures };
     });
-    const signedSpell = await (0, spell_operations_1.injectSignaturesIntoSpell)(context, spell, previousNftTxid, signatureRequest, fromCosigners);
+    const signedSpell = await (0, spell_operations_1.injectSignaturesIntoSpell)(context, spell, signatureRequest, fromCosigners);
     console.log('Signed spell:', JSON.stringify(signedSpell, json_1.bufferReplacer, '\t'));
     if (transmit) {
         await (0, spell_operations_1.transmitSpell)(context, signedSpell);

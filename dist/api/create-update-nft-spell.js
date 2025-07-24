@@ -5,7 +5,7 @@ const bitcoin_1 = require("../core/bitcoin");
 const taproot_1 = require("../core/taproot");
 const charms_sdk_1 = require("../core/charms-sdk");
 const spell_operations_1 = require("./spell-operations");
-async function createUpdateNftSpell(context, feeRate, previousNftTxid, grailState, fundingUtxo) {
+async function createUpdateNftSpell(context, feerate, previousNftTxid, grailState, fundingUtxo) {
     const bitcoinClient = await bitcoin_1.BitcoinClient.initialize();
     const grailAddress = (0, taproot_1.generateGrailPaymentAddress)(grailState, context.network);
     const fundingChangeAddress = await bitcoinClient.getAddress();
@@ -26,7 +26,7 @@ async function createUpdateNftSpell(context, feeRate, previousNftTxid, grailStat
     const request = {
         fundingUtxo,
         fundingChangeAddress,
-        feeRate,
+        feerate,
         previousNftTxid,
         nextNftAddress: grailAddress,
         currentNftState: {

@@ -13,7 +13,7 @@ export interface CharmerRequest {
     appVk?: string;
     fundingUtxo: Utxo;
     fundingChangeAddress: string;
-    feeRate: number;
+    feerate: number;
     toYamlObj(): any;
 }
 export interface NftRequest extends CharmerRequest {

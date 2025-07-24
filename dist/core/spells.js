@@ -145,7 +145,7 @@ async function createSpell(context, previousTxids, request) {
     console.log('Creating spell...');
     const previousTransactions = await Promise.all(previousTxids.map(async (txid) => context.bitcoinClient.getTransactionHex(txid)));
     const yamlStr = yaml.dump(request.toYamlObj()); // toYaml(request.toYamlObj());
-    const output = await (0, charms_sdk_1.executeSpell)(context, request.fundingUtxo, request.fundingChangeAddress, yamlStr, previousTransactions.map(tx => Buffer.from(tx, 'hex')));
+    const output = await (0, charms_sdk_1.executeSpell)(context, request.fundingUtxo, request.feerate, request.fundingChangeAddress, yamlStr, previousTransactions.map(tx => Buffer.from(tx, 'hex')));
     console.log('Spell created successfully:', JSON.stringify(output, json_1.bufferReplacer, '\t'));
     return {
         commitmentTxBytes: output.commitmentTxBytes,

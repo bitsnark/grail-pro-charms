@@ -1,12 +1,13 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.signAsCosigner = exports.createPeginSpell = exports.createUpdateNftSpell = exports.transmitSpell = exports.injectSignaturesIntoSpell = exports.getPreviousGrailState = exports.Context = void 0;
+exports.transmitSpell = exports.injectSignaturesIntoSpell = exports.signAsCosigner = exports.createPeginSpell = exports.createUpdateNftSpell = exports.getPreviousTransactions = exports.getPreviousGrailState = exports.Context = void 0;
 const create_pegin_spell_1 = require("./api/create-pegin-spell");
 Object.defineProperty(exports, "createPeginSpell", { enumerable: true, get: function () { return create_pegin_spell_1.createPeginSpell; } });
 const create_update_nft_spell_1 = require("./api/create-update-nft-spell");
 Object.defineProperty(exports, "createUpdateNftSpell", { enumerable: true, get: function () { return create_update_nft_spell_1.createUpdateNftSpell; } });
 const spell_operations_1 = require("./api/spell-operations");
 Object.defineProperty(exports, "getPreviousGrailState", { enumerable: true, get: function () { return spell_operations_1.getPreviousGrailState; } });
+Object.defineProperty(exports, "getPreviousTransactions", { enumerable: true, get: function () { return spell_operations_1.getPreviousTransactions; } });
 Object.defineProperty(exports, "injectSignaturesIntoSpell", { enumerable: true, get: function () { return spell_operations_1.injectSignaturesIntoSpell; } });
 Object.defineProperty(exports, "signAsCosigner", { enumerable: true, get: function () { return spell_operations_1.signAsCosigner; } });
 Object.defineProperty(exports, "transmitSpell", { enumerable: true, get: function () { return spell_operations_1.transmitSpell; } });
