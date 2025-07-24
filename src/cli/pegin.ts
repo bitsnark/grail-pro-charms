@@ -32,17 +32,14 @@ async function main() {
 
 	const argv = minimist(process.argv.slice(2), {
 		alias: {},
+		string: ['new-public-keys', 'private-keys'],
+		boolean: ['transmit', 'mock-proof'],
 		default: {
-			alias: {},
-			string: ['new-public-keys', 'private-keys'],
-			boolean: ['transmit', 'mock-proof'],
-			default: {
-				network: 'regtest',
-				feerate: 0.002,
-				transmit: true,
-				'mock-proof': false,
-				'user-payment-vout': 0,
-			},
+			network: 'regtest',
+			feerate: 0.00002,
+			transmit: true,
+			'mock-proof': false,
+			'user-payment-vout': 0,
 		},
 		'--': true,
 	});
@@ -144,9 +141,15 @@ async function main() {
 		userWalletAddress = await bitcoinClient.getAddress();
 	}
 
+	if (!argv['feerate']) {
+		console.error('--feerate is required');
+		return;
+	}
+	const feerate = Number.parseFloat(argv['feerate']);
+
 	const spell = await createPeginSpell(
 		context,
-		Number(argv['feerate']),
+		feerate,
 		previousNftTxid,
 		newGrailState,
 		userPaymentDetails,

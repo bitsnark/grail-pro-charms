@@ -15,7 +15,7 @@ import { bufferReplacer } from '../core/json';
 export async function deployNft(
 	context: IContext,
 	deployerPublicKey: Buffer,
-	feeRate: number,
+	feerate: number,
 	fundingUtxo: Utxo,
 	transmit: boolean = false
 ): Promise<void> {
@@ -33,7 +33,7 @@ export async function deployNft(
 	const request: DeployRequest = {
 		fundingUtxo,
 		fundingChangeAddress,
-		feeRate,
+		feerate,
 		nextNftAddress: grailAddress,
 		currentNftState: {
 			publicKeysAsString: initialNftState.publicKeys.join(','),
@@ -77,11 +77,10 @@ async function main() {
 
 	const argv = minimist(process.argv.slice(2), {
 		alias: {},
-		string: ['deployerPublicKey'],
 		boolean: ['transmit', 'mock-proof'],
 		default: {
 			network: 'regtest',
-			feerate: 0.002,
+			feerate: 0.00002,
 			transmit: true,
 			'mock-proof': false,
 		},
@@ -96,7 +95,12 @@ async function main() {
 		(argv['deployerPublicKey'] as string).trim().replace('0x', ''),
 		'hex'
 	);
-	const feeRate = Number.parseFloat(argv['feerate']);
+
+	if (!argv['feerate']) {
+		console.error('--feerate is required');
+		return;
+	}
+	const feerate = Number.parseFloat(argv['feerate']);
 	const transmit = !!argv['transmit'];
 
 	const bitcoinClient = await BitcoinClient.initialize();
@@ -113,7 +117,7 @@ async function main() {
 		fundingUtxo
 	);
 
-	await deployNft(context, deployerPublicKey, feeRate, fundingUtxo, transmit);
+	await deployNft(context, deployerPublicKey, feerate, fundingUtxo, transmit);
 }
 
 if (require.main === module) {

@@ -27,7 +27,7 @@ export interface CharmerRequest {
 	// For the commitment
 	fundingUtxo: Utxo;
 	fundingChangeAddress: string;
-	feeRate: number;
+	feerate: number;
 
 	toYamlObj(): any;
 }

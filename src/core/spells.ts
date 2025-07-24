@@ -3,11 +3,8 @@ import * as yaml from 'js-yaml';
 import { schnorr } from '@noble/curves/secp256k1';
 import { executeSpell } from './charms-sdk';
 import { CharmerRequest, Spell } from './types';
-import { BitcoinClient } from './bitcoin';
 import { bufferReplacer } from './json';
-
 import { KeyPair } from './taproot';
-import { GrailState, LabeledSignature } from './types';
 import { getHash } from './taproot/taproot-common';
 import { showSpell } from './charms-sdk';
 import { IContext } from './i-context';
@@ -172,6 +169,7 @@ export async function createSpell(
 	const output = await executeSpell(
 		context,
 		request.fundingUtxo,
+		request.feerate,
 		request.fundingChangeAddress,
 		yamlStr,
 		previousTransactions.map(tx => Buffer.from(tx, 'hex'))

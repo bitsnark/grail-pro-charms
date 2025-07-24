@@ -14,7 +14,7 @@ import { createUpdatingSpell } from './spell-operations';
 
 export async function createPeginSpell(
 	context: IContext,
-	feeRate: number,
+	feerate: number,
 	previousNftTxid: string,
 	nextGrailState: GrailState,
 	userPaymentDetails: UserPaymentDetails,
@@ -60,7 +60,7 @@ export async function createPeginSpell(
 	const request: PegInRequest = {
 		fundingUtxo,
 		fundingChangeAddress,
-		feeRate,
+		feerate,
 		previousNftTxid,
 		nextNftAddress: grailAddress,
 		currentNftState: {

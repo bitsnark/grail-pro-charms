@@ -7,7 +7,7 @@ import { createUpdatingSpell } from './spell-operations';
 
 export async function createUpdateNftSpell(
 	context: IContext,
-	feeRate: number,
+	feerate: number,
 	previousNftTxid: string,
 	grailState: GrailState,
 	fundingUtxo?: Utxo
@@ -43,7 +43,7 @@ export async function createUpdateNftSpell(
 	const request: UpdateRequest = {
 		fundingUtxo,
 		fundingChangeAddress,
-		feeRate,
+		feerate,
 		previousNftTxid,
 		nextNftAddress: grailAddress,
 		currentNftState: {

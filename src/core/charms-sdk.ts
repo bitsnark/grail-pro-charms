@@ -1,18 +1,20 @@
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import * as yaml from 'js-yaml';
 import { Spell, Utxo } from './types';
 import { exec } from 'child_process';
-import * as yaml from 'js-yaml';
 import { IContext } from './i-context';
 import { parse } from './env-parser';
 
 function executeCommand(
 	context: IContext,
 	command: string[],
-	stdin: string = '',
 	pwd?: string
 ): Promise<string> {
 	return new Promise<string>((resolve, reject) => {
 		console.info(`Executing command: ${command.join(' ')}`);
-		const child = exec(
+		exec(
 			[
 				pwd ? `cd ${pwd}` : '',
 				'export RUST_BACKTRACE=full',
@@ -33,11 +35,6 @@ function executeCommand(
 				resolve(stdout);
 			}
 		);
-		if (stdin) {
-			console.info(`Sending stdin: ${stdin}`);
-			child.stdin!.write(stdin);
-			child.stdin!.end();
-		}
 	}).catch((error: Error) => {
 		console.error('Execution error:', error);
 		throw error;
@@ -47,19 +44,26 @@ function executeCommand(
 export async function getVerificationKey(context: IContext): Promise<string> {
 	const command = [context.charmsBin, 'app vk'];
 	const zkappFolder = parse.string('ZKAPP_FOLDER', './zkapp');
-	return (await executeCommand(context, command, '', zkappFolder)).trim();
+	return (await executeCommand(context, command, zkappFolder)).trim();
 }
 
 export async function executeSpell(
 	context: IContext,
 	fundingUtxo: Utxo,
+	feerate: number,
 	changeAddress: string,
 	yamlStr: any,
 	previousTransactions: Buffer[] = []
 ): Promise<Spell> {
+	const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'charms-'));
+	const tempFile = path.join(tempDir, 'spell.yaml');
+	fs.writeFileSync(tempFile, yamlStr, 'utf8');
+
 	const command = [
 		context.charmsBin,
 		'spell prove',
+		`--spell ${tempFile}`,
+		`--fee-rate ${Math.round(feerate * 1e8)}`, // Convert to satoshis
 		`--app-bins ${context.zkAppBin}`,
 		`--funding-utxo ${fundingUtxo.txid}:${fundingUtxo.vout}`,
 		`--funding-utxo-value ${fundingUtxo.value}`,
@@ -72,9 +76,12 @@ export async function executeSpell(
 			: undefined,
 	].filter(Boolean) as string[];
 
-	return await executeCommand(context, command, yamlStr).then(result => {
+	return await executeCommand(context, command).then(result => {
 		// Result could have some irrelevant garbage?
-		const resultLines = result.split('\n').filter(line => line.trim() !== '');
+		const resultLines = result
+			.split('\n')
+			.map(s => s.trim())
+			.filter(Boolean);
 		const obj = JSON.parse(resultLines.pop() ?? '');
 		if (!Array.isArray(obj)) {
 			throw new Error('Spell execution did not return an array');

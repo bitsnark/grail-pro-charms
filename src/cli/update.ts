@@ -36,16 +36,12 @@ async function main() {
 
 	const argv = minimist(process.argv.slice(2), {
 		alias: {},
+		boolean: ['transmit', 'mock-proof'],
 		default: {
-			alias: {},
-			string: ['new-public-keys', 'private-keys'],
-			boolean: ['transmit', 'mock-proof'],
-			default: {
-				network: 'regtest',
-				feerate: 0.002,
-				transmit: true,
-				'mock-proof': false,
-			},
+			network: 'regtest',
+			feerate: 0.00002,
+			transmit: true,
+			'mock-proof': false,
 		},
 		'--': true,
 	});
@@ -105,9 +101,15 @@ async function main() {
 		.split(',')
 		.map(s => s.trim().replace('0x', ''));
 
+	if (!argv['feerate']) {
+		console.error('--feerate is required: ', argv);
+		return;
+	}
+	const feerate = Number.parseFloat(argv['feerate']);
+
 	const spell = await createUpdateNftSpell(
 		context,
-		Number(argv['feerate']),
+		feerate,
 		previousNftTxid,
 		{
 			publicKeys: newPublicKeys,

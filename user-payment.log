@@ -1,7 +1,7 @@
-[2025-07-22T14:07:43.613Z] Recovery keypair generated: {
-  "publicKey": "0xbe4caac492c6a1ae5722e59dbc7bfb5baa15a0dba00e69cfb89c71955d207a6e",
-  "privateKey": "0x9baa8dc75af02366f55e3908b6dc3057f6fbdab2a6c34637d1a03c9285cc2e93"
+[2025-07-24T08:39:04.876Z] Recovery keypair generated: {
+  "publicKey": "0x28fa3d9b03ac6e918091fb52dd0609979649fa8a55ca263475fe1a3a7be3698c",
+  "privateKey": "0x0a891e68edab482e3fdc81adca40f23162d651cd6cfa1778b9d164aeb0f06981"
 }
-[2025-07-22T14:07:43.652Z] Sending funds to user payment address: bcrt1pxwg9r0xjclp0qu5przljt8lz8hl0crmna47y0vn89hwhn6ah0wnqqej73e
-[2025-07-22T14:07:43.692Z] Funds sent successfully, txid:  0d2fc7d0f73ec28180ad3bf791bf4de7eb923d589344dc82d04e5de4a289be70
-[2025-07-22T14:07:43.692Z] Recovery public key: be4caac492c6a1ae5722e59dbc7bfb5baa15a0dba00e69cfb89c71955d207a6e
+[2025-07-24T08:39:04.916Z] Sending funds to user payment address: bcrt1pukpus6ns69208vl07pyp4tjw4czzqjz2x4mp8mmq78wvu9vxzcqqefmhde
+[2025-07-24T08:39:04.955Z] Funds sent successfully, txid:  fd44af4dfe84bfdd33c1646901b90f022743b3823b5af394113c94fc4421bb40
+[2025-07-24T08:39:04.955Z] Recovery public key: 28fa3d9b03ac6e918091fb52dd0609979649fa8a55ca263475fe1a3a7be3698c
