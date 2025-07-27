@@ -90,13 +90,18 @@ function generateSpendingScriptForUserRecovery(
 }
 
 export function generateSpendingScriptsForUserPayment(
-	grailState: GrailState,
 	userPaymentDetails: UserPaymentDetails,
 	network: Network
 ): { grail: SpendingScript; recovery: SpendingScript } {
-	debugLog({ grailState, userPaymentDetails, network });
+	debugLog({
+		grailState: userPaymentDetails.grailState,
+		userPaymentDetails,
+		network,
+	});
 
-	const grailScript = generateSpendingScriptForUserPayment(grailState);
+	const grailScript = generateSpendingScriptForUserPayment(
+		userPaymentDetails.grailState
+	);
 	const recoveryScript =
 		generateSpendingScriptForUserRecovery(userPaymentDetails);
 	const stt = new SimpleTapTree([grailScript, recoveryScript], network);

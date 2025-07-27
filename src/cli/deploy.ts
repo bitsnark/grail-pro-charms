@@ -31,10 +31,13 @@ export async function deployNft(
 	const fundingChangeAddress = await context.bitcoinClient.getAddress();
 
 	const request: DeployRequest = {
+		appId: context.appId,
+		appVk: context.appVk,
 		fundingUtxo,
 		fundingChangeAddress,
 		feerate,
 		nextNftAddress: grailAddress,
+		ticker: context.ticker,
 		currentNftState: {
 			publicKeysAsString: initialNftState.publicKeys.join(','),
 			threshold: initialNftState.threshold,
@@ -43,8 +46,10 @@ export async function deployNft(
 		toYamlObj: function () {
 			return {
 				version: 4,
-				apps: { $00: `n/${context.appId}/${context.appVk}` },
-				private_inputs: { $00: `${fundingUtxo.txid}:${fundingUtxo.vout}` },
+				apps: { $00: `n/${this.appId}/${this.appVk}` },
+				private_inputs: {
+					$00: `${this.fundingUtxo.txid}:${this.fundingUtxo.vout}`,
+				},
 				public_inputs: { $00: { action: 'deploy' } },
 				ins: [],
 				outs: [
@@ -52,7 +57,7 @@ export async function deployNft(
 						address: this.nextNftAddress,
 						charms: {
 							$00: {
-								ticker: context.ticker,
+								ticker: this.ticker,
 								current_cosigners: this.currentNftState.publicKeysAsString,
 								current_threshold: this.currentNftState.threshold,
 							},

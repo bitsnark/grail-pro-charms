@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.generalizeInfoBlank = void 0;
 exports.utxoFromUtxoId = utxoFromUtxoId;
 function utxoFromUtxoId(str) {
     const parts = str.split(':');
@@ -11,3 +12,10 @@ function utxoFromUtxoId(str) {
         vout: parseInt(parts[1], 10),
     };
 }
+exports.generalizeInfoBlank = {
+    incomingUserBtc: [],
+    incomingGrailBtc: [],
+    incomingUserCharms: [],
+    outgoingUserBtc: [],
+    outgoingUserCharms: [],
+};

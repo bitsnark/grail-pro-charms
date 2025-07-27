@@ -92,7 +92,7 @@ async function main() {
     const previousGrailState = await (0, spell_operations_1.getPreviousGrailState)(context, previousNftTxid);
     const signatureRequest = {
         transactionBytes: spell.spellTxBytes,
-        previousTransactions: await (0, spell_operations_1.getPreviousTransactions)(context, spell),
+        previousTransactions: await (0, spell_operations_1.getPreviousTransactions)(context, spell.spellTxBytes, spell.commitmentTxBytes),
         inputs: [
             {
                 index: 0,

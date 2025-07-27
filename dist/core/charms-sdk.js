@@ -116,11 +116,12 @@ async function executeSpell(context, fundingUtxo, feerate, changeAddress, yamlSt
         };
     });
 }
-async function showSpell(context, transactionHex, previousTransactions = []) {
+async function showSpell(context, txid, previousTransactions = []) {
+    const txhex = await context.bitcoinClient.getTransactionBytes(txid);
     const command = [
         context.charmsBin,
         'tx show-spell',
-        `--tx ${transactionHex}`,
+        `--tx ${txhex}`,
         previousTransactions?.length
             ? `--prev-txs ${previousTransactions.map(tx => tx.toString('hex')).join(',')}`
             : undefined,

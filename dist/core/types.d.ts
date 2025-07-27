@@ -17,6 +17,7 @@ export interface CharmerRequest {
     toYamlObj(): any;
 }
 export interface NftRequest extends CharmerRequest {
+    ticker: String;
     previousUtxo?: Utxo;
     nextNftAddress: string;
     currentNftState: {
@@ -28,14 +29,28 @@ export interface DeployRequest extends NftRequest {
 }
 export interface UpdateRequest extends NftRequest {
     previousNftTxid: string;
+    previousGrailState: GrailState;
 }
 export interface PegInRequest extends UpdateRequest {
     amount: number;
     userWalletAddress: string;
+    userPaymentDetails: UserPaymentDetails;
 }
-export interface PegOutRequest extends UpdateRequest {
+interface Outgoing {
     amount: number;
-    userWalletAddress: string;
+    address: string;
+}
+export interface GeneralizedInfo {
+    incomingUserBtc: UserPaymentDetails[];
+    incomingGrailBtc: Utxo[];
+    incomingUserCharms: Utxo[];
+    outgoingUserBtc: Outgoing[];
+    outgoingUserCharms: Outgoing[];
+    outgoingGrailBtc?: Outgoing;
+}
+export declare const generalizeInfoBlank: GeneralizedInfo;
+export interface GeneralizedRequest extends UpdateRequest {
+    generalizedInfo: GeneralizedInfo;
 }
 export interface LabeledSignature {
     publicKey: string;
@@ -72,3 +87,4 @@ export interface SignatureResponse {
     publicKey: string;
     signatures: CosignerSignatures[];
 }
+export {};

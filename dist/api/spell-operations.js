@@ -44,8 +44,8 @@ const bitcoin = __importStar(require("bitcoinjs-lib"));
 const taproot_1 = require("../core/taproot");
 const spells_1 = require("../core/spells");
 const charms_sdk_1 = require("../core/charms-sdk");
-const spells_2 = require("../core/spells");
 const taproot_common_1 = require("../core/taproot/taproot-common");
+const bitcoin_1 = require("../core/bitcoin");
 async function getPreviousGrailState(context, previousNftTxid) {
     const previousNftTxhex = await context.bitcoinClient.getTransactionHex(previousNftTxid);
     if (!previousNftTxhex) {
@@ -60,7 +60,7 @@ async function getPreviousGrailState(context, previousNftTxid) {
         threshold: previousSpellData.outs[0].charms['$0000'].current_threshold,
     };
 }
-async function createUpdatingSpell(context, request, previousTxIds, previousGrailState, nextGrailState, userPaymentDetails) {
+async function createUpdatingSpell(context, request, previousTxIds, previousGrailState, nextGrailState, generalizedInfo) {
     const spell = await (0, spells_1.createSpell)(context, previousTxIds, request);
     const inputIndexNft = 0; // Assuming the first input is the NFT input
     const spellTx = bitcoin.Transaction.fromBuffer(spell.spellTxBytes);
@@ -70,10 +70,10 @@ async function createUpdatingSpell(context, request, previousTxIds, previousGrai
         spendingScriptGrail.script,
         spendingScriptGrail.controlBlock,
     ];
-    if (userPaymentDetails) {
-        const inputIndexUser = 1; // Assuming the second input is the user payment input
-        const spendingScriptUser = (0, taproot_1.generateSpendingScriptsForUserPayment)(nextGrailState, userPaymentDetails, context.network);
-        spellTx.ins[inputIndexUser].witness = [
+    let userInputIndex = inputIndexNft + 1;
+    for (const input of generalizedInfo.incomingUserBtc) {
+        const spendingScriptUser = (0, taproot_1.generateSpendingScriptsForUserPayment)(nextGrailState, input, context.network);
+        spellTx.ins[userInputIndex++].witness = [
             spendingScriptUser.grail.script,
             spendingScriptUser.grail.controlBlock,
         ];
@@ -121,7 +121,7 @@ async function injectSignaturesIntoSpell(context, spell, signatureRequest, fromC
         }
         spell.spellTxBytes = injectGrailSignaturesIntoTxInput(spell.spellTxBytes, index, signatures);
     }
-    const commitmentTxid = (0, spells_1.txBytesToTxid)(spell.commitmentTxBytes);
+    const commitmentTxid = (0, bitcoin_1.txBytesToTxid)(spell.commitmentTxBytes);
     spell.spellTxBytes = await (0, spells_1.resignSpellWithTemporarySecret)(context, spell.spellTxBytes, { [commitmentTxid]: spell.commitmentTxBytes }, context.temporarySecret);
     return spell;
 }
@@ -138,13 +138,15 @@ async function transmitSpell(context, transactions) {
     console.log('Spell transmitted successfully:', output);
     return output;
 }
-async function getPreviousTransactions(context, spell) {
-    const result = {
-        [(0, spells_1.txBytesToTxid)(spell.commitmentTxBytes)]: spell.commitmentTxBytes,
-    };
-    const tx = bitcoin.Transaction.fromBuffer(spell.spellTxBytes);
+async function getPreviousTransactions(context, spellTxBytes, commitmentTxBytes) {
+    const result = commitmentTxBytes
+        ? {
+            [(0, bitcoin_1.txBytesToTxid)(commitmentTxBytes)]: commitmentTxBytes,
+        }
+        : {};
+    const tx = bitcoin.Transaction.fromBuffer(spellTxBytes);
     for (const input of tx.ins) {
-        const txid = (0, spells_2.hashToTxid)(input.hash);
+        const txid = (0, bitcoin_1.hashToTxid)(input.hash);
         if (!(txid in result)) {
             const txBytes = await context.bitcoinClient.getTransactionHex(txid);
             result[txid] = Buffer.from(txBytes, 'hex');

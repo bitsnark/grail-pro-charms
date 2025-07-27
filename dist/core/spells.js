@@ -33,11 +33,8 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.txidToHash = txidToHash;
-exports.hashToTxid = hashToTxid;
-exports.txBytesToTxid = txBytesToTxid;
-exports.txHexToTxid = txHexToTxid;
 exports.getStateFromNft = getStateFromNft;
+exports.getCharmsAmountFromUtxo = getCharmsAmountFromUtxo;
 exports.signTransactionInput = signTransactionInput;
 exports.resignSpellWithTemporarySecret = resignSpellWithTemporarySecret;
 exports.createSpell = createSpell;
@@ -48,28 +45,11 @@ const charms_sdk_1 = require("./charms-sdk");
 const json_1 = require("./json");
 const taproot_common_1 = require("./taproot/taproot-common");
 const charms_sdk_2 = require("./charms-sdk");
+const bitcoin_1 = require("./bitcoin");
 // SIGHASH type for Taproot (BIP-342)
 const sighashType = bitcoin.Transaction.SIGHASH_DEFAULT;
-function txidToHash(txid) {
-    return Buffer.from(txid, 'hex').reverse();
-}
-function hashToTxid(hash) {
-    // This is a hack to avoid Buffer.reverse() which behaves unexpectedly
-    return Buffer.from(Array.from(hash).reverse()).toString('hex');
-}
-function txBytesToTxid(txBytes) {
-    return bitcoin.Transaction.fromBuffer(txBytes).getId();
-}
-function txHexToTxid(txHex) {
-    const txBytes = Buffer.from(txHex, 'hex');
-    return txBytesToTxid(txBytes);
-}
 async function getStateFromNft(context, nftTxId) {
-    const previousNftTxhex = await context.bitcoinClient.getTransactionHex(nftTxId);
-    if (!previousNftTxhex) {
-        throw new Error(`Previous NFT transaction ${nftTxId} not found`);
-    }
-    const previousSpellData = await (0, charms_sdk_2.showSpell)(context, previousNftTxhex);
+    const previousSpellData = await (0, charms_sdk_2.showSpell)(context, nftTxId);
     console.log('Previous NFT spell:', JSON.stringify(previousSpellData, null, '\t'));
     const previousPublicKeys = previousSpellData.outs[0].charms['$0000'].current_cosigners.split(',');
     const previousThreshold = previousSpellData.outs[0].charms['$0000'].current_threshold;
@@ -77,6 +57,18 @@ async function getStateFromNft(context, nftTxId) {
         publicKeys: previousPublicKeys,
         threshold: previousThreshold,
     };
+}
+async function getCharmsAmountFromUtxo(context, utxo) {
+    const previousSpellData = await (0, charms_sdk_2.showSpell)(context, utxo.txid);
+    const output = previousSpellData.outs[utxo.vout];
+    if (!output || !output.charms || !output.charms['$0001']) {
+        throw new Error(`No charms found in UTXO ${utxo.txid}:${utxo.vout}`);
+    }
+    const charms = output.charms['$0001'];
+    if (typeof charms.amount !== 'number') {
+        throw new Error(`Invalid charms amount in UTXO ${utxo.txid}:${utxo.vout}`);
+    }
+    return charms.amount;
 }
 function signTransactionInput(context, txBytes, inputIndex, script, previousTxBytesMap, keypair) {
     // Load the transaction to sign
@@ -87,7 +79,7 @@ function signTransactionInput(context, txBytes, inputIndex, script, previousTxBy
     const previous = [];
     for (const input of tx.ins) {
         let ttxBytes;
-        const inputTxid = hashToTxid(input.hash);
+        const inputTxid = (0, bitcoin_1.hashToTxid)(input.hash);
         if (previousTxBytesMap[inputTxid]) {
             ttxBytes = previousTxBytesMap[inputTxid];
         }
@@ -111,7 +103,7 @@ async function resignSpellWithTemporarySecret(context, spellTxBytes, previousTxB
     const previous = [];
     for (const input of tx.ins) {
         let ttxBytes;
-        const inputTxid = hashToTxid(input.hash);
+        const inputTxid = (0, bitcoin_1.hashToTxid)(input.hash);
         if (previousTxBytesMap[inputTxid]) {
             ttxBytes = previousTxBytesMap[inputTxid];
         }

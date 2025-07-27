@@ -9,9 +9,61 @@ import {
 import { bufferReplacer } from '../core/json';
 import { IContext } from '../core/i-context';
 import { createGeneralizedSpell } from './create-generalized-spell';
-import { getPreviousGrailState } from './spell-operations';
+import { showSpell } from '../core/charms-sdk';
+import {
+	getPreviousGrailState,
+	getPreviousTransactions,
+} from './spell-operations';
 
-export async function createPeginSpell(
+export async function findLockedBtcUtxos(
+	context: IContext,
+	lestNftTxid: string,
+	minAmount: number
+): Promise<Utxo[]> {
+	const selectedUtxos: Utxo[] = [];
+	let totalAmount = 0;
+
+	let nftTxid = lestNftTxid;
+	while (nftTxid) {
+		const nftTxBytes = await context.bitcoinClient.getTransactionBytes(nftTxid);
+		const previousTransactions = await getPreviousTransactions(
+			context,
+			nftTxBytes
+		);
+		const spellData = await showSpell(
+			context,
+			nftTxid,
+			Object.values(previousTransactions)
+		);
+		if (!spellData) {
+			throw new Error(`Spell data for transaction ${nftTxid} not found`);
+		}
+		const utxos = spellData.outs
+			.map((out: any, index: number) => ({
+				index,
+				amount: out.charms['$0000'].amount,
+				type: out.type,
+			}))
+			.filter((t: any) => t.type == 'locked_btc');
+		for (const utxo of utxos) {
+			if (await context.bitcoinClient.isUtxoSpendable(utxo.txid, utxo.index)) {
+				selectedUtxos.push(utxo);
+				totalAmount += utxo.amount;
+			}
+		}
+		nftTxid = spellData.ins[0].prevout.txid; // Assuming the first input is the NFT input
+	}
+
+	if (totalAmount < minAmount) {
+		throw new Error(
+			`Not enough BTC locked UTXOs found. Required: ${minAmount}`
+		);
+	}
+
+	return selectedUtxos;
+}
+
+export async function createPegoutSpell(
 	context: IContext,
 	feerate: number,
 	previousNftTxid: string,
@@ -48,6 +100,12 @@ export async function createPeginSpell(
 	const userPaymentAmount = userPaymentTx.outs[userPaymentDetails.vout].value;
 	console.log('User payment transaction amount:', userPaymentAmount);
 
+	const lockedBtcUtxos = await findLockedBtcUtxos(
+		context,
+		previousNftTxid,
+		userPaymentAmount
+	);
+
 	const { spell, signatureRequest } = await createGeneralizedSpell(
 		context,
 		feerate,
@@ -55,12 +113,12 @@ export async function createPeginSpell(
 		nextGrailState,
 		{
 			incomingUserBtc: [userPaymentDetails],
-			incomingUserCharms: [],
-			incomingGrailBtc: [],
-			outgoingUserCharms: [
+			incomingUserCharms: [userPaymentDetails],
+			incomingGrailBtc: lockedBtcUtxos,
+			outgoingUserCharms: [],
+			outgoingUserBtc: [
 				{ amount: userPaymentAmount, address: userWalletAddress },
 			],
-			outgoingUserBtc: [],
 		},
 		fundingUtxo
 	);

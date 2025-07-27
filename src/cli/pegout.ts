@@ -6,7 +6,6 @@ import { setupLog } from '../core/log';
 import { bufferReplacer } from '../core/json';
 import { Context } from '../core/context';
 import { parse } from '../core/env-parser';
-import { createPeginSpell } from '../api/create-pegin-spell';
 import {
 	SignatureRequest,
 	SignatureResponse,
@@ -25,6 +24,7 @@ import {
 	generateSpendingScriptsForUserPayment,
 } from '../core/taproot';
 import { privateToKeypair } from './generate-random-keypairs';
+import { createPegoutSpell } from '../api/create-pegout-spell';
 
 async function main() {
 	dotenv.config({ path: ['.env.test', '.env.local', '.env'] });
@@ -39,7 +39,6 @@ async function main() {
 			feerate: 0.00002,
 			transmit: true,
 			'mock-proof': false,
-			'user-payment-vout': 0,
 		},
 		'--': true,
 	});
@@ -147,7 +146,7 @@ async function main() {
 	}
 	const feerate = Number.parseFloat(argv['feerate']);
 
-	const { spell, signatureRequest } = await createPeginSpell(
+	const { spell, signatureRequest } = await createPegoutSpell(
 		context,
 		feerate,
 		previousNftTxid,

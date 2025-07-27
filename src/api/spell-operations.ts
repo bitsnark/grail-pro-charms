@@ -1,6 +1,7 @@
 import * as bitcoin from 'bitcoinjs-lib';
 import {
 	CosignerSignatures,
+	GeneralizedRequest,
 	PreviousTransactions,
 	SignatureRequest,
 	SignatureResponse,
@@ -13,18 +14,16 @@ import {
 	generateSpendingScriptsForUserPayment,
 	generateUserPaymentAddress,
 } from '../core/taproot';
-import { GrailState, UserPaymentDetails } from '../core/types';
+import { GrailState, UserPaymentDetails, GeneralizedInfo } from '../core/types';
 import { IContext } from '../core/i-context';
 import {
 	createSpell,
 	resignSpellWithTemporarySecret,
 	signTransactionInput,
-	txBytesToTxid,
-	txidToHash,
 } from '../core/spells';
 import { showSpell } from '../core/charms-sdk';
-import { hashToTxid } from '../core/spells';
 import { bitcoinjslibNetworks } from '../core/taproot/taproot-common';
+import { hashToTxid, txBytesToTxid } from '../core/bitcoin';
 
 export async function getPreviousGrailState(
 	context: IContext,
@@ -46,13 +45,24 @@ export async function getPreviousGrailState(
 	};
 }
 
+export async function getPreviousGrailStateMap(
+	context: IContext,
+	txids: string[]
+): Promise<{ [key: string]: GrailState }> {
+	const previousGrailStates: { [key: string]: GrailState } = {};
+	for (const txid of txids) {
+		previousGrailStates[txid] = await getPreviousGrailState(context, txid);
+	}
+	return previousGrailStates;
+}
+
 export async function createUpdatingSpell(
 	context: IContext,
 	request: UpdateRequest,
 	previousTxIds: string[],
 	previousGrailState: GrailState,
 	nextGrailState: GrailState,
-	userPaymentDetails: UserPaymentDetails | null
+	generalizedInfo: GeneralizedInfo
 ): Promise<Spell> {
 	const spell = await createSpell(context, previousTxIds, request);
 
@@ -70,15 +80,13 @@ export async function createUpdatingSpell(
 		spendingScriptGrail.controlBlock,
 	];
 
-	if (userPaymentDetails) {
-		const inputIndexUser = 1; // Assuming the second input is the user payment input
-
+	let userInputIndex = inputIndexNft + 1;
+	for (const input of generalizedInfo.incomingUserBtc) {
 		const spendingScriptUser = generateSpendingScriptsForUserPayment(
-			nextGrailState,
-			userPaymentDetails,
+			input,
 			context.network
 		);
-		spellTx.ins[inputIndexUser].witness = [
+		spellTx.ins[userInputIndex++].witness = [
 			spendingScriptUser.grail.script,
 			spendingScriptUser.grail.controlBlock,
 		];
@@ -199,12 +207,15 @@ export async function transmitSpell(
 
 export async function getPreviousTransactions(
 	context: IContext,
-	spell: Spell
+	spellTxBytes: Buffer,
+	commitmentTxBytes?: Buffer
 ): Promise<PreviousTransactions> {
-	const result: PreviousTransactions = {
-		[txBytesToTxid(spell.commitmentTxBytes)]: spell.commitmentTxBytes,
-	};
-	const tx = bitcoin.Transaction.fromBuffer(spell.spellTxBytes);
+	const result: PreviousTransactions = commitmentTxBytes
+		? {
+				[txBytesToTxid(commitmentTxBytes)]: commitmentTxBytes,
+			}
+		: {};
+	const tx = bitcoin.Transaction.fromBuffer(spellTxBytes);
 	for (const input of tx.ins) {
 		const txid = hashToTxid(input.hash);
 		if (!(txid in result)) {

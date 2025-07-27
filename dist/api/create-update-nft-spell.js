@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.createUpdateNftSpell = createUpdateNftSpell;
 const bitcoin_1 = require("../core/bitcoin");
 const taproot_1 = require("../core/taproot");
+const types_1 = require("../core/types");
 const charms_sdk_1 = require("../core/charms-sdk");
 const spell_operations_1 = require("./spell-operations");
 async function createUpdateNftSpell(context, feerate, previousNftTxid, grailState, fundingUtxo) {
@@ -22,8 +23,16 @@ async function createUpdateNftSpell(context, feerate, previousNftTxid, grailStat
         throw new Error('Invalid previous NFT spell data');
     }
     const previousPublicKeys = previousSpellData.outs[0].charms['$0000'].current_cosigners.split(',');
-    const previousThreshold = previousSpellData.outs[0].charms['$0000'].current_threshold;
+    const previousThreshold = previousSpellData.outs[0].charms['$0000']
+        .current_threshold;
     const request = {
+        appId: context.appId,
+        appVk: context.appVk,
+        ticker: context.ticker,
+        previousGrailState: {
+            publicKeys: previousPublicKeys,
+            threshold: previousThreshold,
+        },
         fundingUtxo,
         fundingChangeAddress,
         feerate,
@@ -36,16 +45,16 @@ async function createUpdateNftSpell(context, feerate, previousNftTxid, grailStat
         toYamlObj: function () {
             return {
                 version: 4,
-                apps: { $00: `n/${context.appId}/${context.appVk}` },
+                apps: { $00: `n/${this.appId}/${this.appVk}` },
                 public_inputs: { $00: { action: 'update' } },
                 ins: [
                     {
-                        utxo_id: `${previousNftTxid}:0`,
+                        utxo_id: `${this.previousNftTxid}:0`,
                         charms: {
                             $00: {
-                                ticker: context.ticker,
-                                current_cosigners: previousPublicKeys,
-                                current_threshold: previousThreshold,
+                                ticker: this.ticker,
+                                current_cosigners: this.previousGrailState.publicKeys.join(','),
+                                current_threshold: this.previousGrailState.threshold,
                             },
                         },
                     },
@@ -65,5 +74,5 @@ async function createUpdateNftSpell(context, feerate, previousNftTxid, grailStat
             };
         },
     };
-    return await (0, spell_operations_1.createUpdatingSpell)(context, request, [previousNftTxid], { publicKeys: previousPublicKeys, threshold: previousThreshold }, grailState, null);
+    return await (0, spell_operations_1.createUpdatingSpell)(context, request, [previousNftTxid], { publicKeys: previousPublicKeys, threshold: previousThreshold }, grailState, types_1.generalizeInfoBlank);
 }
