@@ -34,7 +34,19 @@ async function main() {
         console.error('Please provide the NFT transaction ID using --nft-txid');
         process.exit(1);
     }
+    const appId = argv['app-id'];
+    if (!appId) {
+        console.error('--app-id is required');
+        return;
+    }
+    const appVk = argv['app-vk'];
+    if (!appVk) {
+        console.error('--app-vk is required');
+        return;
+    }
     const context = await context_1.Context.create({
+        appId,
+        appVk,
         charmsBin: env_parser_1.parse.string('CHARMS_BIN'),
         zkAppBin: './zkapp/target/charms-app',
         network: argv['network'],

@@ -55,8 +55,8 @@ async function createPeginSpell(context, feeRate, previousNftTxid, nextGrailStat
     if (!userPaymentTxHex) {
         throw new Error(`User payment transaction ${userPaymentDetails.txid} not found`);
     }
-    const userPaymenTx = bitcoin.Transaction.fromHex(userPaymentTxHex);
-    const userPaymentAmount = userPaymenTx.outs[0].value;
+    const userPaymentTx = bitcoin.Transaction.fromHex(userPaymentTxHex);
+    const userPaymentAmount = userPaymentTx.outs[userPaymentDetails.vout].value;
     console.log('User payment transaction amount:', userPaymentAmount);
     const request = {
         fundingUtxo,

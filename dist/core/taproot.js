@@ -45,8 +45,26 @@ const node_fs_1 = __importDefault(require("node:fs"));
 const bitcoin = __importStar(require("bitcoinjs-lib"));
 const taptree_1 = require("./taproot/taptree");
 const json_1 = require("./json");
+if (!!process.env.DEBUG_TAPROOT) {
+    try {
+        if (!node_fs_1.default.existsSync('./debuglog/taproot')) {
+            node_fs_1.default.mkdirSync('./debuglog/taproot', { recursive: true });
+        }
+    }
+    catch (e) {
+        console.error('Error in debugLog:', e);
+    }
+}
 function debugLog(obj) {
-    node_fs_1.default.writeFileSync(`./debuglog/taproot/${new Date()}`, JSON.stringify(obj, json_1.bufferReplacer, 2));
+    if (!process.env.DEBUG_TAPROOT) {
+        return;
+    }
+    try {
+        node_fs_1.default.writeFileSync(`./debuglog/taproot/${new Date()}`, JSON.stringify(obj, json_1.bufferReplacer, 2));
+    }
+    catch (e) {
+        console.error('Error writing debug log:', e);
+    }
 }
 function generateSpendingScriptForGrail(grailState, network) {
     debugLog({ grailState, network });

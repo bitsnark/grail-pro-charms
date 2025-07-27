@@ -13,7 +13,7 @@ export declare class ExtendedClient extends Client {
 export declare class BitcoinClient {
     private client;
     private constructor();
-    static initialize(client?: ExtendedClient): Promise<BitcoinClient>;
+    static initialize(client?: ExtendedClient, beWalletName?: string): Promise<BitcoinClient>;
     getTransactionHex(txid: string): Promise<string>;
     signTransaction(txHex: string, prevtxs?: string[], sighashType?: string): Promise<string>;
     transmitTransaction(txHex: string): Promise<string>;

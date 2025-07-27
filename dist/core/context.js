@@ -6,7 +6,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.Context = void 0;
 const node_fs_1 = __importDefault(require("node:fs"));
 const charms_sdk_1 = require("./charms-sdk");
-const node_crypto_1 = require("node:crypto");
 const bitcoin_1 = require("./bitcoin");
 const crypto_1 = require("bitcoinjs-lib/src/crypto");
 function assertFileExists(desc, path) {
@@ -15,9 +14,8 @@ function assertFileExists(desc, path) {
     }
 }
 class Context {
-    constructor() {
-        this.temporarySecret = (0, node_crypto_1.randomBytes)(32);
-    }
+    // Private constructor to enforce use of static create method
+    constructor() { }
     static async create(obj) {
         const thus = new Context();
         // assertFileExists('charmsBin', obj.charmsBin);
@@ -28,6 +26,9 @@ class Context {
             throw new Error('App ID is required');
         thus.appId = obj.appId;
         console.log('App ID:', thus.appId);
+        //temp heard coded
+        thus.temporarySecret =
+            Buffer.from('9123890ee3891942f4866e427f9b4d276d09336d78325192fc308b2cfbc64558', 'hex');
         thus.network = obj.network || 'regtest';
         thus.mockProof = obj.mockProof || false;
         if (!obj.appVk) {
@@ -45,7 +46,7 @@ class Context {
             thus.bitcoinClient = obj.bitcoinClient;
         }
         else {
-            thus.bitcoinClient = await bitcoin_1.BitcoinClient.initialize();
+            thus.bitcoinClient = await bitcoin_1.BitcoinClient.initialize(undefined, obj.beWalletName);
         }
         return thus;
     }

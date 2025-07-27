@@ -39,11 +39,13 @@ exports.injectSignaturesIntoSpell = injectSignaturesIntoSpell;
 exports.transmitSpell = transmitSpell;
 exports.getPreviousTransactions = getPreviousTransactions;
 exports.signAsCosigner = signAsCosigner;
+exports.findUserPaymentVout = findUserPaymentVout;
 const bitcoin = __importStar(require("bitcoinjs-lib"));
 const taproot_1 = require("../core/taproot");
 const spells_1 = require("../core/spells");
 const charms_sdk_1 = require("../core/charms-sdk");
 const spells_2 = require("../core/spells");
+const taproot_common_1 = require("../core/taproot/taproot-common");
 async function getPreviousGrailState(context, previousNftTxid) {
     const previousNftTxhex = await context.bitcoinClient.getTransactionHex(previousNftTxid);
     if (!previousNftTxhex) {
@@ -69,36 +71,24 @@ async function createUpdatingSpell(context, request, previousTxIds, previousGrai
         spendingScriptGrail.controlBlock,
     ];
     if (userPaymentDetails) {
-        const userPaymentTxHex = await context.bitcoinClient.getTransactionHex(userPaymentDetails.txid);
-        const userPaymentTx = bitcoin.Transaction.fromHex(userPaymentTxHex);
-        const userPaymentOutput = userPaymentTx.outs[userPaymentDetails.vout];
         const inputIndexUser = 1; // Assuming the second input is the user payment input
         const spendingScriptUser = (0, taproot_1.generateSpendingScriptsForUserPayment)(nextGrailState, userPaymentDetails, context.network);
-        spellTx.ins[inputIndexUser] = {
-            hash: (0, spells_1.txidToHash)(userPaymentDetails.txid),
-            index: userPaymentDetails.vout,
-            script: Buffer.from(''),
-            sequence: 0xffffffff,
-            witness: [
-                spendingScriptUser.grail.script,
-                spendingScriptUser.grail.controlBlock,
-            ],
-        };
+        spellTx.ins[inputIndexUser].witness = [
+            spendingScriptUser.grail.script,
+            spendingScriptUser.grail.controlBlock,
+        ];
     }
     spell.spellTxBytes = spellTx.toBuffer();
     return spell;
 }
-function injectGrailSignaturesIntoTxInput(txBytes, inputIndex, grailState, signatures) {
-    if (signatures.length != grailState.threshold) {
-        throw new Error(`Wrong number of signatures provided. Required: ${grailState.threshold}, provided: ${signatures.length}`);
-    }
+function injectGrailSignaturesIntoTxInput(txBytes, inputIndex, signatures) {
     // Load the transaction to sign
     const tx = bitcoin.Transaction.fromBuffer(txBytes);
     // Witness: [signatures] [tapleaf script] [control block]
     tx.ins[inputIndex].witness = [...signatures, ...tx.ins[inputIndex].witness];
     return tx.toBuffer();
 }
-async function injectSignaturesIntoSpell(context, spell, previousNftTxid, signatureRequest, fromCosigners) {
+async function injectSignaturesIntoSpell(context, spell, signatureRequest, fromCosigners) {
     // Clone it so we own it
     spell = { ...spell };
     // Prepare signatures for injection by input index
@@ -129,10 +119,7 @@ async function injectSignaturesIntoSpell(context, spell, previousNftTxid, signat
         if (!signatures || signatures.length === 0) {
             continue; // No signatures for this input
         }
-        const grailState = signatureRequest.inputs.find(ti => ti.index === index)?.state;
-        if (!grailState)
-            throw new Error(`No Grail state found for input index ${index}`);
-        spell.spellTxBytes = injectGrailSignaturesIntoTxInput(spell.spellTxBytes, index, grailState, signatures);
+        spell.spellTxBytes = injectGrailSignaturesIntoTxInput(spell.spellTxBytes, index, signatures);
     }
     const commitmentTxid = (0, spells_1.txBytesToTxid)(spell.commitmentTxBytes);
     spell.spellTxBytes = await (0, spells_1.resignSpellWithTemporarySecret)(context, spell.spellTxBytes, { [commitmentTxid]: spell.commitmentTxBytes }, context.temporarySecret);
@@ -171,4 +158,21 @@ function signAsCosigner(context, request, keypair) {
         signature: (0, spells_1.signTransactionInput)(context, request.transactionBytes, input.index, input.script, request.previousTransactions, keypair),
     }));
     return sigs;
+}
+async function findUserPaymentVout(context, grailState, userPaymentDetails) {
+    const userPaymentTxHex = await context.bitcoinClient.getTransactionHex(userPaymentDetails.txid);
+    if (!userPaymentTxHex) {
+        throw new Error(`User payment transaction ${userPaymentDetails.txid} not found`);
+    }
+    const userPaymentTx = bitcoin.Transaction.fromHex(userPaymentTxHex);
+    const userPaymentAddress = (0, taproot_1.generateUserPaymentAddress)(grailState, userPaymentDetails, context.network);
+    const index = userPaymentTx.outs.findIndex(out => {
+        // Convert address to script and compare
+        const outScript = bitcoin.address.toOutputScript(userPaymentAddress, taproot_common_1.bitcoinjslibNetworks[context.network]);
+        return out.script.compare(outScript) == 0;
+    });
+    if (index === -1) {
+        throw new Error(`User payment address ${userPaymentAddress} not found in transaction ${userPaymentDetails.txid}`);
+    }
+    return index;
 }

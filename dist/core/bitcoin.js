@@ -36,7 +36,7 @@ class BitcoinClient {
     constructor() {
         this.client = null;
     }
-    static async initialize(client) {
+    static async initialize(client, beWalletName) {
         const thus = new BitcoinClient();
         if (client) {
             thus.client = client;
@@ -48,13 +48,13 @@ class BitcoinClient {
                 host: process.env.BTC_NODE_HOST || 'http://localhost:18443', // default for regtest
                 timeout: 30000, // 30 seconds
             });
-            const walletName = process.env.BTC_WALLET_NAME || 'default';
+            const walletName = beWalletName || process.env.BTC_WALLET_NAME || 'default';
             try {
                 await thus.client.loadWallet(walletName);
             }
             catch (error) {
                 if (!error.message.includes('is already loaded')) {
-                    throw new Error(`Failed to load wallet: ${error.message}`);
+                    throw new Error(`Failed to load wallet: ${error.message} ${walletName} ${JSON.stringify(error)}`);
                 }
             }
         }

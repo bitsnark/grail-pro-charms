@@ -9,5 +9,6 @@ export interface IContext {
     network: Network;
     mockProof?: boolean;
     temporarySecret: Buffer;
+    beWalletName?: string;
     bitcoinClient: BitcoinClient;
 }

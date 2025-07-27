@@ -107,7 +107,7 @@ async function main() {
         const signatures = (0, spell_operations_1.signAsCosigner)(context, signatureRequest, keypair);
         return { publicKey: keypair.publicKey.toString('hex'), signatures };
     });
-    const signedSpell = await (0, spell_operations_1.injectSignaturesIntoSpell)(context, spell, previousNftTxid, signatureRequest, fromCosigners);
+    const signedSpell = await (0, spell_operations_1.injectSignaturesIntoSpell)(context, spell, signatureRequest, fromCosigners);
     console.log('Signed spell:', JSON.stringify(signedSpell, json_1.bufferReplacer, '\t'));
     if (transmit) {
         await (0, spell_operations_1.transmitSpell)(context, signedSpell);
