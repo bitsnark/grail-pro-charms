@@ -45,10 +45,11 @@ export class ExtendedClient extends Client {
 export class BitcoinClient {
 	private client: ExtendedClient | null = null;
 
-	private constructor() {}
+	private constructor() { }
 
 	public static async initialize(
-		client?: ExtendedClient
+		client?: ExtendedClient,
+		beWalletName?: string
 	): Promise<BitcoinClient> {
 		const thus = new BitcoinClient();
 		if (client) {
@@ -60,12 +61,12 @@ export class BitcoinClient {
 				host: process.env.BTC_NODE_HOST || 'http://localhost:18443', // default for regtest
 				timeout: 30000, // 30 seconds
 			});
-			const walletName = process.env.BTC_WALLET_NAME || 'default';
+			const walletName = beWalletName || process.env.BTC_WALLET_NAME || 'default';
 			try {
 				await thus.client.loadWallet(walletName);
 			} catch (error: any) {
 				if (!error.message.includes('is already loaded')) {
-					throw new Error(`Failed to load wallet: ${error.message}`);
+					throw new Error(`Failed to load wallet: ${error.message} ${walletName} ${JSON.stringify(error)}`);
 				}
 			}
 		}

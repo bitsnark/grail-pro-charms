@@ -16,5 +16,6 @@ export interface IContext {
 
 	temporarySecret: Buffer;
 
+	beWalletName?: string;
 	bitcoinClient: BitcoinClient;
 }

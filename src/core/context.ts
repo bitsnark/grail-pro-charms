@@ -24,11 +24,12 @@ export class Context implements IContext {
 
 	network!: Network;
 	mockProof!: boolean;
-	temporarySecret: Buffer<ArrayBufferLike> = randomBytes(32);
+	temporarySecret!: Buffer<ArrayBufferLike>;
 
 	bitcoinClient!: BitcoinClient;
+	// Private constructor to enforce use of static create method
 
-	private constructor() {}
+	private constructor() { }
 
 	public static async create(obj: Partial<IContext>): Promise<Context> {
 		const thus = new Context();
@@ -42,6 +43,9 @@ export class Context implements IContext {
 		if (!obj.appId) throw new Error('App ID is required');
 		thus.appId = obj.appId;
 		console.log('App ID:', thus.appId);
+
+		thus.temporarySecret =
+			Buffer.from('9123890ee3891942f4866e427f9b4d276d09336d78325192fc308b2cfbc64558', 'hex');
 
 		thus.network = obj.network || 'regtest';
 		thus.mockProof = obj.mockProof || false;
@@ -62,7 +66,7 @@ export class Context implements IContext {
 		if (obj.bitcoinClient) {
 			thus.bitcoinClient = obj.bitcoinClient;
 		} else {
-			thus.bitcoinClient = await BitcoinClient.initialize();
+			thus.bitcoinClient = await BitcoinClient.initialize(undefined, obj.beWalletName);
 		}
 
 		return thus;
