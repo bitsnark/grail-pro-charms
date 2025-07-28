@@ -155,7 +155,6 @@ async function main() {
 		previousNftTxid,
 		newGrailState,
 		userPaymentDetails,
-		userWalletAddress,
 		fundingUtxo
 	);
 	console.log('Spell created:', JSON.stringify(spell, bufferReplacer, '\t'));

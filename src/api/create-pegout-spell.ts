@@ -69,7 +69,6 @@ export async function createPegoutSpell(
 	previousNftTxid: string,
 	nextGrailState: GrailState,
 	userPaymentDetails: UserPaymentDetails,
-	userWalletAddress: string,
 	fundingUtxo?: Utxo
 ): Promise<{ spell: Spell; signatureRequest: SignatureRequest }> {
 	const previousNftTxhex =
@@ -117,7 +116,10 @@ export async function createPegoutSpell(
 			incomingGrailBtc: lockedBtcUtxos,
 			outgoingUserCharms: [],
 			outgoingUserBtc: [
-				{ amount: userPaymentAmount, address: userWalletAddress },
+				{
+					amount: userPaymentAmount,
+					address: userPaymentDetails.userWalletAddress,
+				},
 			],
 		},
 		fundingUtxo
