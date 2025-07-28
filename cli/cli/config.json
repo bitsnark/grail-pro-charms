@@ -1,11 +1,8 @@
-
 {
-"appId": "a7c82c02cf765839ff2dc5e82180493c5c1fea3928d28869e6affa8ff2c0423f",
-"appVk": "0ceca241d8613b0df84514041340466ff8272960278e89084537d9348054ef54",
-"firstNftTxid": "d40d11eec501badb97dba1d5ff78995f371df44babe4f753e9d2133a1690a625",
-        
+    "appId": "7f8605442f2de2f2945028b5c7d40c0eec82810204d2b4bc2807f28412e69583",
+    "appVk": "4affe370f0fb670b303bd81c05d7b5295a287f77610943631622f02292d37839",
+    "firstNftTxid": "d9d3967deaeaf0794c0129ec5ab3b02daf1106bf221443dda94864eb233bd3b0",
     "ticker": "GRAIL-NFT",
-
     "deployerPublicKey": "b95552a6fa61ea56171e6e260cdba57d250b44ba1234dc928a177698f3f016da",
     "deployerPrivateKey": "12d3389de3ef6f86dbfd07aaff39c52c8ef1d7253b9ce2cc6312b53420707e6a",
     "network": "regtest",

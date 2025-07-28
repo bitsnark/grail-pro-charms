@@ -1,0 +1,18 @@
+version: 4
+apps:
+  $00: >-
+    n/e59ec22a3ba2ab2af7f5ac06d4b921a25373bee2212daed2e773e93f79376e26/4affe370f0fb670b303bd81c05d7b5295a287f77610943631622f02292d37839
+private_inputs:
+  $00: 622cb1a2c541d8b508309373e2695ec7d17cbde4747ce3553410bd90ed88658f:0
+public_inputs:
+  $00:
+    action: deploy
+ins: []
+outs:
+  - address: bcrt1pqdlmlgzrnx59yp8ek9w3emlhu9u3e6g28nr7p578dr60atjcgsxqwrr2d9
+    charms:
+      $00:
+        ticker: GRAIL-NFT
+        current_cosigners: b95552a6fa61ea56171e6e260cdba57d250b44ba1234dc928a177698f3f016da
+        current_threshold: 1
+

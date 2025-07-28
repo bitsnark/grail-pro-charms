@@ -47,7 +47,7 @@ export async function executeSpell(
   previousTransactions: Buffer[] = [],
 ): Promise<Buffer[]> {
 
-  const command = [
+ const command = ['echo', `"${yamlStr}"`, '|',
     CHARMS_BIN,
     'spell prove',
     `--app-bins ${APP_BINS}`,
@@ -57,7 +57,7 @@ export async function executeSpell(
     previousTransactions?.length ? `--prev-txs ${previousTransactions.map(tx => tx.toString('hex')).join(',')}` : undefined
   ].filter(Boolean) as string[];
 
-  return await executeCommand(command, yamlStr)
+  return await executeCommand(command)
     .then(result => {
       // Result could have some irrelevant garbage?
       const resultLines = result.split('\n').filter(line => line.trim() !== '');
