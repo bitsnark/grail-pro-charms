@@ -61,8 +61,9 @@ async function deployNft(context, deployerPublicKey, feerate, fundingUtxo, trans
     const spell = await (0, spells_1.createSpell)(context, [], request);
     console.log('Spell created:', JSON.stringify(spell, json_1.bufferReplacer, '\t'));
     if (transmit) {
-        await (0, spell_operations_1.transmitSpell)(context, spell);
+        return await (0, spell_operations_1.transmitSpell)(context, spell);
     }
+    return ['', ''];
 }
 async function deployNftCli(_argv) {
     dotenv_1.default.config({ path: ['.env.test', '.env.local', '.env'] });
@@ -78,14 +79,12 @@ async function deployNftCli(_argv) {
         },
         '--': true,
     });
-    if (!argv['deployerPublicKey']) {
-        console.error('--deployerPublicKey is required');
-        return;
+    if (!argv['deployer-public-key']) {
+        throw new Error('--deployerPublicKey is required');
     }
-    const deployerPublicKey = Buffer.from(argv['deployerPublicKey'].trim().replace('0x', ''), 'hex');
+    const deployerPublicKey = Buffer.from(argv['deployer-public-key'].trim().replace('0x', ''), 'hex');
     if (!argv['feerate']) {
-        console.error('--feerate is required');
-        return;
+        throw new Error('--feerate is required');
     }
     const feerate = Number.parseFloat(argv['feerate']);
     const transmit = !!argv['transmit'];
@@ -98,10 +97,25 @@ async function deployNftCli(_argv) {
         mockProof: !!argv['mock-proof'],
         ticker: 'GRAIL-NFT',
     }, fundingUtxo);
-    await deployNft(context, deployerPublicKey, feerate, fundingUtxo, transmit);
+    const [_, spellTxid] = await deployNft(context, deployerPublicKey, feerate, fundingUtxo, transmit);
+    return {
+        appId: context.appId,
+        appVk: context.appVk,
+        spellTxid: spellTxid,
+    };
 }
 if (require.main === module) {
-    deployNftCli(process.argv.slice(2)).catch(error => {
+    deployNftCli(process.argv.slice(2))
+        .catch(error => {
         console.error('Error during NFT deployment:', error);
+    })
+        .then(flag => {
+        if (flag) {
+            console.log('NFT deployment completed successfully.');
+        }
+        else {
+            console.error('NFT deployment failed.');
+        }
+        process.exit(flag ? 0 : 1);
     });
 }

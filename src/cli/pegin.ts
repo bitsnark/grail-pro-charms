@@ -19,11 +19,11 @@ import { privateToKeypair } from './generate-random-keypairs';
 
 export const TIMELOCK_BLOCKS = 100; // Default timelock for user payments
 
-async function main() {
+export async function peginCli(_argv: string[]): Promise<[string, string]> {
 	dotenv.config({ path: ['.env.test', '.env.local', '.env'] });
 	setupLog();
 
-	const argv = minimist(process.argv.slice(2), {
+	const argv = minimist(_argv, {
 		alias: {},
 		string: ['new-public-keys', 'private-keys'],
 		boolean: ['transmit', 'mock-proof'],
@@ -42,8 +42,7 @@ async function main() {
 
 	const appId = argv['app-id'] as string;
 	if (!appId) {
-		console.error('--app-id is required');
-		return;
+		throw new Error('--app-id is required');
 	}
 	const appVk = argv['app-vk'] as string;
 
@@ -60,8 +59,7 @@ async function main() {
 	});
 
 	if (!argv['new-public-keys']) {
-		console.error('--new-public-keys is required');
-		return;
+		throw new Error('--new-public-keys is required');
 	}
 	const newPublicKeys = (argv['new-public-keys'] as string)
 		.split(',')
@@ -72,31 +70,27 @@ async function main() {
 		newThreshold < 1 ||
 		newThreshold > newPublicKeys.length
 	) {
-		console.error(
+		throw new Error(
 			'Invalid new threshold. It must be a number between 1 and the number of public keys.'
 		);
-		return;
 	}
 
 	const previousNftTxid = argv['previous-nft-txid'] as string;
 	if (!previousNftTxid) {
-		console.error('--previous-nft-txid is required');
-		return;
+		throw new Error('--previous-nft-txid is required');
 	}
 
 	const transmit = !!argv['transmit'];
 
 	if (!argv['private-keys']) {
-		console.error('--private-keys is required');
-		return;
+		throw new Error('--private-keys is required');
 	}
 	const privateKeys = (argv['private-keys'] as string)
 		.split(',')
 		.map(s => s.trim().replace('0x', ''));
 
 	if (!argv['recovery-public-key']) {
-		console.error('--recovery-public-key is required');
-		return;
+		throw new Error('--recovery-public-key is required');
 	}
 	const recoveryPublicKey = (argv['recovery-public-key'] as string).replace(
 		'0x',
@@ -110,8 +104,7 @@ async function main() {
 
 	const userPaymentTxid = argv['user-payment-txid'] as string;
 	if (!userPaymentTxid) {
-		console.error('--user-payment-txid is required');
-		return;
+		throw new Error('--user-payment-txid is required');
 	}
 	const userPaymentVout = await findUserPaymentVout(
 		context,
@@ -137,8 +130,7 @@ async function main() {
 	};
 
 	if (!argv['feerate']) {
-		console.error('--feerate is required');
-		return;
+		throw new Error('--feerate is required');
 	}
 	const feerate = Number.parseFloat(argv['feerate']);
 
@@ -172,12 +164,13 @@ async function main() {
 	);
 
 	if (transmit) {
-		await transmitSpell(context, signedSpell);
+		return await transmitSpell(context, signedSpell);
 	}
+	return ['', ''];
 }
 
 if (require.main === module) {
-	main().catch(err => {
+	peginCli(process.argv.slice(2)).catch(err => {
 		console.error(err);
-	});
+	}).then
 }
