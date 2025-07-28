@@ -3,11 +3,11 @@
     "version": "1.0.1",
     "description": "This is a [Charms](https://charms.dev) app.",
     "main": "dist/index.js",
-    "type": "module",
     "scripts": {
         "prettier-fix": "prettier --write \"**/*.ts\"",
         "build": "tsc --project . --outDir ./dist --declaration --pretty",
-        "clean-js": "find ./src -type f -name \"*.js\" -delete"
+        "clean-js": "find ./src -type f -name \"*.js\" -delete",
+        "test": "jest --detectOpenHandles --testPathIgnorePatterns=integration"
     },
     "devDependencies": {
         "@jest/globals": "29.7.0",
