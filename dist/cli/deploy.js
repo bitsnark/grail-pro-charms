@@ -4,6 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.deployNft = deployNft;
+exports.deployNftCli = deployNftCli;
 const minimist_1 = __importDefault(require("minimist"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const log_1 = require("../core/log");
@@ -63,10 +64,10 @@ async function deployNft(context, deployerPublicKey, feerate, fundingUtxo, trans
         await (0, spell_operations_1.transmitSpell)(context, spell);
     }
 }
-async function main() {
+async function deployNftCli(_argv) {
     dotenv_1.default.config({ path: ['.env.test', '.env.local', '.env'] });
     (0, log_1.setupLog)();
-    const argv = (0, minimist_1.default)(process.argv.slice(2), {
+    const argv = (0, minimist_1.default)(_argv, {
         alias: {},
         boolean: ['transmit', 'mock-proof'],
         default: {
@@ -100,7 +101,7 @@ async function main() {
     await deployNft(context, deployerPublicKey, feerate, fundingUtxo, transmit);
 }
 if (require.main === module) {
-    main().catch(error => {
+    deployNftCli(process.argv.slice(2)).catch(error => {
         console.error('Error during NFT deployment:', error);
     });
 }
