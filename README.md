@@ -90,6 +90,9 @@ logtimestamps=1
 
 # Optional: Enable debugging logs
 debug=1
+
+# estimation is available. It helps ensure transactions are processed even
+fallbackfee=0.0001
 ```
 
 ### 2. Bitcoin Node Setup
