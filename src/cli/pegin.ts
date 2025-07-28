@@ -7,24 +7,16 @@ import { bufferReplacer } from '../core/json';
 import { Context } from '../core/context';
 import { parse } from '../core/env-parser';
 import { createPeginSpell } from '../api/create-pegin-spell';
-import {
-	SignatureRequest,
-	SignatureResponse,
-	UserPaymentDetails,
-} from '../core/types';
+import { SignatureResponse, UserPaymentDetails } from '../core/types';
 import {
 	findUserPaymentVout,
-	getPreviousGrailState,
-	getPreviousTransactions,
 	injectSignaturesIntoSpell,
 	signAsCosigner,
 	transmitSpell,
 } from '../api/spell-operations';
-import {
-	generateSpendingScriptForGrail,
-	generateSpendingScriptsForUserPayment,
-} from '../core/taproot';
 import { privateToKeypair } from './generate-random-keypairs';
+
+const TIMELOCK_BLOCKS = 100; // Default timelock for user payments
 
 async function main() {
 	dotenv.config({ path: ['.env.test', '.env.local', '.env'] });
@@ -119,32 +111,33 @@ async function main() {
 		threshold: newThreshold,
 	};
 
+	const userPaymentTxid = argv['user-payment-txid'] as string;
+	if (!userPaymentTxid) {
+		console.error('--user-payment-txid is required');
+		return;
+	}
+	const userPaymentVout = await findUserPaymentVout(
+		context,
+		newGrailState,
+		userPaymentTxid,
+		recoveryPublicKey,
+		TIMELOCK_BLOCKS
+	);
+
 	const userWalletAddress =
-		await context.bitcoinClient.getUserWalletAddressFromFundingUtxo(
-			fundingUtxo,
+		await context.bitcoinClient.getUserWalletAddressFromUserPaymentUtxo(
+			{ txid: userPaymentTxid, vout: userPaymentVout },
 			network
 		);
 
 	const userPaymentDetails: UserPaymentDetails = {
-		txid: argv['user-payment-txid'] as string,
-		vout: Number.parseInt(argv['user-payment-vout'] as string) || 0,
+		txid: userPaymentTxid,
+		vout: userPaymentVout,
 		recoveryPublicKey,
-		timelockBlocks: 100,
+		timelockBlocks: TIMELOCK_BLOCKS,
 		grailState: newGrailState,
 		userWalletAddress,
 	};
-
-	let userPaymentVout = 0;
-	if (!argv['user-payment-vout']) {
-		console.warn('--user-payment-vout not provided, auto detecting...');
-		userPaymentVout = await findUserPaymentVout(
-			context,
-			newGrailState,
-			userPaymentDetails
-		);
-		userPaymentDetails.vout = userPaymentVout;
-		console.warn(`Detected user payment vout: ${userPaymentVout}`);
-	}
 
 	if (!argv['feerate']) {
 		console.error('--feerate is required');

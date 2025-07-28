@@ -201,7 +201,7 @@ export class BitcoinClient {
 		return !!(await this.client!.getTxOut(txid, vout, true));
 	}
 
-	public async getUserWalletAddressFromFundingUtxo(
+	public async getUserWalletAddressFromUserPaymentUtxo(
 		fundingUtxo: Utxo,
 		network: Network
 	): Promise<string> {

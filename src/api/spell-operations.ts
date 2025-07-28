@@ -243,20 +243,19 @@ export function signAsCosigner(
 export async function findUserPaymentVout(
 	context: IContext,
 	grailState: GrailState,
-	userPaymentDetails: UserPaymentDetails
+	userPaymentTxid: string,
+	recoveryPublicKey: string,
+	timelockBlocks: number
 ): Promise<number> {
-	const userPaymentTxHex = await context.bitcoinClient.getTransactionHex(
-		userPaymentDetails.txid
-	);
+	const userPaymentTxHex =
+		await context.bitcoinClient.getTransactionHex(userPaymentTxid);
 	if (!userPaymentTxHex) {
-		throw new Error(
-			`User payment transaction ${userPaymentDetails.txid} not found`
-		);
+		throw new Error(`User payment transaction ${userPaymentTxid} not found`);
 	}
 	const userPaymentTx = bitcoin.Transaction.fromHex(userPaymentTxHex);
 	const userPaymentAddress = generateUserPaymentAddress(
 		grailState,
-		userPaymentDetails,
+		{ recoveryPublicKey, timelockBlocks },
 		context.network
 	);
 	const index = userPaymentTx.outs.findIndex(out => {
@@ -269,7 +268,7 @@ export async function findUserPaymentVout(
 	});
 	if (index === -1) {
 		throw new Error(
-			`User payment address ${userPaymentAddress} not found in transaction ${userPaymentDetails.txid}`
+			`User payment address ${userPaymentAddress} not found in transaction ${userPaymentTxid}`
 		);
 	}
 	return index;
