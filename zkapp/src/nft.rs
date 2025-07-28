@@ -23,9 +23,6 @@ pub fn nft_deploy_satisfied(app: &App, tx: &Transaction, _pub_in: &Data, priv_in
 
     let nft_charms = app_datas(app, tx.outs.iter()).collect::<Vec<_>>();
 
-    // can mint exactly one NFT.
-    check!(nft_charms.len() == 1);
-
     // the NFT has the correct structure.
     check!(nft_charms[0].value::<NftData>().is_ok());
 
@@ -64,7 +61,6 @@ pub fn nft_update_satisfied(app: &App, tx: &Transaction) -> bool {
     check_previous_nft(app, tx);
     
     let nft_charms = app_datas(app, tx.outs.iter()).collect::<Vec<_>>();
-    check!(nft_charms.len() == 1);
 
     // the NFT has the correct structure.
     check!(nft_charms[0].value::<NftData>().is_ok());

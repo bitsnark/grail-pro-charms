@@ -22,10 +22,13 @@ async function deployNft(context, deployerPublicKey, feerate, fundingUtxo, trans
     const grailAddress = (0, taproot_1.generateGrailPaymentAddress)(initialNftState, context.network);
     const fundingChangeAddress = await context.bitcoinClient.getAddress();
     const request = {
+        appId: context.appId,
+        appVk: context.appVk,
         fundingUtxo,
         fundingChangeAddress,
         feerate,
         nextNftAddress: grailAddress,
+        ticker: context.ticker,
         currentNftState: {
             publicKeysAsString: initialNftState.publicKeys.join(','),
             threshold: initialNftState.threshold,
@@ -33,8 +36,10 @@ async function deployNft(context, deployerPublicKey, feerate, fundingUtxo, trans
         toYamlObj: function () {
             return {
                 version: 4,
-                apps: { $00: `n/${context.appId}/${context.appVk}` },
-                private_inputs: { $00: `${fundingUtxo.txid}:${fundingUtxo.vout}` },
+                apps: { $00: `n/${this.appId}/${this.appVk}` },
+                private_inputs: {
+                    $00: `${this.fundingUtxo.txid}:${this.fundingUtxo.vout}`,
+                },
                 public_inputs: { $00: { action: 'deploy' } },
                 ins: [],
                 outs: [
@@ -42,7 +47,7 @@ async function deployNft(context, deployerPublicKey, feerate, fundingUtxo, trans
                         address: this.nextNftAddress,
                         charms: {
                             $00: {
-                                ticker: context.ticker,
+                                ticker: this.ticker,
                                 current_cosigners: this.currentNftState.publicKeysAsString,
                                 current_threshold: this.currentNftState.threshold,
                             },
@@ -89,7 +94,7 @@ async function main() {
         charmsBin: env_parser_1.parse.string('CHARMS_BIN'),
         zkAppBin: './zkapp/target/charms-app',
         network: argv['network'],
-        mockProof: argv['mock-proof'],
+        mockProof: !!argv['mock-proof'],
         ticker: 'GRAIL-NFT',
     }, fundingUtxo);
     await deployNft(context, deployerPublicKey, feerate, fundingUtxo, transmit);

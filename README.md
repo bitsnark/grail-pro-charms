@@ -1,27 +1,45 @@
+***
 
 ts-node ./src/cli/generate-random-keypairs.ts --count 1
 
-"publicKey": "0x9ad051ec4798d22004f2cad73c30ffa6fc4e62c3b3f20aa5675f01afc83682a6",
-"privateKey": "0x4d78d8bfee0e78ed9f6b3ba37a7c5ed892ce8e01ae63e863cc6af7a804b9f646"
-
-ts-node ./src/cli/deploy.ts --deployerPublicKey 9ad051ec4798d22004f2cad73c30ffa6fc4e62c3b3f20aa5675f01afc83682a6
-App ID: 5f5f744bbb6658dcd6ad329c546641c04e8a8c732a8990936187e948a6718992
-App Verification Key: 76f6ea263c513548c1f15915a4867c71be83f13ceb30380fd43f8f32d1da425b
-Spell transmitted successfully: [
-  "dc2728c8c330d65ad823067e91eaaa83ccb2c9f81895736a58a2eacc54dfcc90",
-  "46e4f3487516e0ba0af4a77c01ea27b70e0ef5f17a885dfd4abd1eecbf41b9e2"
+[2025-07-28T10:46:00.582Z] [
+        {
+                "publicKey": "0xaf6644ddd084ac99ffbc0f3e233694cf4356c4106709913210413779d17e8486",
+                "privateKey": "0x88eab7fda0159b008a2f3636c88b8af0196fc2fc9a34bbb1b63c1958488223ce"
+        }
 ]
 
-ts-node ./src/cli/update.ts --app-id 5f5f744bbb6658dcd6ad329c546641c04e8a8c732a8990936187e948a6718992 -app-vk 76f6ea263c513548c1f15915a4867c71be83f13ceb30380fd43f8f32d1da425b --private-keys 4d78d8bfee0e78ed9f6b3ba37a7c5ed892ce8e01ae63e863cc6af7a804b9f646 --new-public-keys 9ad051ec4798d22004f2cad73c30ffa6fc4e62c3b3f20aa5675f01afc83682a6 --new-threshold 1 --previous-nft-txid 46e4f3487516e0ba0af4a77c01ea27b70e0ef5f17a885dfd4abd1eecbf41b9e2 --mock-proof --transmit &> update.log
+***
 
-Spell transmitted successfully: [
-  "2c464132c28e98a5d3f3c374da70f9678e87a7815ab0c32b3b64e49b88eb2f19",
-  "71c962be6689f73c3f976647391397429571fd12f96cd942f59b7284565ff9bc"
+ts-node ./src/cli/deploy.ts --deployerPublicKey af6644ddd084ac99ffbc0f3e233694cf4356c4106709913210413779d17e8486 --mock-proof --transmit &> deploy.log
+
+[2025-07-28T10:48:33.823Z] App ID: 3b0ad31236878d16961cdd16f99c37b048943747c09a4a9eed97c9592a25fb87
+[2025-07-28T10:48:37.051Z] App Verification Key: ead64b28a5854f4be43637305362f33b32fa533ebd21cc2cda96840450f42151
+[2025-07-28T10:49:17.318Z] Spell transmitted successfully: [
+  "38f02936e121cd854fcbbf0a6236c22c61dc1f56c5002c7c77dd318daa6fa20e",
+  "961a2734d3b9bcd0049b15dbf8c5f11fa6623d4cd0bd3f2ed2b6e237b1c4fdd3"
 ]
 
+***
 
+ts-node ./src/cli/user-payment.ts --current-public-keys af6644ddd084ac99ffbc0f3e233694cf4356c4106709913210413779d17e8486 --current-threshold 1 --amount 666666 &> user-payment.log
 
+[2025-07-28T10:53:18.843Z] Recovery keypair generated: {
+  "publicKey": "0x213c1539be1fb847318ab399053cd89f10ad449bdffa3969e72b275d1e2b811f",
+  "privateKey": "0x24eee63154ab7934ea272ca72edb966e649bdcdc62d5525c94477eefd4f3b37a"
+}
+[2025-07-28T10:53:18.883Z] Sending funds to user payment address: bcrt1p4dj20vtz4l7wxgj738pyalrvt0440d33v0zta43yzjnjrjuy0dyq6yjdsp
+[2025-07-28T10:53:18.917Z] Funds sent successfully, txid:  01c59201c89cd07137b5f510d60286c4a23893b0153581d39cf0ccfa7c59c390
+[2025-07-28T10:53:18.917Z] Recovery public key: 213c1539be1fb847318ab399053cd89f10ad449bdffa3969e72b275d1e2b811f
 
+***
 
+ts-node ./src/cli/pegin.ts --app-id 3b0ad31236878d16961cdd16f99c37b048943747c09a4a9eed97c9592a25fb87 --app-vk ead64b28a5854f4be43637305362f33b32fa533ebd21cc2cda96840450f42151 --new-public-keys af6644ddd084ac99ffbc0f3e233694cf4356c4106709913210413779d17e8486 --new-threshold 1 --previous-nft-txid 961a2734d3b9bcd0049b15dbf8c5f11fa6623d4cd0bd3f2ed2b6e237b1c4fdd3 --recovery-public-key 213c1539be1fb847318ab399053cd89f10ad449bdffa3969e72b275d1e2b811f --private-keys 88eab7fda0159b008a2f3636c88b8af0196fc2fc9a34bbb1b63c1958488223ce --user-payment-txid 01c59201c89cd07137b5f510d60286c4a23893b0153581d39cf0ccfa7c59c390 --mock-proof --transmit &> pegin.log
 
+[2025-07-28T11:02:10.719Z] Spell transmitted successfully: [
+  "dec430075feddbc98388d5a9d8acfd87c7ba660c334a861711aab759789b534f",
+  "acbe668971eac0865ce28c026af649a954beddbbe80c09dd2714bfc65a85d41c"
+]
+
+***
 

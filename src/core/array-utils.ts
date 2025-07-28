@@ -43,3 +43,23 @@ export function unique<T>(a: T[]): T[] {
 export function reverse<T>(a: T[]): T[] {
 	return a.slice().reverse();
 }
+
+export async function forEachAsync<T>(
+	a: T[],
+	f: (item: T, index: number) => Promise<void>
+): Promise<void> {
+	for (let i = 0; i < a.length; i++) {
+		await f(a[i], i);
+	}
+}
+
+export async function mapAsync<T1, T2>(
+	a: T1[],
+	f: (item: T1, index: number) => Promise<T2>
+): Promise<T2[]> {
+	const results: T2[] = [];
+	for (let i = 0; i < a.length; i++) {
+		results.push(await f(a[i], i));
+	}
+	return results;
+}

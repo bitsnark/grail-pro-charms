@@ -7,18 +7,19 @@ const minimist_1 = __importDefault(require("minimist"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const bitcoin_1 = require("../core/bitcoin");
 const log_1 = require("../core/log");
+const json_1 = require("../core/json");
 const context_1 = require("../core/context");
 const env_parser_1 = require("../core/env-parser");
-const create_update_nft_spell_1 = require("../api/create-update-nft-spell");
-const generate_random_keypairs_1 = require("./generate-random-keypairs");
 const spell_operations_1 = require("../api/spell-operations");
-const json_1 = require("../core/json");
-const utils_1 = require("./utils");
+const generate_random_keypairs_1 = require("./generate-random-keypairs");
+const create_pegout_spell_1 = require("../api/create-pegout-spell");
+const pegin_1 = require("./pegin");
 async function main() {
     dotenv_1.default.config({ path: ['.env.test', '.env.local', '.env'] });
     (0, log_1.setupLog)();
     const argv = (0, minimist_1.default)(process.argv.slice(2), {
         alias: {},
+        string: ['new-public-keys', 'private-keys'],
         boolean: ['transmit', 'mock-proof'],
         default: {
             network: 'regtest',
@@ -36,6 +37,7 @@ async function main() {
         return;
     }
     const appVk = argv['app-vk'];
+    const network = argv['network'];
     const context = await context_1.Context.create({
         appId,
         appVk,
@@ -45,6 +47,20 @@ async function main() {
         mockProof: argv['mock-proof'],
         ticker: 'GRAIL-NFT',
     });
+    if (!argv['new-public-keys']) {
+        console.error('--new-public-keys is required');
+        return;
+    }
+    const newPublicKeys = argv['new-public-keys']
+        .split(',')
+        .map(pk => pk.trim().replace('0x', ''));
+    const newThreshold = Number.parseInt(argv['new-threshold']);
+    if (isNaN(newThreshold) ||
+        newThreshold < 1 ||
+        newThreshold > newPublicKeys.length) {
+        console.error('Invalid new threshold. It must be a number between 1 and the number of public keys.');
+        return;
+    }
     const previousNftTxid = argv['previous-nft-txid'];
     if (!previousNftTxid) {
         console.error('--previous-nft-txid is required');
@@ -58,19 +74,41 @@ async function main() {
     const privateKeys = argv['private-keys']
         .split(',')
         .map(s => s.trim().replace('0x', ''));
+    if (!argv['user-payment-txid']) {
+        console.error('--user-payment-txid is required');
+        return;
+    }
+    if (!argv['recovery-public-key']) {
+        console.error('--recovery-public-key is required');
+        return;
+    }
+    const recoveryPublicKey = argv['recovery-public-key'].replace('0x', '');
+    const newGrailState = {
+        publicKeys: newPublicKeys,
+        threshold: newThreshold,
+    };
+    const userPaymentTxid = argv['user-payment-txid'];
+    if (!userPaymentTxid) {
+        console.error('--user-payment-txid is required');
+        return;
+    }
+    const userPaymentVout = await (0, spell_operations_1.findUserPaymentVout)(context, newGrailState, userPaymentTxid, recoveryPublicKey, pegin_1.TIMELOCK_BLOCKS);
+    const userWalletAddress = await (0, spell_operations_1.getUserWalletAddressFromUserPaymentUtxo)(context, { txid: userPaymentTxid, vout: userPaymentVout }, network);
+    const userPaymentDetails = {
+        txid: userPaymentTxid,
+        vout: userPaymentVout,
+        recoveryPublicKey,
+        timelockBlocks: pegin_1.TIMELOCK_BLOCKS,
+        grailState: newGrailState,
+        userWalletAddress,
+    };
     if (!argv['feerate']) {
-        console.error('--feerate is required: ', argv);
+        console.error('--feerate is required');
         return;
     }
     const feerate = Number.parseFloat(argv['feerate']);
-    const newGrailState = (0, utils_1.getNewGrailStateFromArgv)(argv);
-    if (!newGrailState) {
-        console.error('Invalid new grail state');
-        return;
-    }
-    const { spell, signatureRequest } = await (0, create_update_nft_spell_1.createUpdateNftSpell)(context, feerate, previousNftTxid, newGrailState, fundingUtxo);
+    const { spell, signatureRequest } = await (0, create_pegout_spell_1.createPegoutSpell)(context, feerate, previousNftTxid, newGrailState, userPaymentDetails, fundingUtxo);
     console.log('Spell created:', JSON.stringify(spell, json_1.bufferReplacer, '\t'));
-    console.log('Signature request:', JSON.stringify(signatureRequest, json_1.bufferReplacer, '\t'));
     const fromCosigners = privateKeys
         .map(pk => Buffer.from(pk, 'hex'))
         .map(privateKey => {
@@ -85,7 +123,7 @@ async function main() {
     }
 }
 if (require.main === module) {
-    main().catch(error => {
-        console.error('Error during NFT update:', error);
+    main().catch(err => {
+        console.error(err);
     });
 }

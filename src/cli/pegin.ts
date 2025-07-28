@@ -7,24 +7,17 @@ import { bufferReplacer } from '../core/json';
 import { Context } from '../core/context';
 import { parse } from '../core/env-parser';
 import { createPeginSpell } from '../api/create-pegin-spell';
-import {
-	SignatureRequest,
-	SignatureResponse,
-	UserPaymentDetails,
-} from '../core/types';
+import { SignatureResponse, UserPaymentDetails } from '../core/types';
 import {
 	findUserPaymentVout,
-	getPreviousGrailState,
-	getPreviousTransactions,
+	getUserWalletAddressFromUserPaymentUtxo,
 	injectSignaturesIntoSpell,
 	signAsCosigner,
 	transmitSpell,
 } from '../api/spell-operations';
-import {
-	generateSpendingScriptForGrail,
-	generateSpendingScriptsForUserPayment,
-} from '../core/taproot';
 import { privateToKeypair } from './generate-random-keypairs';
+
+export const TIMELOCK_BLOCKS = 100; // Default timelock for user payments
 
 async function main() {
 	dotenv.config({ path: ['.env.test', '.env.local', '.env'] });
@@ -54,12 +47,14 @@ async function main() {
 	}
 	const appVk = argv['app-vk'] as string;
 
+	const network = argv['network'] as Network;
+
 	const context = await Context.create({
 		appId,
 		appVk,
 		charmsBin: parse.string('CHARMS_BIN'),
 		zkAppBin: './zkapp/target/charms-app',
-		network: argv['network'] as Network,
+		network,
 		mockProof: argv['mock-proof'],
 		ticker: 'GRAIL-NFT',
 	});
@@ -99,10 +94,6 @@ async function main() {
 		.split(',')
 		.map(s => s.trim().replace('0x', ''));
 
-	if (!argv['user-payment-txid']) {
-		console.error('--user-payment-txid is required');
-		return;
-	}
 	if (!argv['recovery-public-key']) {
 		console.error('--recovery-public-key is required');
 		return;
@@ -117,29 +108,33 @@ async function main() {
 		threshold: newThreshold,
 	};
 
-	const userPaymentDetails: UserPaymentDetails = {
-		txid: argv['user-payment-txid'] as string,
-		vout: Number.parseInt(argv['user-payment-vout'] as string) || 0,
+	const userPaymentTxid = argv['user-payment-txid'] as string;
+	if (!userPaymentTxid) {
+		console.error('--user-payment-txid is required');
+		return;
+	}
+	const userPaymentVout = await findUserPaymentVout(
+		context,
+		newGrailState,
+		userPaymentTxid,
 		recoveryPublicKey,
-		timelockBlocks: 100,
+		TIMELOCK_BLOCKS
+	);
+
+	const userWalletAddress = await getUserWalletAddressFromUserPaymentUtxo(
+		context,
+		{ txid: userPaymentTxid, vout: userPaymentVout },
+		network
+	);
+
+	const userPaymentDetails: UserPaymentDetails = {
+		txid: userPaymentTxid,
+		vout: userPaymentVout,
+		recoveryPublicKey,
+		timelockBlocks: TIMELOCK_BLOCKS,
+		grailState: newGrailState,
+		userWalletAddress,
 	};
-
-	let userPaymentVout = 0;
-	if (!argv['user-payment-vout']) {
-		console.warn('--user-payment-vout not provided, auto detecting...');
-		userPaymentVout = await findUserPaymentVout(
-			context,
-			newGrailState,
-			userPaymentDetails
-		);
-		userPaymentDetails.vout = userPaymentVout;
-		console.warn(`Detected user payment vout: ${userPaymentVout}`);
-	}
-
-	let userWalletAddress = argv['user-wallet-address'] as string;
-	if (!userWalletAddress) {
-		userWalletAddress = await bitcoinClient.getAddress();
-	}
 
 	if (!argv['feerate']) {
 		console.error('--feerate is required');
@@ -147,45 +142,15 @@ async function main() {
 	}
 	const feerate = Number.parseFloat(argv['feerate']);
 
-	const spell = await createPeginSpell(
+	const { spell, signatureRequest } = await createPeginSpell(
 		context,
 		feerate,
 		previousNftTxid,
 		newGrailState,
 		userPaymentDetails,
-		userWalletAddress,
 		fundingUtxo
 	);
 	console.log('Spell created:', JSON.stringify(spell, bufferReplacer, '\t'));
-
-	const previousGrailState = await getPreviousGrailState(
-		context,
-		previousNftTxid
-	);
-
-	const signatureRequest: SignatureRequest = {
-		transactionBytes: spell.spellTxBytes,
-		previousTransactions: await getPreviousTransactions(context, spell),
-		inputs: [
-			{
-				index: 0,
-				state: previousGrailState,
-				script: generateSpendingScriptForGrail(
-					previousGrailState,
-					context.network
-				).script,
-			},
-			{
-				index: 1,
-				state: newGrailState,
-				script: generateSpendingScriptsForUserPayment(
-					newGrailState,
-					userPaymentDetails,
-					context.network
-				).grail.script,
-			},
-		],
-	};
 
 	const fromCosigners: SignatureResponse[] = privateKeys
 		.map(pk => Buffer.from(pk, 'hex'))
