@@ -22,7 +22,7 @@ import {
 } from './spell-operations';
 import { getCharmsAmountFromUtxo } from '../core/spells';
 import { mapAsync } from '../core/array-utils';
-import { DUST_LIMIT } from '../core/bitcoin';
+import { DUST_LIMIT, txBytesToTxid } from '../core/bitcoin';
 
 function getAmountFromUtxo(
 	previousTransactions: { [key: string]: Buffer },
@@ -42,21 +42,6 @@ function getAmountFromUtxo(
 	return tx.outs[utxo.vout].value;
 }
 
-function isAddressInInputs(
-	previousTransactions: { [key: string]: Buffer },
-	txid: string,
-	address: string
-): boolean {
-	const tx = bitcoin.Transaction.fromBuffer(previousTransactions[txid]);
-	for (const input of tx.ins) {
-		const inputTxid = bitcoin.crypto.hash256(input.hash).toString('hex');
-		if (inputTxid === address) {
-			return true;
-		}
-	}
-	return false;
-}
-
 async function sanityCheck(
 	context: IContext,
 	previousTransactions: { [key: string]: Buffer },
@@ -68,8 +53,8 @@ async function sanityCheck(
 
 	// Let's check each user gets the correct amount of BTC
 	for (const outgoing of generalizedInfo.outgoingUserBtc) {
-		const upd = generalizedInfo.incomingUserCharms.find(incoming =>
-			isAddressInInputs(previousTransactions, incoming.txid, outgoing.address)
+		const upd = generalizedInfo.incomingUserCharms.find(
+			incoming => incoming.userWalletAddress === outgoing.address
 		);
 		if (!upd) {
 			throw new Error(
@@ -86,8 +71,8 @@ async function sanityCheck(
 
 	// Let's check each user gets the correct amount of charms
 	for (const outgoing of generalizedInfo.outgoingUserCharms) {
-		const upd = generalizedInfo.incomingUserBtc.find(incoming =>
-			isAddressInInputs(previousTransactions, incoming.txid, outgoing.address)
+		const upd = generalizedInfo.incomingUserBtc.find(
+			incoming => incoming.userWalletAddress === outgoing.address
 		);
 		if (!upd) {
 			throw new Error(
@@ -136,7 +121,6 @@ async function sanityCheck(
 	for (const outgoing of [
 		...generalizedInfo.outgoingUserBtc,
 		...generalizedInfo.outgoingUserCharms,
-		generalizedInfo.outgoingGrailBtc,
 	]) {
 		if (outgoing.amount < DUST_LIMIT) {
 			throw new Error(
@@ -186,6 +170,7 @@ export async function createGeneralizedSpell(
 	fundingUtxo?: Utxo
 ): Promise<{ spell: Spell; signatureRequest: SignatureRequest }> {
 	const allPreviousTxids = [
+		previousNftTxid,
 		...generalizedInfo.incomingGrailBtc.map(utxo => utxo.txid),
 		...generalizedInfo.incomingUserBtc.map(payment => payment.txid),
 		...generalizedInfo.incomingUserCharms.map(utxo => utxo.txid),
@@ -212,7 +197,7 @@ export async function createGeneralizedSpell(
 		),
 		address: grailAddress,
 	};
-	// In under dust limit, just contribute it to the fee
+	// If under dust limit, just contribute it to the fee
 	if (generalizedInfo.outgoingGrailBtc.amount < DUST_LIMIT) {
 		generalizedInfo.outgoingGrailBtc.amount = 0;
 	}
@@ -220,16 +205,10 @@ export async function createGeneralizedSpell(
 	// Sanity!
 	await sanityCheck(context, previousTransactions, generalizedInfo);
 
-	const previousNftTxhex =
-		await context.bitcoinClient.getTransactionHex(previousNftTxid);
-	if (!previousNftTxhex) {
-		throw new Error(`Previous NFT transaction ${previousNftTxid} not found`);
-	}
-
 	const fundingChangeAddress = await context.bitcoinClient.getAddress();
 	fundingUtxo = fundingUtxo || (await context.bitcoinClient.getFundingUtxo());
 
-	const previousSpellData = await showSpell(context, previousNftTxhex);
+	const previousSpellData = await showSpell(context, previousNftTxid);
 	console.log(
 		'Previous NFT spell:',
 		JSON.stringify(previousSpellData, null, '\t')
@@ -349,6 +328,8 @@ export async function createGeneralizedSpell(
 		nextGrailState,
 		generalizedInfo
 	);
+	previousTransactions[txBytesToTxid(spell.commitmentTxBytes)] =
+		spell.commitmentTxBytes;
 
 	const previousSpellMap = await getPreviousGrailStateMap(context, [
 		...generalizedInfo.incomingGrailBtc.map(utxo => utxo.txid),
@@ -359,6 +340,14 @@ export async function createGeneralizedSpell(
 		transactionBytes: spell.spellTxBytes,
 		previousTransactions,
 		inputs: [
+			{
+				index: 0,
+				state: previousGrailState,
+				script: generateSpendingScriptForGrail(
+					previousGrailState,
+					context.network
+				).script,
+			},
 			...generalizedInfo.incomingUserBtc.map(payment => ({
 				index: 0,
 				state: payment.grailState,
@@ -381,8 +370,7 @@ export async function createGeneralizedSpell(
 			})),
 		].map((input, index) => ({
 			...input,
-			index: index + 1, // Assuming the first input is the NFT input
-			script: input.script,
+			index,
 		})),
 	};
 

@@ -9,6 +9,7 @@ import {
 import { showSpell } from '../core/charms-sdk';
 import { IContext } from '../core/i-context';
 import { createGeneralizedSpell } from './create-generalized-spell';
+import { bufferReplacer } from '../core/json';
 
 export async function createUpdateNftSpell(
 	context: IContext,
@@ -23,15 +24,10 @@ export async function createUpdateNftSpell(
 		fundingUtxo = await bitcoinClient.getFundingUtxo();
 	}
 
-	const previousNftTxhex =
-		await bitcoinClient.getTransactionHex(previousNftTxid);
-	if (!previousNftTxhex) {
-		throw new Error(`Previous NFT transaction ${previousNftTxid} not found`);
-	}
-	const previousSpellData = await showSpell(context, previousNftTxhex);
+	const previousSpellData = await showSpell(context, previousNftTxid);
 	console.log(
 		'Previous NFT spell:',
-		JSON.stringify(previousSpellData, null, '\t')
+		JSON.stringify(previousSpellData, bufferReplacer, '\t')
 	);
 	if (!previousSpellData) {
 		throw new Error('Invalid previous NFT spell data');

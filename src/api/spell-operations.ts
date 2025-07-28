@@ -29,12 +29,7 @@ export async function getPreviousGrailState(
 	context: IContext,
 	previousNftTxid: string
 ): Promise<GrailState> {
-	const previousNftTxhex =
-		await context.bitcoinClient.getTransactionHex(previousNftTxid);
-	if (!previousNftTxhex) {
-		throw new Error(`Previous NFT transaction ${previousNftTxid} not found`);
-	}
-	const previousSpellData = await showSpell(context, previousNftTxhex);
+	const previousSpellData = await showSpell(context, previousNftTxid);
 	if (!previousSpellData) {
 		throw new Error('Invalid previous NFT spell data');
 	}

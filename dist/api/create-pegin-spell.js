@@ -38,7 +38,6 @@ const bitcoin = __importStar(require("bitcoinjs-lib"));
 const json_1 = require("../core/json");
 const create_generalized_spell_1 = require("./create-generalized-spell");
 const spell_operations_1 = require("./spell-operations");
-const taproot_1 = require("../core/taproot");
 async function createPeginSpell(context, feerate, previousNftTxid, nextGrailState, userPaymentDetails, userWalletAddress, fundingUtxo) {
     const previousNftTxhex = await context.bitcoinClient.getTransactionHex(previousNftTxid);
     if (!previousNftTxhex) {
@@ -56,7 +55,7 @@ async function createPeginSpell(context, feerate, previousNftTxid, nextGrailStat
     const userPaymentTx = bitcoin.Transaction.fromBuffer(userPaymentTxBytes);
     const userPaymentAmount = userPaymentTx.outs[userPaymentDetails.vout].value;
     console.log('User payment transaction amount:', userPaymentAmount);
-    const spell = await (0, create_generalized_spell_1.createGeneralizedSpell)(context, feerate, previousNftTxid, nextGrailState, {
+    const { spell, signatureRequest } = await (0, create_generalized_spell_1.createGeneralizedSpell)(context, feerate, previousNftTxid, nextGrailState, {
         incomingUserBtc: [userPaymentDetails],
         incomingUserCharms: [],
         incomingGrailBtc: [],
@@ -66,21 +65,5 @@ async function createPeginSpell(context, feerate, previousNftTxid, nextGrailStat
         outgoingUserBtc: [],
     }, fundingUtxo);
     console.log('Peg-in spell created:', JSON.stringify(spell, json_1.bufferReplacer, '\t'));
-    const signatureRequest = {
-        transactionBytes: spell.spellTxBytes,
-        previousTransactions: await (0, spell_operations_1.getPreviousTransactions)(context, spell.spellTxBytes, spell.commitmentTxBytes),
-        inputs: [
-            {
-                index: 0,
-                state: previousGrailState,
-                script: (0, taproot_1.generateSpendingScriptForGrail)(previousGrailState, context.network).script,
-            },
-            {
-                index: 1,
-                state: nextGrailState,
-                script: (0, taproot_1.generateSpendingScriptsForUserPayment)(nextGrailState, userPaymentDetails, context.network).grail.script,
-            },
-        ],
-    };
     return { spell, signatureRequest };
 }

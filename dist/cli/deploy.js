@@ -94,7 +94,7 @@ async function main() {
         charmsBin: env_parser_1.parse.string('CHARMS_BIN'),
         zkAppBin: './zkapp/target/charms-app',
         network: argv['network'],
-        mockProof: argv['mock-proof'],
+        mockProof: !!argv['mock-proof'],
         ticker: 'GRAIL-NFT',
     }, fundingUtxo);
     await deployNft(context, deployerPublicKey, feerate, fundingUtxo, transmit);

@@ -66,12 +66,10 @@ export function signTransactionInput(
 
 	const previous: { value: number; script: Buffer }[] = [];
 	for (const input of tx.ins) {
-		let ttxBytes: Buffer;
 		const inputTxid = hashToTxid(input.hash);
-		if (previousTxBytesMap[inputTxid]) {
-			ttxBytes = previousTxBytesMap[inputTxid];
-		} else throw new Error(`Input transaction ${inputTxid} not found`);
-		const ttx = bitcoin.Transaction.fromBuffer(ttxBytes);
+		const ttxbytes = previousTxBytesMap[inputTxid];
+		if (!ttxbytes) throw new Error(`Input transaction ${inputTxid} not found`);
+		const ttx = bitcoin.Transaction.fromBuffer(ttxbytes);
 		const out = ttx.outs[input.index];
 		previous.push({
 			value: out.value,

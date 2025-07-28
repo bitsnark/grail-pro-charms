@@ -31,11 +31,6 @@ export interface UpdateRequest extends NftRequest {
     previousNftTxid: string;
     previousGrailState: GrailState;
 }
-export interface PegInRequest extends UpdateRequest {
-    amount: number;
-    userWalletAddress: string;
-    userPaymentDetails: UserPaymentDetails;
-}
 interface Outgoing {
     amount: number;
     address: string;
@@ -43,7 +38,7 @@ interface Outgoing {
 export interface GeneralizedInfo {
     incomingUserBtc: UserPaymentDetails[];
     incomingGrailBtc: Utxo[];
-    incomingUserCharms: Utxo[];
+    incomingUserCharms: UserPaymentDetails[];
     outgoingUserBtc: Outgoing[];
     outgoingUserCharms: Outgoing[];
     outgoingGrailBtc?: Outgoing;
@@ -62,6 +57,8 @@ export interface UserPaymentDetails {
     timelockBlocks: number;
     txid: string;
     vout: number;
+    grailState: GrailState;
+    userWalletAddress: string;
 }
 export interface Spell {
     commitmentTxBytes: Buffer;

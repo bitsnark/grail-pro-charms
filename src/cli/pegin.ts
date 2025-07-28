@@ -54,12 +54,14 @@ async function main() {
 	}
 	const appVk = argv['app-vk'] as string;
 
+	const network = argv['network'] as Network;
+
 	const context = await Context.create({
 		appId,
 		appVk,
 		charmsBin: parse.string('CHARMS_BIN'),
 		zkAppBin: './zkapp/target/charms-app',
-		network: argv['network'] as Network,
+		network,
 		mockProof: argv['mock-proof'],
 		ticker: 'GRAIL-NFT',
 	});
@@ -117,11 +119,19 @@ async function main() {
 		threshold: newThreshold,
 	};
 
+	const userWalletAddress =
+		await context.bitcoinClient.getUserWalletAddressFromFundingUtxo(
+			fundingUtxo,
+			network
+		);
+
 	const userPaymentDetails: UserPaymentDetails = {
 		txid: argv['user-payment-txid'] as string,
 		vout: Number.parseInt(argv['user-payment-vout'] as string) || 0,
 		recoveryPublicKey,
 		timelockBlocks: 100,
+		grailState: newGrailState,
+		userWalletAddress,
 	};
 
 	let userPaymentVout = 0;
@@ -134,11 +144,6 @@ async function main() {
 		);
 		userPaymentDetails.vout = userPaymentVout;
 		console.warn(`Detected user payment vout: ${userPaymentVout}`);
-	}
-
-	let userWalletAddress = argv['user-wallet-address'] as string;
-	if (!userWalletAddress) {
-		userWalletAddress = await bitcoinClient.getAddress();
 	}
 
 	if (!argv['feerate']) {

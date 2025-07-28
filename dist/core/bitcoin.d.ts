@@ -1,5 +1,6 @@
 import Client from 'bitcoin-core';
 import { Utxo } from './types';
+import { Network } from './taproot/taproot-common';
 export declare const DUST_LIMIT = 546;
 export declare function txidToHash(txid: string): Buffer;
 export declare function hashToTxid(hash: Buffer): string;
@@ -39,4 +40,5 @@ export declare class BitcoinClient {
         [txid: string]: Buffer;
     }>;
     isUtxoSpendable(txid: string, vout: number): Promise<boolean>;
+    getUserWalletAddressFromFundingUtxo(fundingUtxo: Utxo, network: Network): Promise<string>;
 }

@@ -16,26 +16,18 @@ const userPaymentDetailsSchema = {
 };
 
 function checkObj(obj: any, schema: any): boolean {
-	for (const key in Object.keys(schema)) {
-		if (!obj.hasOwnProperty(key)) {
-			return false;
+	if (typeof obj != typeof schema) return false;
+	if (Array.isArray(schema) && !Array.isArray(obj)) return false;
+	if (Array.isArray(schema)) {
+		for (const item of obj) {
+			if (!checkObj(item, schema[0])) return false;
 		}
-		if (typeof obj[key] !== typeof schema[key]) {
-			return false;
-		}
-		if (Array.isArray(schema[key]) && !Array.isArray(obj[key])) {
-			return false;
-		}
-		if (Array.isArray(schema[key]) && Array.isArray(obj[key])) {
-			for (const item of obj[key]) {
-				if (!checkObj(item, schema[key][0])) {
-					return false;
-				}
-			}
-		} else if (typeof schema[key] === 'object') {
-			if (!checkObj(obj[key], schema[key])) {
-				return false;
-			}
+		return true;
+	}
+	if (typeof schema === 'object') {
+		for (const key of Object.keys(schema)) {
+			if (!obj[key]) return false;
+			if (!checkObj(obj[key], schema[key])) return false;
 		}
 	}
 	return true;

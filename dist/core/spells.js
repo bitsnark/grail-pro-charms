@@ -78,14 +78,11 @@ function signTransactionInput(context, txBytes, inputIndex, script, previousTxBy
     const tapleafHash = (0, taproot_common_1.getHash)(script);
     const previous = [];
     for (const input of tx.ins) {
-        let ttxBytes;
         const inputTxid = (0, bitcoin_1.hashToTxid)(input.hash);
-        if (previousTxBytesMap[inputTxid]) {
-            ttxBytes = previousTxBytesMap[inputTxid];
-        }
-        else
+        const ttxbytes = previousTxBytesMap[inputTxid];
+        if (!ttxbytes)
             throw new Error(`Input transaction ${inputTxid} not found`);
-        const ttx = bitcoin.Transaction.fromBuffer(ttxBytes);
+        const ttx = bitcoin.Transaction.fromBuffer(ttxbytes);
         const out = ttx.outs[input.index];
         previous.push({
             value: out.value,

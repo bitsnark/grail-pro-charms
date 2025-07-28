@@ -6,11 +6,8 @@ import { setupLog } from '../core/log';
 import { Context } from '../core/context';
 import { parse } from '../core/env-parser';
 import { createUpdateNftSpell } from '../api/create-update-nft-spell';
-import { generateSpendingScriptForGrail, KeyPair } from '../core/taproot';
-import {
-	privateToKeypair,
-	publicFromPrivate,
-} from './generate-random-keypairs';
+import { generateSpendingScriptForGrail } from '../core/taproot';
+import { privateToKeypair } from './generate-random-keypairs';
 import {
 	getPreviousGrailState,
 	getPreviousTransactions,
@@ -19,8 +16,9 @@ import {
 	transmitSpell,
 } from '../api/spell-operations';
 import { bufferReplacer } from '../core/json';
-import { GrailState, SignatureRequest, SignatureResponse } from '../core/types';
+import { SignatureRequest, SignatureResponse } from '../core/types';
 import { getNewGrailStateFromArgv } from './utils';
+import { buffer } from 'stream/consumers';
 
 async function main() {
 	dotenv.config({ path: ['.env.test', '.env.local', '.env'] });
@@ -86,7 +84,7 @@ async function main() {
 		return;
 	}
 
-	const spell = await createUpdateNftSpell(
+	const { spell, signatureRequest } = await createUpdateNftSpell(
 		context,
 		feerate,
 		previousNftTxid,
@@ -94,30 +92,7 @@ async function main() {
 		fundingUtxo
 	);
 	console.log('Spell created:', JSON.stringify(spell, bufferReplacer, '\t'));
-
-	const previousGrailState = await getPreviousGrailState(
-		context,
-		previousNftTxid
-	);
-
-	const signatureRequest: SignatureRequest = {
-		transactionBytes: spell.spellTxBytes,
-		previousTransactions: await getPreviousTransactions(
-			context,
-			spell.spellTxBytes,
-			spell.commitmentTxBytes
-		),
-		inputs: [
-			{
-				index: 0,
-				state: previousGrailState,
-				script: generateSpendingScriptForGrail(
-					previousGrailState,
-					context.network
-				).script,
-			},
-		],
-	};
+	console.log('Signature request:', JSON.stringify(signatureRequest, bufferReplacer, '\t'));
 
 	const fromCosigners: SignatureResponse[] = privateKeys
 		.map(pk => Buffer.from(pk, 'hex'))

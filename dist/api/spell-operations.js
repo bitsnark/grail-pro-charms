@@ -34,6 +34,7 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getPreviousGrailState = getPreviousGrailState;
+exports.getPreviousGrailStateMap = getPreviousGrailStateMap;
 exports.createUpdatingSpell = createUpdatingSpell;
 exports.injectSignaturesIntoSpell = injectSignaturesIntoSpell;
 exports.transmitSpell = transmitSpell;
@@ -47,11 +48,7 @@ const charms_sdk_1 = require("../core/charms-sdk");
 const taproot_common_1 = require("../core/taproot/taproot-common");
 const bitcoin_1 = require("../core/bitcoin");
 async function getPreviousGrailState(context, previousNftTxid) {
-    const previousNftTxhex = await context.bitcoinClient.getTransactionHex(previousNftTxid);
-    if (!previousNftTxhex) {
-        throw new Error(`Previous NFT transaction ${previousNftTxid} not found`);
-    }
-    const previousSpellData = await (0, charms_sdk_1.showSpell)(context, previousNftTxhex);
+    const previousSpellData = await (0, charms_sdk_1.showSpell)(context, previousNftTxid);
     if (!previousSpellData) {
         throw new Error('Invalid previous NFT spell data');
     }
@@ -59,6 +56,13 @@ async function getPreviousGrailState(context, previousNftTxid) {
         publicKeys: previousSpellData.outs[0].charms['$0000'].current_cosigners.split(','),
         threshold: previousSpellData.outs[0].charms['$0000'].current_threshold,
     };
+}
+async function getPreviousGrailStateMap(context, txids) {
+    const previousGrailStates = {};
+    for (const txid of txids) {
+        previousGrailStates[txid] = await getPreviousGrailState(context, txid);
+    }
+    return previousGrailStates;
 }
 async function createUpdatingSpell(context, request, previousTxIds, previousGrailState, nextGrailState, generalizedInfo) {
     const spell = await (0, spells_1.createSpell)(context, previousTxIds, request);
@@ -72,7 +76,7 @@ async function createUpdatingSpell(context, request, previousTxIds, previousGrai
     ];
     let userInputIndex = inputIndexNft + 1;
     for (const input of generalizedInfo.incomingUserBtc) {
-        const spendingScriptUser = (0, taproot_1.generateSpendingScriptsForUserPayment)(nextGrailState, input, context.network);
+        const spendingScriptUser = (0, taproot_1.generateSpendingScriptsForUserPayment)(input, context.network);
         spellTx.ins[userInputIndex++].witness = [
             spendingScriptUser.grail.script,
             spendingScriptUser.grail.controlBlock,

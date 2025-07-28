@@ -104,7 +104,7 @@ export async function showSpell(
 	txid: string,
 	previousTransactions: Buffer[] = []
 ): Promise<any> {
-	const txhex = await context.bitcoinClient.getTransactionBytes(txid);
+	const txhex = await context.bitcoinClient.getTransactionHex(txid);
 	const command = [
 		context.charmsBin,
 		'tx show-spell',

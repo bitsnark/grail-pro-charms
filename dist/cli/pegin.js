@@ -37,12 +37,13 @@ async function main() {
         return;
     }
     const appVk = argv['app-vk'];
+    const network = argv['network'];
     const context = await context_1.Context.create({
         appId,
         appVk,
         charmsBin: env_parser_1.parse.string('CHARMS_BIN'),
         zkAppBin: './zkapp/target/charms-app',
-        network: argv['network'],
+        network,
         mockProof: argv['mock-proof'],
         ticker: 'GRAIL-NFT',
     });
@@ -86,11 +87,14 @@ async function main() {
         publicKeys: newPublicKeys,
         threshold: newThreshold,
     };
+    const userWalletAddress = await context.bitcoinClient.getUserWalletAddressFromFundingUtxo(fundingUtxo, network);
     const userPaymentDetails = {
         txid: argv['user-payment-txid'],
         vout: Number.parseInt(argv['user-payment-vout']) || 0,
         recoveryPublicKey,
         timelockBlocks: 100,
+        grailState: newGrailState,
+        userWalletAddress,
     };
     let userPaymentVout = 0;
     if (!argv['user-payment-vout']) {
@@ -98,10 +102,6 @@ async function main() {
         userPaymentVout = await (0, spell_operations_1.findUserPaymentVout)(context, newGrailState, userPaymentDetails);
         userPaymentDetails.vout = userPaymentVout;
         console.warn(`Detected user payment vout: ${userPaymentVout}`);
-    }
-    let userWalletAddress = argv['user-wallet-address'];
-    if (!userWalletAddress) {
-        userWalletAddress = await bitcoinClient.getAddress();
     }
     if (!argv['feerate']) {
         console.error('--feerate is required');

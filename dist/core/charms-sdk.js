@@ -117,7 +117,7 @@ async function executeSpell(context, fundingUtxo, feerate, changeAddress, yamlSt
     });
 }
 async function showSpell(context, txid, previousTransactions = []) {
-    const txhex = await context.bitcoinClient.getTransactionBytes(txid);
+    const txhex = await context.bitcoinClient.getTransactionHex(txid);
     const command = [
         context.charmsBin,
         'tx show-spell',

@@ -86,6 +86,7 @@ export interface UserPaymentDetails {
 	txid: string;
 	vout: number;
 	grailState: GrailState;
+	userWalletAddress: string;
 }
 
 export interface Spell {

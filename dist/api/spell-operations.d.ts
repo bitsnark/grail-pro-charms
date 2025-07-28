@@ -3,6 +3,9 @@ import { KeyPair } from '../core/taproot';
 import { GrailState, UserPaymentDetails, GeneralizedInfo } from '../core/types';
 import { IContext } from '../core/i-context';
 export declare function getPreviousGrailState(context: IContext, previousNftTxid: string): Promise<GrailState>;
+export declare function getPreviousGrailStateMap(context: IContext, txids: string[]): Promise<{
+    [key: string]: GrailState;
+}>;
 export declare function createUpdatingSpell(context: IContext, request: UpdateRequest, previousTxIds: string[], previousGrailState: GrailState, nextGrailState: GrailState, generalizedInfo: GeneralizedInfo): Promise<Spell>;
 export declare function injectSignaturesIntoSpell(context: IContext, spell: Spell, signatureRequest: SignatureRequest, fromCosigners: SignatureResponse[]): Promise<Spell>;
 export declare function transmitSpell(context: IContext, transactions: Spell): Promise<[string, string]>;
