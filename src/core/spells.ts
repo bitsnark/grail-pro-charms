@@ -2,7 +2,7 @@ import * as bitcoin from 'bitcoinjs-lib';
 import * as yaml from 'js-yaml';
 import { schnorr } from '@noble/curves/secp256k1';
 import { executeSpell } from './charms-sdk';
-import { CharmerRequest, Spell, Utxo } from './types';
+import { CharmerRequest, GrailState, Spell, Utxo } from './types';
 import { bufferReplacer } from './json';
 import { KeyPair } from './taproot';
 import { getHash } from './taproot/taproot-common';
@@ -16,7 +16,7 @@ const sighashType = bitcoin.Transaction.SIGHASH_DEFAULT;
 export async function getStateFromNft(
 	context: IContext,
 	nftTxId: string
-): Promise<{ publicKeys: string[]; threshold: number }> {
+): Promise<GrailState> {
 	const previousSpellData = await showSpell(context, nftTxId);
 	console.log(
 		'Previous NFT spell:',

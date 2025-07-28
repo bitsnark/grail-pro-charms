@@ -6,19 +6,15 @@ import { setupLog } from '../core/log';
 import { Context } from '../core/context';
 import { parse } from '../core/env-parser';
 import { createUpdateNftSpell } from '../api/create-update-nft-spell';
-import { generateSpendingScriptForGrail } from '../core/taproot';
 import { privateToKeypair } from './generate-random-keypairs';
 import {
-	getPreviousGrailState,
-	getPreviousTransactions,
 	injectSignaturesIntoSpell,
 	signAsCosigner,
 	transmitSpell,
 } from '../api/spell-operations';
 import { bufferReplacer } from '../core/json';
-import { SignatureRequest, SignatureResponse } from '../core/types';
 import { getNewGrailStateFromArgv } from './utils';
-import { buffer } from 'stream/consumers';
+import { SignatureResponse } from '../core/types';
 
 async function main() {
 	dotenv.config({ path: ['.env.test', '.env.local', '.env'] });
