@@ -5,30 +5,30 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.BitcoinClient = exports.ExtendedClient = void 0;
 const bitcoin_core_1 = __importDefault(require("bitcoin-core"));
-class ExtendedClient extends bitcoin_core_1.default {
-    constructor(options) {
-        super(options);
+class ExtendedClient {
+    constructor(client) {
+        this.client = client;
     }
     getRawTransaction(txid) {
-        return this.command('getrawtransaction', txid, true);
+        return this.client.command('getrawtransaction', txid, true);
     }
     sendRawTransaction(txHex) {
-        return this.command('sendrawtransaction', txHex);
+        return this.client.command('sendrawtransaction', txHex);
     }
     signTransactionInputs(txHex, prevtxs, sighashType) {
-        return this.command('signrawtransactionwithwallet', txHex, prevtxs, sighashType);
+        return this.client.command('signrawtransactionwithwallet', txHex, prevtxs, sighashType);
     }
     listUnspent(minconf, maxconf, addresses) {
-        return this.command('listunspent', minconf, maxconf, addresses);
+        return this.client.command('listunspent', minconf, maxconf, addresses);
     }
     getNewAddress() {
-        return this.command('getnewaddress');
+        return this.client.command('getnewaddress');
     }
     loadWallet(name) {
-        return this.command('loadwallet', name);
+        return this.client.command('loadwallet', name);
     }
     sendToAddress(toAddress, amountBtc) {
-        return this.command('sendtoaddress', toAddress, amountBtc);
+        return this.client.command('sendtoaddress', toAddress, amountBtc);
     }
 }
 exports.ExtendedClient = ExtendedClient;
@@ -39,15 +39,15 @@ class BitcoinClient {
     static async initialize(client) {
         const thus = new BitcoinClient();
         if (client) {
-            thus.client = client;
+            thus.client = new ExtendedClient(client);
         }
         else {
-            thus.client = new ExtendedClient({
+            thus.client = new ExtendedClient(new bitcoin_core_1.default({
                 username: process.env.BTC_NODE_USERNAME || 'bitcoin',
                 password: process.env.BTC_NODE_PASSWORD || '1234',
                 host: process.env.BTC_NODE_HOST || 'http://localhost:18443', // default for regtest
                 timeout: 30000, // 30 seconds
-            });
+            }));
             const walletName = process.env.BTC_WALLET_NAME || 'default';
             try {
                 await thus.client.loadWallet(walletName);
