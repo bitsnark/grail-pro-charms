@@ -200,31 +200,4 @@ export class BitcoinClient {
 	public async isUtxoSpendable(txid: string, vout: number): Promise<boolean> {
 		return !!(await this.client!.getTxOut(txid, vout, true));
 	}
-
-	public async getUserWalletAddressFromUserPaymentUtxo(
-		fundingUtxo: Utxo,
-		network: Network
-	): Promise<string> {
-		const txBytes = await this.getTransactionBytes(fundingUtxo.txid);
-		const tx = bitcoin.Transaction.fromBuffer(txBytes);
-		if (tx.outs.length < 2) {
-			throw new Error('Funding UTXO has no inputs');
-		}
-		const changeOutput = fundingUtxo.vout == 0 ? 1 : 0;
-		const script = tx.outs[changeOutput].script;
-
-		const address = [
-			bitcoin.payments.p2ms, bitcoin.payments.p2pk, bitcoin.payments.p2pkh, bitcoin.payments.p2sh, bitcoin.payments.p2wpkh, bitcoin.payments.p2wsh, bitcoin.payments.p2tr			
-		].map(payment => {
-			try {
-				return payment({ output: script, network: bitcoinjslibNetworks[network] }).address;
-			} catch (e) {
-				return undefined;
-			}
-		}).filter(Boolean)[0];
-		if (!address) {
-			throw new Error('No valid address found for the script');
-		}
-		return address;
-	}
 }

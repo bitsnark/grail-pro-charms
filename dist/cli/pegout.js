@@ -13,6 +13,7 @@ const env_parser_1 = require("../core/env-parser");
 const spell_operations_1 = require("../api/spell-operations");
 const generate_random_keypairs_1 = require("./generate-random-keypairs");
 const create_pegout_spell_1 = require("../api/create-pegout-spell");
+const pegin_1 = require("./pegin");
 async function main() {
     dotenv_1.default.config({ path: ['.env.test', '.env.local', '.env'] });
     (0, log_1.setupLog)();
@@ -36,6 +37,7 @@ async function main() {
         return;
     }
     const appVk = argv['app-vk'];
+    const network = argv['network'];
     const context = await context_1.Context.create({
         appId,
         appVk,
@@ -85,28 +87,27 @@ async function main() {
         publicKeys: newPublicKeys,
         threshold: newThreshold,
     };
-    const userWalletAddress = await context.bitcoinClient.getUserWalletAddressFromFundingUtxo(fundingUtxo, argv['network']);
+    const userPaymentTxid = argv['user-payment-txid'];
+    if (!userPaymentTxid) {
+        console.error('--user-payment-txid is required');
+        return;
+    }
+    const userPaymentVout = await (0, spell_operations_1.findUserPaymentVout)(context, newGrailState, userPaymentTxid, recoveryPublicKey, pegin_1.TIMELOCK_BLOCKS);
+    const userWalletAddress = await (0, spell_operations_1.getUserWalletAddressFromUserPaymentUtxo)(context, { txid: userPaymentTxid, vout: userPaymentVout }, network);
     const userPaymentDetails = {
-        txid: argv['user-payment-txid'],
-        vout: Number.parseInt(argv['user-payment-vout']) || 0,
+        txid: userPaymentTxid,
+        vout: userPaymentVout,
         recoveryPublicKey,
-        timelockBlocks: 100,
+        timelockBlocks: pegin_1.TIMELOCK_BLOCKS,
         grailState: newGrailState,
         userWalletAddress,
     };
-    let userPaymentVout = 0;
-    if (!argv['user-payment-vout']) {
-        console.warn('--user-payment-vout not provided, auto detecting...');
-        userPaymentVout = await (0, spell_operations_1.findUserPaymentVout)(context, newGrailState, userPaymentDetails);
-        userPaymentDetails.vout = userPaymentVout;
-        console.warn(`Detected user payment vout: ${userPaymentVout}`);
-    }
     if (!argv['feerate']) {
         console.error('--feerate is required');
         return;
     }
     const feerate = Number.parseFloat(argv['feerate']);
-    const { spell, signatureRequest } = await (0, create_pegout_spell_1.createPegoutSpell)(context, feerate, previousNftTxid, newGrailState, userPaymentDetails, userWalletAddress, fundingUtxo);
+    const { spell, signatureRequest } = await (0, create_pegout_spell_1.createPegoutSpell)(context, feerate, previousNftTxid, newGrailState, userPaymentDetails, fundingUtxo);
     console.log('Spell created:', JSON.stringify(spell, json_1.bufferReplacer, '\t'));
     const fromCosigners = privateKeys
         .map(pk => Buffer.from(pk, 'hex'))

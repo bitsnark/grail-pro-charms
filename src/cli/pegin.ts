@@ -10,13 +10,14 @@ import { createPeginSpell } from '../api/create-pegin-spell';
 import { SignatureResponse, UserPaymentDetails } from '../core/types';
 import {
 	findUserPaymentVout,
+	getUserWalletAddressFromUserPaymentUtxo,
 	injectSignaturesIntoSpell,
 	signAsCosigner,
 	transmitSpell,
 } from '../api/spell-operations';
 import { privateToKeypair } from './generate-random-keypairs';
 
-const TIMELOCK_BLOCKS = 100; // Default timelock for user payments
+export const TIMELOCK_BLOCKS = 100; // Default timelock for user payments
 
 async function main() {
 	dotenv.config({ path: ['.env.test', '.env.local', '.env'] });
@@ -93,10 +94,6 @@ async function main() {
 		.split(',')
 		.map(s => s.trim().replace('0x', ''));
 
-	if (!argv['user-payment-txid']) {
-		console.error('--user-payment-txid is required');
-		return;
-	}
 	if (!argv['recovery-public-key']) {
 		console.error('--recovery-public-key is required');
 		return;
@@ -124,11 +121,11 @@ async function main() {
 		TIMELOCK_BLOCKS
 	);
 
-	const userWalletAddress =
-		await context.bitcoinClient.getUserWalletAddressFromUserPaymentUtxo(
-			{ txid: userPaymentTxid, vout: userPaymentVout },
-			network
-		);
+	const userWalletAddress = await getUserWalletAddressFromUserPaymentUtxo(
+		context,
+		{ txid: userPaymentTxid, vout: userPaymentVout },
+		network
+	);
 
 	const userPaymentDetails: UserPaymentDetails = {
 		txid: userPaymentTxid,

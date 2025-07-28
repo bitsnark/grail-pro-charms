@@ -38,7 +38,7 @@ const bitcoin = __importStar(require("bitcoinjs-lib"));
 const json_1 = require("../core/json");
 const create_generalized_spell_1 = require("./create-generalized-spell");
 const spell_operations_1 = require("./spell-operations");
-async function createPeginSpell(context, feerate, previousNftTxid, nextGrailState, userPaymentDetails, userWalletAddress, fundingUtxo) {
+async function createPeginSpell(context, feerate, previousNftTxid, nextGrailState, userPaymentDetails, fundingUtxo) {
     const previousNftTxhex = await context.bitcoinClient.getTransactionHex(previousNftTxid);
     if (!previousNftTxhex) {
         throw new Error(`Previous NFT transaction ${previousNftTxid} not found`);
@@ -60,7 +60,10 @@ async function createPeginSpell(context, feerate, previousNftTxid, nextGrailStat
         incomingUserCharms: [],
         incomingGrailBtc: [],
         outgoingUserCharms: [
-            { amount: userPaymentAmount, address: userWalletAddress },
+            {
+                amount: userPaymentAmount,
+                address: userPaymentDetails.userWalletAddress,
+            },
         ],
         outgoingUserBtc: [],
     }, fundingUtxo);

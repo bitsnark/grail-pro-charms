@@ -71,7 +71,7 @@ async function findLockedBtcUtxos(context, lestNftTxid, minAmount) {
     }
     return selectedUtxos;
 }
-async function createPegoutSpell(context, feerate, previousNftTxid, nextGrailState, userPaymentDetails, userWalletAddress, fundingUtxo) {
+async function createPegoutSpell(context, feerate, previousNftTxid, nextGrailState, userPaymentDetails, fundingUtxo) {
     const previousNftTxhex = await context.bitcoinClient.getTransactionHex(previousNftTxid);
     if (!previousNftTxhex) {
         throw new Error(`Previous NFT transaction ${previousNftTxid} not found`);
@@ -95,7 +95,10 @@ async function createPegoutSpell(context, feerate, previousNftTxid, nextGrailSta
         incomingGrailBtc: lockedBtcUtxos,
         outgoingUserCharms: [],
         outgoingUserBtc: [
-            { amount: userPaymentAmount, address: userWalletAddress },
+            {
+                amount: userPaymentAmount,
+                address: userPaymentDetails.userWalletAddress,
+            },
         ],
     }, fundingUtxo);
     console.log('Peg-in spell created:', JSON.stringify(spell, json_1.bufferReplacer, '\t'));

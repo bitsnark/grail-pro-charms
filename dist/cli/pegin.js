@@ -3,6 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.TIMELOCK_BLOCKS = void 0;
 const minimist_1 = __importDefault(require("minimist"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const bitcoin_1 = require("../core/bitcoin");
@@ -13,6 +14,7 @@ const env_parser_1 = require("../core/env-parser");
 const create_pegin_spell_1 = require("../api/create-pegin-spell");
 const spell_operations_1 = require("../api/spell-operations");
 const generate_random_keypairs_1 = require("./generate-random-keypairs");
+exports.TIMELOCK_BLOCKS = 100; // Default timelock for user payments
 async function main() {
     dotenv_1.default.config({ path: ['.env.test', '.env.local', '.env'] });
     (0, log_1.setupLog)();
@@ -74,10 +76,6 @@ async function main() {
     const privateKeys = argv['private-keys']
         .split(',')
         .map(s => s.trim().replace('0x', ''));
-    if (!argv['user-payment-txid']) {
-        console.error('--user-payment-txid is required');
-        return;
-    }
     if (!argv['recovery-public-key']) {
         console.error('--recovery-public-key is required');
         return;
@@ -87,28 +85,27 @@ async function main() {
         publicKeys: newPublicKeys,
         threshold: newThreshold,
     };
-    const userWalletAddress = await context.bitcoinClient.getUserWalletAddressFromFundingUtxo(fundingUtxo, network);
+    const userPaymentTxid = argv['user-payment-txid'];
+    if (!userPaymentTxid) {
+        console.error('--user-payment-txid is required');
+        return;
+    }
+    const userPaymentVout = await (0, spell_operations_1.findUserPaymentVout)(context, newGrailState, userPaymentTxid, recoveryPublicKey, exports.TIMELOCK_BLOCKS);
+    const userWalletAddress = await (0, spell_operations_1.getUserWalletAddressFromUserPaymentUtxo)(context, { txid: userPaymentTxid, vout: userPaymentVout }, network);
     const userPaymentDetails = {
-        txid: argv['user-payment-txid'],
-        vout: Number.parseInt(argv['user-payment-vout']) || 0,
+        txid: userPaymentTxid,
+        vout: userPaymentVout,
         recoveryPublicKey,
-        timelockBlocks: 100,
+        timelockBlocks: exports.TIMELOCK_BLOCKS,
         grailState: newGrailState,
         userWalletAddress,
     };
-    let userPaymentVout = 0;
-    if (!argv['user-payment-vout']) {
-        console.warn('--user-payment-vout not provided, auto detecting...');
-        userPaymentVout = await (0, spell_operations_1.findUserPaymentVout)(context, newGrailState, userPaymentDetails);
-        userPaymentDetails.vout = userPaymentVout;
-        console.warn(`Detected user payment vout: ${userPaymentVout}`);
-    }
     if (!argv['feerate']) {
         console.error('--feerate is required');
         return;
     }
     const feerate = Number.parseFloat(argv['feerate']);
-    const { spell, signatureRequest } = await (0, create_pegin_spell_1.createPeginSpell)(context, feerate, previousNftTxid, newGrailState, userPaymentDetails, userWalletAddress, fundingUtxo);
+    const { spell, signatureRequest } = await (0, create_pegin_spell_1.createPeginSpell)(context, feerate, previousNftTxid, newGrailState, userPaymentDetails, fundingUtxo);
     console.log('Spell created:', JSON.stringify(spell, json_1.bufferReplacer, '\t'));
     const fromCosigners = privateKeys
         .map(pk => Buffer.from(pk, 'hex'))

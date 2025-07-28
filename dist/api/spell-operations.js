@@ -41,6 +41,7 @@ exports.transmitSpell = transmitSpell;
 exports.getPreviousTransactions = getPreviousTransactions;
 exports.signAsCosigner = signAsCosigner;
 exports.findUserPaymentVout = findUserPaymentVout;
+exports.getUserWalletAddressFromUserPaymentUtxo = getUserWalletAddressFromUserPaymentUtxo;
 const bitcoin = __importStar(require("bitcoinjs-lib"));
 const taproot_1 = require("../core/taproot");
 const spells_1 = require("../core/spells");
@@ -165,20 +166,54 @@ function signAsCosigner(context, request, keypair) {
     }));
     return sigs;
 }
-async function findUserPaymentVout(context, grailState, userPaymentDetails) {
-    const userPaymentTxHex = await context.bitcoinClient.getTransactionHex(userPaymentDetails.txid);
+async function findUserPaymentVout(context, grailState, userPaymentTxid, recoveryPublicKey, timelockBlocks) {
+    const userPaymentTxHex = await context.bitcoinClient.getTransactionHex(userPaymentTxid);
     if (!userPaymentTxHex) {
-        throw new Error(`User payment transaction ${userPaymentDetails.txid} not found`);
+        throw new Error(`User payment transaction ${userPaymentTxid} not found`);
     }
     const userPaymentTx = bitcoin.Transaction.fromHex(userPaymentTxHex);
-    const userPaymentAddress = (0, taproot_1.generateUserPaymentAddress)(grailState, userPaymentDetails, context.network);
+    const userPaymentAddress = (0, taproot_1.generateUserPaymentAddress)(grailState, { recoveryPublicKey, timelockBlocks }, context.network);
     const index = userPaymentTx.outs.findIndex(out => {
         // Convert address to script and compare
         const outScript = bitcoin.address.toOutputScript(userPaymentAddress, taproot_common_1.bitcoinjslibNetworks[context.network]);
         return out.script.compare(outScript) == 0;
     });
     if (index === -1) {
-        throw new Error(`User payment address ${userPaymentAddress} not found in transaction ${userPaymentDetails.txid}`);
+        throw new Error(`User payment address ${userPaymentAddress} not found in transaction ${userPaymentTxid}`);
     }
     return index;
+}
+async function getUserWalletAddressFromUserPaymentUtxo(context, fundingUtxo, network) {
+    const txBytes = await context.bitcoinClient.getTransactionBytes(fundingUtxo.txid);
+    const tx = bitcoin.Transaction.fromBuffer(txBytes);
+    if (tx.outs.length < 2) {
+        throw new Error('Funding UTXO has no inputs');
+    }
+    const changeOutput = fundingUtxo.vout == 0 ? 1 : 0;
+    const script = tx.outs[changeOutput].script;
+    const address = [
+        bitcoin.payments.p2ms,
+        bitcoin.payments.p2pk,
+        bitcoin.payments.p2pkh,
+        bitcoin.payments.p2sh,
+        bitcoin.payments.p2wpkh,
+        bitcoin.payments.p2wsh,
+        bitcoin.payments.p2tr,
+    ]
+        .map(payment => {
+        try {
+            return payment({
+                output: script,
+                network: taproot_common_1.bitcoinjslibNetworks[network],
+            }).address;
+        }
+        catch (e) {
+            return undefined;
+        }
+    })
+        .filter(Boolean)[0];
+    if (!address) {
+        throw new Error('No valid address found for the script');
+    }
+    return address;
 }
