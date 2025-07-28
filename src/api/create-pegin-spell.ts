@@ -17,7 +17,6 @@ export async function createPeginSpell(
 	previousNftTxid: string,
 	nextGrailState: GrailState,
 	userPaymentDetails: UserPaymentDetails,
-	userWalletAddress: string,
 	fundingUtxo?: Utxo
 ): Promise<{ spell: Spell; signatureRequest: SignatureRequest }> {
 	const previousNftTxhex =
@@ -58,7 +57,10 @@ export async function createPeginSpell(
 			incomingUserCharms: [],
 			incomingGrailBtc: [],
 			outgoingUserCharms: [
-				{ amount: userPaymentAmount, address: userWalletAddress },
+				{
+					amount: userPaymentAmount,
+					address: userPaymentDetails.userWalletAddress,
+				},
 			],
 			outgoingUserBtc: [],
 		},
