@@ -69,6 +69,9 @@ export class ExtendedClient extends Client {
 	): Promise<any> {
 		return this.command('gettxout', txid, vout, includeMempool);
 	}
+	generateToAddress(blocks: number, address: string): Promise<string[]> {
+		return this.command('generatetoaddress', blocks, address);
+	}
 }
 
 export class BitcoinClient {
@@ -199,5 +202,9 @@ export class BitcoinClient {
 
 	public async isUtxoSpendable(txid: string, vout: number): Promise<boolean> {
 		return !!(await this.client!.getTxOut(txid, vout, true));
+	}
+
+	public async generateToAddress(blocks: number, address: string): Promise<string[]> {
+		return this.client!.generateToAddress(blocks, address);
 	}
 }

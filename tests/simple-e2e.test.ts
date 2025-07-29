@@ -2,8 +2,9 @@ import { generateRandomKeypair } from "../src/cli/generate-random-keypairs";
 import { deployNftCli } from "../src/cli/deploy";
 import { userPaymentCli } from "../src/cli/user-payment";
 import { peginCli } from "../src/cli/pegin";
+import { BitcoinClient } from "../src/core/bitcoin";
 
-jest.setTimeout(600000);
+jest.setTimeout(1200000);
 
 describe('simple e2e test', () => {
   it('should deploy the NFT', async () => {
@@ -36,6 +37,12 @@ describe('simple e2e test', () => {
     ]);
     expect(paymentResult).toBeTruthy();
     console.log('User Payment Result:', paymentResult);
+
+    // Mint a block in regtest
+    const bitcoinClient = await BitcoinClient.initialize();
+    const address = await bitcoinClient.getAddress();
+    const blockHashes = await bitcoinClient.generateToAddress(1, address);
+    console.log('Minted block:', blockHashes[0]);
 
     // Execute peg in
     const peginResult = await peginCli([
