@@ -163,7 +163,6 @@ export async function peginCli(_argv: string[]): Promise<[string, string]> {
 		JSON.stringify(signedSpell, bufferReplacer, '\t')
 	);
 
-	let spellTxid = '';
 	if (transmit) {
 		return await transmitSpell(context, signedSpell);
 	}
