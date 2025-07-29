@@ -124,7 +124,7 @@ b listunspent
 # Running the Tests
 
 ```bash
-$ npm run test
+$ npm run test:e2e
 ```
 
 _Note:_ See pegin-e2e-test-log.md

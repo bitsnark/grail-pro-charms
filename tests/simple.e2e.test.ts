@@ -7,18 +7,29 @@ import { BitcoinClient } from "../src/core/bitcoin";
 jest.setTimeout(1200000);
 
 describe('simple e2e test', () => {
-  it('should deploy the NFT', async () => {
+  let deployerPublicKey: string;
+  let deployerPrivateKey: string;
+  let deploymentResult: any;
+  let paymentResult: any;
 
+  it('should generate random keypair for deployer', async () => {
     // Generate a random keypair for the deployer
-    const deployerKaypair = generateRandomKeypair();
-    const deployerPublicKey = deployerKaypair.publicKey.toString('hex');
-    const deployerPrivateKey = deployerKaypair.privateKey.toString('hex');
+    const deployerKeypair = generateRandomKeypair();
+    deployerPublicKey = deployerKeypair.publicKey.toString('hex');
+    deployerPrivateKey = deployerKeypair.privateKey.toString('hex');
 
     console.log('Deployer Public Key:', deployerPublicKey);
     console.log('Deployer Private Key:', deployerPrivateKey);
 
+    expect(deployerPublicKey).toBeDefined();
+    expect(deployerPrivateKey).toBeDefined();
+  });
+
+  it('should deploy the NFT', async () => {
+    expect(deployerPublicKey).toBeDefined();
+
     // Deploy the NFT using the CLI
-    const result = await deployNftCli([
+    deploymentResult = await deployNftCli([
       '--deployer-public-key', deployerPublicKey,
       '--mock-proof', 'true',
       '--network', 'regtest',
@@ -26,31 +37,54 @@ describe('simple e2e test', () => {
       '--transmit', 'true',
       '--ticker', 'TESTNFT'
     ]);
-    expect(result).toBeTruthy();
-    console.log('Deployment Result:', result);
+    expect(deploymentResult).toBeTruthy();
+    expect(deploymentResult.appId).toBeDefined();
+    expect(deploymentResult.appVk).toBeDefined();
+    expect(deploymentResult.spellTxid).toBeDefined();
+    console.log('Deployment Result:', deploymentResult);
+  });
+
+  it('should execute user payment', async () => {
+    expect(deployerPublicKey).toBeDefined();
+    expect(deploymentResult).toBeDefined();
 
     // Execute user payment
-    const paymentResult = await userPaymentCli([
+    paymentResult = await userPaymentCli([
       '--current-public-keys', deployerPublicKey,
       '--current-threshold', '1',
       '--amount', '666666'
     ]);
     expect(paymentResult).toBeTruthy();
+    expect(paymentResult.txid).toBeDefined();
+    expect(paymentResult.recoveryPublicKey).toBeDefined();
     console.log('User Payment Result:', paymentResult);
+  });
 
+  it('should mint a block in regtest', async () => {
     // Mint a block in regtest
     const bitcoinClient = await BitcoinClient.initialize();
     const address = await bitcoinClient.getAddress();
     const blockHashes = await bitcoinClient.generateToAddress(1, address);
+    
+    expect(blockHashes).toBeDefined();
+    expect(blockHashes.length).toBe(1);
+    expect(blockHashes[0]).toBeDefined();
     console.log('Minted block:', blockHashes[0]);
+  });
+
+  it('should execute pegin', async () => {
+    expect(deploymentResult).toBeDefined();
+    expect(paymentResult).toBeDefined();
+    expect(deployerPublicKey).toBeDefined();
+    expect(deployerPrivateKey).toBeDefined();
 
     // Execute peg in
     const peginResult = await peginCli([
-      '--app-id', result.appId,
-      '--app-vk', result.appVk,
+      '--app-id', deploymentResult.appId,
+      '--app-vk', deploymentResult.appVk,
       '--new-public-keys', deployerPublicKey,
       '--new-threshold', '1',
-      '--previous-nft-txid', result.spellTxid,
+      '--previous-nft-txid', deploymentResult.spellTxid,
       '--recovery-public-key', paymentResult.recoveryPublicKey,
       '--private-keys', deployerPrivateKey,
       '--user-payment-txid', paymentResult.txid,
