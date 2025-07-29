@@ -1,10 +1,7 @@
-import { CharmerRequest, Spell, Utxo } from './types';
+import { CharmerRequest, GrailState, Spell, Utxo } from './types';
 import { KeyPair } from './taproot';
 import { IContext } from './i-context';
-export declare function getStateFromNft(context: IContext, nftTxId: string): Promise<{
-    publicKeys: string[];
-    threshold: number;
-}>;
+export declare function getStateFromNft(context: IContext, nftTxId: string): Promise<GrailState>;
 export declare function getCharmsAmountFromUtxo(context: IContext, utxo: Utxo): Promise<number>;
 export declare function signTransactionInput(context: IContext, txBytes: Buffer, inputIndex: number, script: Buffer, previousTxBytesMap: {
     [txid: string]: Buffer;

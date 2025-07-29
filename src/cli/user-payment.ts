@@ -6,12 +6,15 @@ import { generateRandomKeypair } from './generate-random-keypairs';
 import { Network } from '../core/taproot/taproot-common';
 import { setupLog } from '../core/log';
 import { bufferReplacer } from '../core/json';
+import { TIMELOCK_BLOCKS } from './pegin';
 
-async function main() {
+export async function userPaymentCli(
+	_argv: string[]
+): Promise<{ txid: string; recoveryPublicKey: string }> {
 	dotenv.config({ path: ['.env.test', '.env.local', '.env'] });
 	setupLog();
 
-	const argv = minimist(process.argv.slice(2), {
+	const argv = minimist(_argv, {
 		alias: {},
 		default: {
 			network: 'regtest',
@@ -22,8 +25,7 @@ async function main() {
 
 	const network = argv['network'] as Network;
 	if (!argv['current-public-keys']) {
-		console.error('--current-public-keys is required.');
-		return;
+		throw new Error('--current-public-keys is required.');
 	}
 	const currentPublicKeys = (argv['current-public-keys'] as string)
 		.split(',')
@@ -34,16 +36,14 @@ async function main() {
 		currentThreshold < 1 ||
 		currentThreshold > currentPublicKeys.length
 	) {
-		console.error(
+		throw new Error(
 			'--current-threshold must be a number between 1 and the number of current public keys.'
 		);
-		return;
 	}
 
 	const amount = Number.parseInt(argv['amount']);
 	if (!amount || isNaN(amount) || amount <= 0) {
-		console.error('--amount must be a positive number.');
-		return;
+		throw new Error('--amount must be a positive number.');
 	}
 
 	const bitcoinClient = await BitcoinClient.initialize();
@@ -58,7 +58,7 @@ async function main() {
 		{ publicKeys: currentPublicKeys, threshold: currentThreshold },
 		{
 			recoveryPublicKey: recoveryKeypair.publicKey.toString('hex'),
-			timelockBlocks: 100,
+			timelockBlocks: TIMELOCK_BLOCKS,
 		},
 		network
 	);
@@ -70,10 +70,21 @@ async function main() {
 		'Recovery public key:',
 		recoveryKeypair.publicKey.toString('hex')
 	);
+
+	return { txid, recoveryPublicKey: recoveryKeypair.publicKey.toString('hex') };
 }
 
 if (require.main === module) {
-	main().catch(error => {
-		console.error('Error during NFT update:', error);
-	});
+	userPaymentCli(process.argv.slice(2))
+		.catch(error => {
+			console.error('Error during NFT update:', error);
+		})
+		.then(result => {
+			if (result) {
+				console.log('User payment created successfully:', result);
+			} else {
+				console.error('User payment creation failed.');
+			}
+			process.exit(result ? 0 : 1);
+		});
 }
