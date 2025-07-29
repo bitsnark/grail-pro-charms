@@ -1,6 +1,7 @@
 import { generateRandomKeypair } from "../src/cli/generate-random-keypairs";
 import { deployNftCli } from "../src/cli/deploy";
 import { userPaymentCli } from "../src/cli/user-payment";
+import { peginCli } from "../src/cli/pegin";
 
 jest.setTimeout(600000);
 
@@ -36,5 +37,20 @@ describe('simple e2e test', () => {
     expect(paymentResult).toBeTruthy();
     console.log('User Payment Result:', paymentResult);
 
+    // Execute peg in
+    const peginResult = await peginCli([
+      '--app-id', result.appId,
+      '--app-vk', result.appVk,
+      '--new-public-keys', deployerPublicKey,
+      '--new-threshold', '1',
+      '--previous-nft-txid', result.spellTxid,
+      '--recovery-public-key', paymentResult.recoveryPublicKey,
+      '--private-keys', deployerPrivateKey,
+      '--user-payment-txid', paymentResult.txid,
+      '--mock-proof', 'true',
+      '--transmit', 'true'
+    ]);
+    expect(peginResult).toBeTruthy();
+    console.log('Pegin Result:', peginResult);
   });
 });
