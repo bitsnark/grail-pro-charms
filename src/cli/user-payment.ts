@@ -6,6 +6,7 @@ import { generateRandomKeypair } from './generate-random-keypairs';
 import { Network } from '../core/taproot/taproot-common';
 import { setupLog } from '../core/log';
 import { bufferReplacer } from '../core/json';
+import { TIMELOCK_BLOCKS } from './pegin';
 
 export async function userPaymentCli(
 	_argv: string[]
@@ -57,7 +58,7 @@ export async function userPaymentCli(
 		{ publicKeys: currentPublicKeys, threshold: currentThreshold },
 		{
 			recoveryPublicKey: recoveryKeypair.publicKey.toString('hex'),
-			timelockBlocks: 100,
+			timelockBlocks: TIMELOCK_BLOCKS,
 		},
 		network
 	);
@@ -70,23 +71,20 @@ export async function userPaymentCli(
 		recoveryKeypair.publicKey.toString('hex')
 	);
 
-	return {
-		txid,
-		recoveryPublicKey: recoveryKeypair.publicKey.toString('hex')
-	};
+	return { txid, recoveryPublicKey: recoveryKeypair.publicKey.toString('hex') };
 }
 
 if (require.main === module) {
 	userPaymentCli(process.argv.slice(2))
 		.catch(error => {
-			console.error('Error during user payment:', error);
+			console.error('Error during NFT update:', error);
 		})
-		.then(flag => {
-			if (flag) {
-				console.log('User payment completed successfully.');
+		.then(result => {
+			if (result) {
+				console.log('User payment created successfully:', result);
 			} else {
-				console.error('User payment failed.');
+				console.error('User payment creation failed.');
 			}
-			process.exit(flag ? 0 : 1);
+			process.exit(result ? 0 : 1);
 		});
 }

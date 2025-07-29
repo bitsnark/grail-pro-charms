@@ -19,9 +19,7 @@ import { privateToKeypair } from './generate-random-keypairs';
 
 export const TIMELOCK_BLOCKS = 100; // Default timelock for user payments
 
-export async function peginCli(
-	_argv: string[]
-): Promise<{ spellTxid: string }> {
+export async function peginCli(_argv: string[]): Promise<[string, string]> {
 	dotenv.config({ path: ['.env.test', '.env.local', '.env'] });
 	setupLog();
 
@@ -167,24 +165,13 @@ export async function peginCli(
 
 	let spellTxid = '';
 	if (transmit) {
-		const [_, txid] = await transmitSpell(context, signedSpell);
-		spellTxid = txid;
+		return await transmitSpell(context, signedSpell);
 	}
-
-	return { spellTxid };
+	return ['', ''];
 }
 
 if (require.main === module) {
-	peginCli(process.argv.slice(2))
-		.catch(error => {
-			console.error('Error during pegin:', error);
-		})
-		.then(flag => {
-			if (flag) {
-				console.log('Pegin completed successfully.');
-			} else {
-				console.error('Pegin failed.');
-			}
-			process.exit(flag ? 0 : 1);
-		});
+	peginCli(process.argv.slice(2)).catch(err => {
+		console.error(err);
+	}).then
 }
