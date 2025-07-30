@@ -43,3 +43,88 @@ ts-node ./src/cli/pegin.ts --app-id 3b0ad31236878d16961cdd16f99c37b048943747c09a
 
 ***
 
+# How to Run E2E Tests
+
+## Prerequisites
+
+- Bitcoin Core with regtest configuration
+- Charms CLI tool installed from [bitsnark/charms](https://github.com/bitsnark/charms) (stable version)
+
+
+## Environment Setup
+
+Set the following environment variables:
+
+```bash
+export BTC_WALLET_NAME=testwallet
+export CHARMS_BIN=~/.cargo/bin/charms
+```
+
+## Bitcoin Regtest Node Configuration
+
+### 1. Bitcoin Configuration File
+
+Create or update your `bitcoin.conf` file with the following settings:
+
+```ini
+server=1
+txindex=1
+
+daemon=0
+addresstype=bech32m
+changetype=bech32m
+
+rpcport=18443
+# Enable regtest mode
+regtest=1
+
+# RPC authentication
+rpcuser=bitcoin
+rpcpassword=1234
+
+# Allow RPC connections only from localhost
+rpcallowip=127.0.0.1
+
+# Optional: Enable timestamps in logs
+logtimestamps=1
+
+# Optional: Enable debugging logs
+debug=1
+
+# estimation is available. It helps ensure transactions are processed even
+fallbackfee=0.0001
+```
+
+### 2. Bitcoin Node Setup
+
+Start the Bitcoin regtest node and perform initial setup:
+
+```bash
+# Start bitcoind
+bitcoind
+
+# Create wallet
+b createwallet testwallet
+
+# Unload wallet (if needed)
+b loadwallet "testwallet"
+
+# Generate new address
+b getnewaddress
+# Example output: bcrt1pyezp8aenr3d779g6hg7z8jhjmrdwuvw3lnt9a2gdlec72hrkfpxqqx6m5p
+
+# Generate 101 blocks to the address (for coinbase maturity)
+b generatetoaddress 101 bcrt1pyezp8aenr3d779g6hg7z8jhjmrdwuvw3lnt9a2gdlec72hrkfpxqqx6m5p
+
+# List unspent transactions
+b listunspent
+```
+
+
+# Running the Tests
+
+```bash
+$ npm run test:e2e
+```
+
+_Note:_ See pegin-e2e-test-log.md
