@@ -122,9 +122,16 @@ b listunspent
 
 
 # Running the Tests
-
+## Simple e2e (deploy to pegin)
 ```bash
 $ npm run test:e2e
 ```
 
 _Note:_ See pegin-e2e-test-log.md
+
+## NFT update e2e
+```bash
+$ npm run test:e2e:update
+```
+
+_Note:_ See update-e2e-test-log.md
