@@ -8,7 +8,7 @@
         "build": "tsc --project . --outDir ./dist --declaration --pretty",
         "clean-js": "find ./src -type f -name \"*.js\" -delete",
         "test": "jest --detectOpenHandles --testPathIgnorePatterns=e2e",
-        "test:e2e": "jest --detectOpenHandles --runInBand tests/simple.e2e.test.ts"
+        "test:e2e": "jest --detectOpenHandles --runInBand tests/simple-e2e.test.ts"
     },
     "devDependencies": {
         "@jest/globals": "29.7.0",
