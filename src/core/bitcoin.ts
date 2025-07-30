@@ -1,5 +1,5 @@
 import Client from 'bitcoin-core';
-import { Utxo } from './types';
+import { PreviousTransactions, Utxo } from './types';
 import * as bitcoin from 'bitcoinjs-lib';
 import { Network, bitcoinjslibNetworks } from './taproot/taproot-common';
 
@@ -36,7 +36,14 @@ export class ExtendedClient extends Client {
 	}
 	signTransactionInputs(
 		txHex: string,
-		prevtxs?: string[],
+		prevtxs?: {
+			txid: string;
+			vout: number;
+			scriptPubKey: string;
+			redeemScript: string;
+			witnessScript: string;
+			amount: number;
+		}[],
 		sighashType?: string
 	): Promise<any> {
 		return this.command(
@@ -120,21 +127,42 @@ export class BitcoinClient {
 	}
 
 	public async signTransaction(
-		txHex: string,
-		prevtxs?: string[],
+		txBytes: Buffer,
+		prevtxsBytesMap?: PreviousTransactions,
 		sighashType?: string
-	): Promise<string> {
+	): Promise<Buffer> {
+		const tx = bitcoin.Transaction.fromBuffer(txBytes);
+		const prevtxinfo = prevtxsBytesMap ? tx.ins.map((input, index) => {
+			const prevtxid = hashToTxid(input.hash);
+			const prevtxbytes = prevtxsBytesMap[prevtxid];
+			if (!prevtxbytes) {
+				throw new Error(`Previous transaction ${prevtxid} not found`);
+			}
+			const prevtxObj = bitcoin.Transaction.fromBuffer(prevtxbytes);
+			const output = prevtxObj.outs[input.index];
+			return {
+				txid: prevtxid,
+				vout: input.index,
+				scriptPubKey: output.script.toString('hex'),
+				redeemScript: '',
+				witnessScript: '',
+				amount: output.value / 100000000, // Convert satoshis to BTC
+			};
+		}) : undefined;
+
+		console.log('!!!!!! Signing transaction with inputs:', prevtxinfo);
+
 		const result = await this.client!.signTransactionInputs(
-			txHex,
-			prevtxs,
+			txBytes.toString('hex'),
+			prevtxinfo,
 			sighashType
 		);
 		if (!result.complete) throw new Error('Transaction signing failed');
-		return result.hex;
+		return Buffer.from(result.hex, 'hex');
 	}
 
-	public async transmitTransaction(txHex: string): Promise<string> {
-		return this.client!.sendRawTransaction(txHex);
+	public async transmitTransaction(txBytes: Buffer): Promise<string> {
+		return this.client!.sendRawTransaction(txBytes.toString('hex'));
 	}
 
 	public async listUnspent(
@@ -142,7 +170,7 @@ export class BitcoinClient {
 	): Promise<
 		{ spendable: boolean; value: number; txid: string; vout: number }[]
 	> {
-		return this.client!.listUnspent(1, 9999999, address ? [address] : []).then(
+		return this.client!.listUnspent(0, 9999999, address ? [address] : []).then(
 			utxos =>
 				utxos.map(utxo => ({
 					spendable: utxo.spendable,
@@ -199,5 +227,10 @@ export class BitcoinClient {
 
 	public async isUtxoSpendable(txid: string, vout: number): Promise<boolean> {
 		return !!(await this.client!.getTxOut(txid, vout, true));
+	}
+
+	public async generateBlocks(txids: string[]): Promise<void> {
+		const output = await this.getAddress();
+		await this.client!.command('generateblock', output, txids);
 	}
 }

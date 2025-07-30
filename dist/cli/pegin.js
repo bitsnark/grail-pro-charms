@@ -8,7 +8,6 @@ exports.peginCli = peginCli;
 const minimist_1 = __importDefault(require("minimist"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const bitcoin_1 = require("../core/bitcoin");
-const log_1 = require("../core/log");
 const json_1 = require("../core/json");
 const context_1 = require("../core/context");
 const env_parser_1 = require("../core/env-parser");
@@ -18,7 +17,6 @@ const generate_random_keypairs_1 = require("./generate-random-keypairs");
 exports.TIMELOCK_BLOCKS = 100; // Default timelock for user payments
 async function peginCli(_argv) {
     dotenv_1.default.config({ path: ['.env.test', '.env.local', '.env'] });
-    (0, log_1.setupLog)();
     const argv = (0, minimist_1.default)(_argv, {
         alias: {},
         string: ['new-public-keys', 'private-keys'],
@@ -46,7 +44,7 @@ async function peginCli(_argv) {
         charmsBin: env_parser_1.parse.string('CHARMS_BIN'),
         zkAppBin: './zkapp/target/charms-app',
         network,
-        mockProof: argv['mock-proof'],
+        mockProof: !!argv['mock-proof'],
         ticker: 'GRAIL-NFT',
     });
     if (!argv['new-public-keys']) {
@@ -99,7 +97,7 @@ async function peginCli(_argv) {
     }
     const feerate = Number.parseFloat(argv['feerate']);
     const { spell, signatureRequest } = await (0, create_pegin_spell_1.createPeginSpell)(context, feerate, previousNftTxid, newGrailState, userPaymentDetails, fundingUtxo);
-    console.log('Spell created:', JSON.stringify(spell, json_1.bufferReplacer, '\t'));
+    console.log('Spell created:', JSON.stringify(spell, json_1.bufferReplacer, 2));
     const fromCosigners = privateKeys
         .map(pk => Buffer.from(pk, 'hex'))
         .map(privateKey => {
@@ -108,9 +106,13 @@ async function peginCli(_argv) {
         return { publicKey: keypair.publicKey.toString('hex'), signatures };
     });
     const signedSpell = await (0, spell_operations_1.injectSignaturesIntoSpell)(context, spell, signatureRequest, fromCosigners);
-    console.log('Signed spell:', JSON.stringify(signedSpell, json_1.bufferReplacer, '\t'));
+    console.log('Signed spell:', JSON.stringify(signedSpell, json_1.bufferReplacer, 2));
     if (transmit) {
-        return await (0, spell_operations_1.transmitSpell)(context, signedSpell);
+        const transmittedTxids = await (0, spell_operations_1.transmitSpell)(context, signedSpell);
+        // if (network === 'regtest') {
+        // 	await context.bitcoinClient.generateBlocks([userPaymentDetails.txid, ...transmittedTxids]);
+        // }
+        return transmittedTxids;
     }
     return ['', ''];
 }

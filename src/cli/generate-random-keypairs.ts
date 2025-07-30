@@ -5,7 +5,6 @@ import { Buffer } from 'node:buffer';
 import { randomBytes } from 'crypto';
 import { bufferReplacer } from '../core/json';
 import { array } from '../core/array-utils';
-import { setupLog } from '../core/log';
 
 interface Keypair {
 	publicKey: Buffer;
@@ -46,7 +45,6 @@ export function generateRandomKeypairs(size: number): Keypair[] {
 
 function main() {
 	dotenv.config({ path: ['.env.test', '.env.local', '.env'] });
-	setupLog();
 
 	const argv = minimist(process.argv.slice(2), {
 		alias: { c: 'count' },
@@ -61,7 +59,7 @@ function main() {
 	// Generate the random roster
 	const roster = generateRandomKeypairs(argv.count || 1);
 	// Print the roster
-	console.log(JSON.stringify(roster, bufferReplacer, '\t'));
+	console.log(JSON.stringify(roster, bufferReplacer, 2));
 }
 
 if (require.main === module) {

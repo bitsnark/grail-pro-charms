@@ -1,6 +1,5 @@
 import minimist from 'minimist';
 import dotenv from 'dotenv';
-import { setupLog } from '../core/log';
 import { Network } from '../core/taproot/taproot-common';
 import { Context } from '../core/context';
 import { BitcoinClient } from '../core/bitcoin';
@@ -11,6 +10,7 @@ import { createSpell } from '../core/spells';
 import { transmitSpell } from '../api/spell-operations';
 import { parse } from '../core/env-parser';
 import { bufferReplacer } from '../core/json';
+import { TICKER, ZKAPP_BIN } from './consts';
 
 export async function deployNft(
 	context: IContext,
@@ -69,7 +69,7 @@ export async function deployNft(
 	};
 
 	const spell = await createSpell(context, [], request);
-	console.log('Spell created:', JSON.stringify(spell, bufferReplacer, '\t'));
+	console.log('Spell created:', JSON.stringify(spell, bufferReplacer, 2));
 
 	if (transmit) {
 		return await transmitSpell(context, spell);
@@ -81,7 +81,6 @@ export async function deployNftCli(
 	_argv: string[]
 ): Promise<{ appId: string; appVk: string; spellTxid: string }> {
 	dotenv.config({ path: ['.env.test', '.env.local', '.env'] });
-	setupLog();
 
 	const argv = minimist(_argv, {
 		alias: {},
@@ -112,13 +111,15 @@ export async function deployNftCli(
 	const bitcoinClient = await BitcoinClient.initialize();
 	const fundingUtxo = await bitcoinClient.getFundingUtxo();
 
+	const network = argv['network'] as Network;
+
 	const context = await Context.createForDeploy(
 		{
 			charmsBin: parse.string('CHARMS_BIN'),
-			zkAppBin: './zkapp/target/charms-app',
-			network: argv['network'] as Network,
+			zkAppBin: ZKAPP_BIN,
+			network: network,
 			mockProof: !!argv['mock-proof'],
-			ticker: 'GRAIL-NFT',
+			ticker: TICKER,
 		},
 		fundingUtxo
 	);
@@ -130,10 +131,15 @@ export async function deployNftCli(
 		fundingUtxo,
 		transmit
 	);
+
+	// if (network === 'regtest') {
+	// 	await context.bitcoinClient.generateBlocks([commitTxid, spellTxid]);
+	// }
+
 	return {
 		appId: context.appId,
 		appVk: context.appVk,
-		spellTxid: spellTxid,
+		spellTxid
 	};
 }
 

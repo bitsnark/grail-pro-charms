@@ -154,7 +154,7 @@ async function createGeneralizedSpell(context, feerate, previousNftTxid, nextGra
     const fundingChangeAddress = await context.bitcoinClient.getAddress();
     fundingUtxo = fundingUtxo || (await context.bitcoinClient.getFundingUtxo());
     const previousSpellData = await (0, charms_sdk_1.showSpell)(context, previousNftTxid);
-    console.log('Previous NFT spell:', JSON.stringify(previousSpellData, null, '\t'));
+    console.log('Previous NFT spell:', JSON.stringify(previousSpellData, null, 2));
     const previousPublicKeys = previousSpellData.outs[0].charms['$0000'].current_cosigners.split(',');
     const previousThreshold = previousSpellData.outs[0].charms['$0000']
         .current_threshold;
@@ -293,6 +293,6 @@ async function createGeneralizedSpell(context, feerate, previousNftTxid, nextGra
             index,
         })),
     };
-    console.log('Spell created:', JSON.stringify(spell, json_1.bufferReplacer, '\t'));
+    console.log('Spell created:', JSON.stringify(spell, json_1.bufferReplacer, 2));
     return { spell, signatureRequest };
 }

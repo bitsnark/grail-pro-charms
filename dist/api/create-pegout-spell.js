@@ -47,7 +47,7 @@ async function findLockedBtcUtxos(context, lestNftTxid, minAmount) {
     while (nftTxid) {
         const nftTxBytes = await context.bitcoinClient.getTransactionBytes(nftTxid);
         const previousTransactions = await (0, spell_operations_1.getPreviousTransactions)(context, nftTxBytes);
-        const spellData = await (0, charms_sdk_1.showSpell)(context, nftTxid, Object.values(previousTransactions));
+        const spellData = await (0, charms_sdk_1.showSpell)(context, nftTxid);
         if (!spellData) {
             throw new Error(`Spell data for transaction ${nftTxid} not found`);
         }
@@ -101,6 +101,6 @@ async function createPegoutSpell(context, feerate, previousNftTxid, nextGrailSta
             },
         ],
     }, fundingUtxo);
-    console.log('Peg-in spell created:', JSON.stringify(spell, json_1.bufferReplacer, '\t'));
+    console.log('Peg-in spell created:', JSON.stringify(spell, json_1.bufferReplacer, 2));
     return { spell, signatureRequest };
 }

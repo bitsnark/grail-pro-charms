@@ -2,7 +2,6 @@ import minimist from 'minimist';
 import dotenv from 'dotenv';
 import { BitcoinClient } from '../core/bitcoin';
 import { Network } from '../core/taproot/taproot-common';
-import { setupLog } from '../core/log';
 import { Context } from '../core/context';
 import { parse } from '../core/env-parser';
 import { createUpdateNftSpell } from '../api/create-update-nft-spell';
@@ -18,7 +17,6 @@ import { SignatureResponse } from '../core/types';
 
 async function main() {
 	dotenv.config({ path: ['.env.test', '.env.local', '.env'] });
-	setupLog();
 
 	const argv = minimist(process.argv.slice(2), {
 		alias: {},
@@ -87,8 +85,8 @@ async function main() {
 		newGrailState,
 		fundingUtxo
 	);
-	console.log('Spell created:', JSON.stringify(spell, bufferReplacer, '\t'));
-	console.log('Signature request:', JSON.stringify(signatureRequest, bufferReplacer, '\t'));
+	console.log('Spell created:', JSON.stringify(spell, bufferReplacer, 2));
+	console.log('Signature request:', JSON.stringify(signatureRequest, bufferReplacer, 2));
 
 	const fromCosigners: SignatureResponse[] = privateKeys
 		.map(pk => Buffer.from(pk, 'hex'))
@@ -106,7 +104,7 @@ async function main() {
 	);
 	console.log(
 		'Signed spell:',
-		JSON.stringify(signedSpell, bufferReplacer, '\t')
+		JSON.stringify(signedSpell, bufferReplacer, 2)
 	);
 
 	if (transmit) {

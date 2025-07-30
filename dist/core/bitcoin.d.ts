@@ -1,5 +1,5 @@
 import Client from 'bitcoin-core';
-import { Utxo } from './types';
+import { PreviousTransactions, Utxo } from './types';
 export declare const DUST_LIMIT = 546;
 export declare function txidToHash(txid: string): Buffer;
 export declare function hashToTxid(hash: Buffer): string;
@@ -9,7 +9,14 @@ export declare class ExtendedClient extends Client {
     constructor(options: any);
     getRawTransaction(txid: string): Promise<any>;
     sendRawTransaction(txHex: string): Promise<string>;
-    signTransactionInputs(txHex: string, prevtxs?: string[], sighashType?: string): Promise<any>;
+    signTransactionInputs(txHex: string, prevtxs?: {
+        txid: string;
+        vout: number;
+        scriptPubKey: string;
+        redeemScript: string;
+        witnessScript: string;
+        amount: number;
+    }[], sighashType?: string): Promise<any>;
     listUnspent(minconf: number, maxconf: number, addresses: string[]): Promise<any[]>;
     getNewAddress(): Promise<string>;
     loadWallet(name: string): Promise<any>;
@@ -23,8 +30,8 @@ export declare class BitcoinClient {
     static initialize(client?: ExtendedClient): Promise<BitcoinClient>;
     getTransactionHex(txid: string): Promise<string>;
     getTransactionBytes(txid: string): Promise<Buffer>;
-    signTransaction(txHex: string, prevtxs?: string[], sighashType?: string): Promise<string>;
-    transmitTransaction(txHex: string): Promise<string>;
+    signTransaction(txBytes: Buffer, prevtxsBytesMap?: PreviousTransactions, sighashType?: string): Promise<Buffer>;
+    transmitTransaction(txBytes: Buffer): Promise<string>;
     listUnspent(address?: string): Promise<{
         spendable: boolean;
         value: number;
@@ -39,4 +46,5 @@ export declare class BitcoinClient {
         [txid: string]: Buffer;
     }>;
     isUtxoSpendable(txid: string, vout: number): Promise<boolean>;
+    generateBlocks(txids: string[]): Promise<void>;
 }

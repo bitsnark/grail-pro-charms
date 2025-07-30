@@ -3,7 +3,6 @@ import dotenv from 'dotenv';
 import { BitcoinClient } from '../core/bitcoin';
 import { showSpell } from '../core/charms-sdk';
 import { IContext } from '../core/i-context';
-import { setupLog } from '../core/log';
 import { parse } from '../core/env-parser';
 import { Context } from '../core/context';
 import { Network } from '../core/taproot/taproot-common';
@@ -17,12 +16,11 @@ async function viewNft(context: IContext, nftTxid: string) {
 		return;
 	}
 	const spell = await showSpell(context, txhex);
-	console.log('spell: ' + JSON.stringify(spell, null, '\t'));
+	console.log('spell: ' + JSON.stringify(spell, null, 2));
 }
 
 async function main() {
 	dotenv.config({ path: ['.env.test', '.env.local', '.env'] });
-	setupLog();
 
 	const argv = minimist(process.argv.slice(2), {
 		alias: {},

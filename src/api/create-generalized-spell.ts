@@ -211,7 +211,7 @@ export async function createGeneralizedSpell(
 	const previousSpellData = await showSpell(context, previousNftTxid);
 	console.log(
 		'Previous NFT spell:',
-		JSON.stringify(previousSpellData, null, '\t')
+		JSON.stringify(previousSpellData, null, 2)
 	);
 
 	const previousPublicKeys = previousSpellData.outs[0].charms[
@@ -374,6 +374,6 @@ export async function createGeneralizedSpell(
 		})),
 	};
 
-	console.log('Spell created:', JSON.stringify(spell, bufferReplacer, '\t'));
+	console.log('Spell created:', JSON.stringify(spell, bufferReplacer, 2));
 	return { spell, signatureRequest };
 }

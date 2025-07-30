@@ -101,17 +101,13 @@ export async function executeSpell(
 
 export async function showSpell(
 	context: IContext,
-	txid: string,
-	previousTransactions: Buffer[] = []
+	txid: string
 ): Promise<any> {
 	const txhex = await context.bitcoinClient.getTransactionHex(txid);
 	const command = [
 		context.charmsBin,
 		'tx show-spell',
-		`--tx ${txhex}`,
-		previousTransactions?.length
-			? `--prev-txs ${previousTransactions.map(tx => tx.toString('hex')).join(',')}`
-			: undefined,
+		`--tx ${txhex}`
 	].filter(Boolean) as string[];
 
 	const stdout = await executeCommand(context, command);

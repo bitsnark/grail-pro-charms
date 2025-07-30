@@ -27,7 +27,7 @@ export async function createUpdateNftSpell(
 	const previousSpellData = await showSpell(context, previousNftTxid);
 	console.log(
 		'Previous NFT spell:',
-		JSON.stringify(previousSpellData, bufferReplacer, '\t')
+		JSON.stringify(previousSpellData, bufferReplacer, 2)
 	);
 	if (!previousSpellData) {
 		throw new Error('Invalid previous NFT spell data');

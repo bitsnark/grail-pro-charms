@@ -12,6 +12,7 @@ exports.unique = unique;
 exports.reverse = reverse;
 exports.forEachAsync = forEachAsync;
 exports.mapAsync = mapAsync;
+exports.arrayFromArrayWithIndex = arrayFromArrayWithIndex;
 function range(start, end) {
     return new Array(end - start).fill(0).map((_, i) => i);
 }
@@ -59,4 +60,11 @@ async function mapAsync(a, f) {
         results.push(await f(a[i], i));
     }
     return results;
+}
+function arrayFromArrayWithIndex(array) {
+    return array.reduce((acc, item) => {
+        const { index, ...itemWithoutIndex } = item;
+        acc[index] = itemWithoutIndex;
+        return acc;
+    }, []);
 }

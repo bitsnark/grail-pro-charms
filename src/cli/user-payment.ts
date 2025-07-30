@@ -4,21 +4,90 @@ import { BitcoinClient } from '../core/bitcoin';
 import { generateUserPaymentAddress } from '../core/taproot';
 import { generateRandomKeypair } from './generate-random-keypairs';
 import { Network } from '../core/taproot/taproot-common';
-import { setupLog } from '../core/log';
-import { bufferReplacer } from '../core/json';
 import { TIMELOCK_BLOCKS } from './pegin';
+import { findCharmsUtxos } from '../core/spells';
+import { IContext } from '../core/i-context';
+import { Context } from '../core/context';
+import { parse } from '../core/env-parser';
+import { ZKAPP_BIN } from './consts';
+
+export async function sendUserPaymentCharms(
+	context: IContext,
+	currentPublicKeys: string[],
+	currentThreshold: number,
+	amount: number,
+	network: Network
+): Promise<{ txid: string; recoveryPublicKey: string }> {
+	const bitcoinClient = await BitcoinClient.initialize();
+
+	const recoveryKeypair = generateRandomKeypair();
+
+	const userPaymentAddress = generateUserPaymentAddress(
+		{ publicKeys: currentPublicKeys, threshold: currentThreshold },
+		{
+			recoveryPublicKey: recoveryKeypair.publicKey.toString('hex'),
+			timelockBlocks: TIMELOCK_BLOCKS,
+		},
+		network
+	);
+
+	const charmsUtxos = await findCharmsUtxos(context, amount);
+	if (charmsUtxos.length === 0) {
+		throw new Error('No sufficient Charms UTXOs found for user payment.');
+	}
+	
+	console.log('Sending funds to user payment address:', userPaymentAddress);
+	const txid = await bitcoinClient.fundAddress(userPaymentAddress, amount);
+	console.log('Funds sent successfully, txid: ', txid);
+	console.log(
+		'Recovery public key:',
+		recoveryKeypair.publicKey.toString('hex')
+	);
+
+	return { txid, recoveryPublicKey: recoveryKeypair.publicKey.toString('hex') };
+}
+
+export async function sendUserPaymentBtc(
+	currentPublicKeys: string[],
+	currentThreshold: number,
+	amount: number,
+	network: Network
+): Promise<{ txid: string; recoveryPublicKey: string }> {
+	const bitcoinClient = await BitcoinClient.initialize();
+
+	const recoveryKeypair = generateRandomKeypair();
+
+	const userPaymentAddress = generateUserPaymentAddress(
+		{ publicKeys: currentPublicKeys, threshold: currentThreshold },
+		{
+			recoveryPublicKey: recoveryKeypair.publicKey.toString('hex'),
+			timelockBlocks: TIMELOCK_BLOCKS,
+		},
+		network
+	);
+
+	console.log('Sending funds to user payment address:', userPaymentAddress);
+	const txid = await bitcoinClient.fundAddress(userPaymentAddress, amount);
+	console.log('Funds sent successfully, txid: ', txid);
+	console.log(
+		'Recovery public key:',
+		recoveryKeypair.publicKey.toString('hex')
+	);
+
+	return { txid, recoveryPublicKey: recoveryKeypair.publicKey.toString('hex') };
+}
 
 export async function userPaymentCli(
 	_argv: string[]
 ): Promise<{ txid: string; recoveryPublicKey: string }> {
 	dotenv.config({ path: ['.env.test', '.env.local', '.env'] });
-	setupLog();
 
 	const argv = minimist(_argv, {
 		alias: {},
+		boolean: ['mock-proof'],
 		default: {
 			network: 'regtest',
-			amount: 666666,
+			'mock-proof': false,
 		},
 		'--': true,
 	});
@@ -46,32 +115,34 @@ export async function userPaymentCli(
 		throw new Error('--amount must be a positive number.');
 	}
 
-	const bitcoinClient = await BitcoinClient.initialize();
+	const type = argv['type'] as string;
+	if (type && type !== 'charms' && type !== 'btc') {
+		throw new Error('--type must be either "charms" or "btc".');
+	}
 
-	const recoveryKeypair = generateRandomKeypair();
-	console.log(
-		'Recovery keypair generated:',
-		JSON.stringify(recoveryKeypair, bufferReplacer, 2)
-	);
-
-	const userPaymentAddress = generateUserPaymentAddress(
-		{ publicKeys: currentPublicKeys, threshold: currentThreshold },
-		{
-			recoveryPublicKey: recoveryKeypair.publicKey.toString('hex'),
-			timelockBlocks: TIMELOCK_BLOCKS,
-		},
-		network
-	);
-
-	console.log('Sending funds to user payment address:', userPaymentAddress);
-	const txid = await bitcoinClient.fundAddress(userPaymentAddress, amount);
-	console.log('Funds sent successfully, txid: ', txid);
-	console.log(
-		'Recovery public key:',
-		recoveryKeypair.publicKey.toString('hex')
-	);
-
-	return { txid, recoveryPublicKey: recoveryKeypair.publicKey.toString('hex') };
+	if (type == 'charms') {
+		const context = await Context.create({
+			charmsBin: parse.string('CHARMS_BIN'),
+			zkAppBin: ZKAPP_BIN,
+			network,
+			mockProof: !!argv['mock-proof'],
+			ticker: 'GRAIL-NFT',
+		});
+		return await sendUserPaymentCharms(
+			context,
+			currentPublicKeys,
+			currentThreshold,
+			amount,
+			network
+		);
+	} else {
+		return await sendUserPaymentBtc(
+			currentPublicKeys,
+			currentThreshold,
+			amount,
+			network
+		);
+	}
 }
 
 if (require.main === module) {

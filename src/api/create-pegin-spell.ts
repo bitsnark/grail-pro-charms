@@ -69,7 +69,7 @@ export async function createPeginSpell(
 
 	console.log(
 		'Peg-in spell created:',
-		JSON.stringify(spell, bufferReplacer, '\t')
+		JSON.stringify(spell, bufferReplacer, 2)
 	);
 
 	return { spell, signatureRequest };

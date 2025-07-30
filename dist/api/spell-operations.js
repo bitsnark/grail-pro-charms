@@ -132,13 +132,11 @@ async function injectSignaturesIntoSpell(context, spell, signatureRequest, fromC
 }
 async function transmitSpell(context, transactions) {
     console.log('Transmitting spell...');
-    const commitmentTxHex = transactions.commitmentTxBytes.toString('hex');
-    const signedCommitmentTxHex = await context.bitcoinClient.signTransaction(commitmentTxHex, undefined, 'ALL|ANYONECANPAY');
-    console.info('Sending commitment transaction:', signedCommitmentTxHex);
-    const commitmentTxid = await context.bitcoinClient.transmitTransaction(signedCommitmentTxHex);
-    const spellTransactionHex = transactions.spellTxBytes.toString('hex');
-    console.info('Sending spell transaction:', spellTransactionHex);
-    const spellTxid = await context.bitcoinClient.transmitTransaction(spellTransactionHex);
+    const signedCommitmentTxBytes = await context.bitcoinClient.signTransaction(transactions.commitmentTxBytes, undefined, 'ALL|ANYONECANPAY');
+    console.info('Sending commitment transaction:', signedCommitmentTxBytes.toString('hex'));
+    const commitmentTxid = await context.bitcoinClient.transmitTransaction(signedCommitmentTxBytes);
+    console.info('Sending spell transaction:', transactions.spellTxBytes.toString('hex'));
+    const spellTxid = await context.bitcoinClient.transmitTransaction(transactions.spellTxBytes);
     const output = [commitmentTxid, spellTxid];
     console.log('Spell transmitted successfully:', output);
     return output;

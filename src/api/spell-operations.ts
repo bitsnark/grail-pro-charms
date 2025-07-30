@@ -177,23 +177,24 @@ export async function transmitSpell(
 ): Promise<[string, string]> {
 	console.log('Transmitting spell...');
 
-	const commitmentTxHex = transactions.commitmentTxBytes.toString('hex');
-	const signedCommitmentTxHex = await context.bitcoinClient.signTransaction(
-		commitmentTxHex,
+	const signedCommitmentTxBytes = await context.bitcoinClient.signTransaction(
+		transactions.commitmentTxBytes,
 		undefined,
 		'ALL|ANYONECANPAY'
 	);
 
-	console.info('Sending commitment transaction:', signedCommitmentTxHex);
+	console.info(
+		'Sending commitment transaction:',
+		signedCommitmentTxBytes.toString('hex')
+	);
 	const commitmentTxid = await context.bitcoinClient.transmitTransaction(
-		signedCommitmentTxHex
+		signedCommitmentTxBytes
 	);
 
-	const spellTransactionHex = transactions.spellTxBytes.toString('hex');
-
-	console.info('Sending spell transaction:', spellTransactionHex);
-	const spellTxid =
-		await context.bitcoinClient.transmitTransaction(spellTransactionHex);
+	console.info('Sending spell transaction:', transactions.spellTxBytes.toString('hex'));
+	const spellTxid = await context.bitcoinClient.transmitTransaction(
+		transactions.spellTxBytes
+	);
 
 	const output: [string, string] = [commitmentTxid, spellTxid];
 	console.log('Spell transmitted successfully:', output);
@@ -280,7 +281,9 @@ export async function getUserWalletAddressFromUserPaymentUtxo(
 	fundingUtxo: Utxo,
 	network: Network
 ): Promise<string> {
-	const txBytes = await context.bitcoinClient.getTransactionBytes(fundingUtxo.txid);
+	const txBytes = await context.bitcoinClient.getTransactionBytes(
+		fundingUtxo.txid
+	);
 	const tx = bitcoin.Transaction.fromBuffer(txBytes);
 	if (tx.outs.length < 2) {
 		throw new Error('Funding UTXO has no inputs');

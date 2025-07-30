@@ -63,3 +63,16 @@ export async function mapAsync<T1, T2>(
 	}
 	return results;
 }
+
+export function arrayFromArrayWithIndex<T extends { index: number }>(
+	array: T[]
+): Exclude<T, 'index'>[] {
+	return array.reduce(
+		(acc, item) => {
+			const { index, ...itemWithoutIndex } = item;
+			acc[index] = itemWithoutIndex as Exclude<T, 'index'>;
+			return acc;
+		},
+		[] as Exclude<T, 'index'>[]
+	);
+}

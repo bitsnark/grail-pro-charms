@@ -32,8 +32,7 @@ export async function findLockedBtcUtxos(
 		);
 		const spellData = await showSpell(
 			context,
-			nftTxid,
-			Object.values(previousTransactions)
+			nftTxid
 		);
 		if (!spellData) {
 			throw new Error(`Spell data for transaction ${nftTxid} not found`);
@@ -127,7 +126,7 @@ export async function createPegoutSpell(
 
 	console.log(
 		'Peg-in spell created:',
-		JSON.stringify(spell, bufferReplacer, '\t')
+		JSON.stringify(spell, bufferReplacer, 2)
 	);
 
 	return { spell, signatureRequest };

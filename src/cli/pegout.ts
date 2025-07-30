@@ -2,35 +2,26 @@ import minimist from 'minimist';
 import dotenv from 'dotenv';
 import { BitcoinClient } from '../core/bitcoin';
 import { Network } from '../core/taproot/taproot-common';
-import { setupLog } from '../core/log';
 import { bufferReplacer } from '../core/json';
 import { Context } from '../core/context';
 import { parse } from '../core/env-parser';
 import {
-	SignatureRequest,
 	SignatureResponse,
 	UserPaymentDetails,
 } from '../core/types';
 import {
 	findUserPaymentVout,
-	getPreviousGrailState,
-	getPreviousTransactions,
 	getUserWalletAddressFromUserPaymentUtxo,
 	injectSignaturesIntoSpell,
 	signAsCosigner,
 	transmitSpell,
 } from '../api/spell-operations';
-import {
-	generateSpendingScriptForGrail,
-	generateSpendingScriptsForUserPayment,
-} from '../core/taproot';
 import { privateToKeypair } from './generate-random-keypairs';
 import { createPegoutSpell } from '../api/create-pegout-spell';
 import { TIMELOCK_BLOCKS } from './pegin';
 
 async function main() {
 	dotenv.config({ path: ['.env.test', '.env.local', '.env'] });
-	setupLog();
 
 	const argv = minimist(process.argv.slice(2), {
 		alias: {},
@@ -162,7 +153,7 @@ async function main() {
 		userPaymentDetails,
 		fundingUtxo
 	);
-	console.log('Spell created:', JSON.stringify(spell, bufferReplacer, '\t'));
+	console.log('Spell created:', JSON.stringify(spell, bufferReplacer, 2));
 
 	const fromCosigners: SignatureResponse[] = privateKeys
 		.map(pk => Buffer.from(pk, 'hex'))
@@ -180,7 +171,7 @@ async function main() {
 	);
 	console.log(
 		'Signed spell:',
-		JSON.stringify(signedSpell, bufferReplacer, '\t')
+		JSON.stringify(signedSpell, bufferReplacer, 2)
 	);
 
 	if (transmit) {

@@ -47,7 +47,6 @@ const node_buffer_1 = require("node:buffer");
 const crypto_1 = require("crypto");
 const json_1 = require("../core/json");
 const array_utils_1 = require("../core/array-utils");
-const log_1 = require("../core/log");
 function publicFromPrivate(privateKey) {
     if (!secp.isPrivate(privateKey)) {
         throw new Error('Invalid private key');
@@ -78,7 +77,6 @@ function generateRandomKeypairs(size) {
 }
 function main() {
     dotenv_1.default.config({ path: ['.env.test', '.env.local', '.env'] });
-    (0, log_1.setupLog)();
     const argv = (0, minimist_1.default)(process.argv.slice(2), {
         alias: { c: 'count' },
         '--': true,
@@ -90,7 +88,7 @@ function main() {
     // Generate the random roster
     const roster = generateRandomKeypairs(argv.count || 1);
     // Print the roster
-    console.log(JSON.stringify(roster, json_1.bufferReplacer, '\t'));
+    console.log(JSON.stringify(roster, json_1.bufferReplacer, 2));
 }
 if (require.main === module) {
     main();

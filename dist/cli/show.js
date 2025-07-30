@@ -7,7 +7,6 @@ const minimist_1 = __importDefault(require("minimist"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const bitcoin_1 = require("../core/bitcoin");
 const charms_sdk_1 = require("../core/charms-sdk");
-const log_1 = require("../core/log");
 const env_parser_1 = require("../core/env-parser");
 const context_1 = require("../core/context");
 async function viewNft(context, nftTxid) {
@@ -18,11 +17,10 @@ async function viewNft(context, nftTxid) {
         return;
     }
     const spell = await (0, charms_sdk_1.showSpell)(context, txhex);
-    console.log('spell: ' + JSON.stringify(spell, null, '\t'));
+    console.log('spell: ' + JSON.stringify(spell, null, 2));
 }
 async function main() {
     dotenv_1.default.config({ path: ['.env.test', '.env.local', '.env'] });
-    (0, log_1.setupLog)();
     const argv = (0, minimist_1.default)(process.argv.slice(2), {
         alias: {},
         default: {

@@ -2,7 +2,6 @@ import minimist from 'minimist';
 import dotenv from 'dotenv';
 import { BitcoinClient } from '../core/bitcoin';
 import { Network } from '../core/taproot/taproot-common';
-import { setupLog } from '../core/log';
 import { bufferReplacer } from '../core/json';
 import { Context } from '../core/context';
 import { parse } from '../core/env-parser';
@@ -21,7 +20,6 @@ export const TIMELOCK_BLOCKS = 100; // Default timelock for user payments
 
 export async function peginCli(_argv: string[]): Promise<[string, string]> {
 	dotenv.config({ path: ['.env.test', '.env.local', '.env'] });
-	setupLog();
 
 	const argv = minimist(_argv, {
 		alias: {},
@@ -54,7 +52,7 @@ export async function peginCli(_argv: string[]): Promise<[string, string]> {
 		charmsBin: parse.string('CHARMS_BIN'),
 		zkAppBin: './zkapp/target/charms-app',
 		network,
-		mockProof: argv['mock-proof'],
+		mockProof: !!argv['mock-proof'],
 		ticker: 'GRAIL-NFT',
 	});
 
@@ -142,7 +140,7 @@ export async function peginCli(_argv: string[]): Promise<[string, string]> {
 		userPaymentDetails,
 		fundingUtxo
 	);
-	console.log('Spell created:', JSON.stringify(spell, bufferReplacer, '\t'));
+	console.log('Spell created:', JSON.stringify(spell, bufferReplacer, 2));
 
 	const fromCosigners: SignatureResponse[] = privateKeys
 		.map(pk => Buffer.from(pk, 'hex'))
@@ -160,17 +158,22 @@ export async function peginCli(_argv: string[]): Promise<[string, string]> {
 	);
 	console.log(
 		'Signed spell:',
-		JSON.stringify(signedSpell, bufferReplacer, '\t')
+		JSON.stringify(signedSpell, bufferReplacer, 2)
 	);
 
 	if (transmit) {
-		return await transmitSpell(context, signedSpell);
+		const transmittedTxids = await transmitSpell(context, signedSpell);
+		// if (network === 'regtest') {
+		// 	await context.bitcoinClient.generateBlocks([userPaymentDetails.txid, ...transmittedTxids]);
+		// }
+		return transmittedTxids;
 	}
+
 	return ['', ''];
 }
 
 if (require.main === module) {
 	peginCli(process.argv.slice(2)).catch(err => {
 		console.error(err);
-	}).then
+	}).then;
 }

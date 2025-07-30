@@ -38,6 +38,8 @@ exports.getCharmsAmountFromUtxo = getCharmsAmountFromUtxo;
 exports.signTransactionInput = signTransactionInput;
 exports.resignSpellWithTemporarySecret = resignSpellWithTemporarySecret;
 exports.createSpell = createSpell;
+exports.getTokenInfoForUtxo = getTokenInfoForUtxo;
+exports.findCharmsUtxos = findCharmsUtxos;
 const bitcoin = __importStar(require("bitcoinjs-lib"));
 const yaml = __importStar(require("js-yaml"));
 const secp256k1_1 = require("@noble/curves/secp256k1");
@@ -46,11 +48,12 @@ const json_1 = require("./json");
 const taproot_common_1 = require("./taproot/taproot-common");
 const charms_sdk_2 = require("./charms-sdk");
 const bitcoin_1 = require("./bitcoin");
+const array_utils_1 = require("./array-utils");
 // SIGHASH type for Taproot (BIP-342)
 const sighashType = bitcoin.Transaction.SIGHASH_DEFAULT;
 async function getStateFromNft(context, nftTxId) {
     const previousSpellData = await (0, charms_sdk_2.showSpell)(context, nftTxId);
-    console.log('Previous NFT spell:', JSON.stringify(previousSpellData, null, '\t'));
+    console.log('Previous NFT spell:', JSON.stringify(previousSpellData, null, 2));
     const previousPublicKeys = previousSpellData.outs[0].charms['$0000'].current_cosigners.split(',');
     const previousThreshold = previousSpellData.outs[0].charms['$0000'].current_threshold;
     return {
@@ -133,11 +136,43 @@ async function resignSpellWithTemporarySecret(context, spellTxBytes, previousTxB
 async function createSpell(context, previousTxids, request) {
     console.log('Creating spell...');
     const previousTransactions = await Promise.all(previousTxids.map(async (txid) => context.bitcoinClient.getTransactionHex(txid)));
-    const yamlStr = yaml.dump(request.toYamlObj()); // toYaml(request.toYamlObj());
+    const yamlStr = yaml.dump(request.toYamlObj());
+    console.log('Executing spell creation with Yaml: ', yamlStr);
     const output = await (0, charms_sdk_1.executeSpell)(context, request.fundingUtxo, request.feerate, request.fundingChangeAddress, yamlStr, previousTransactions.map(tx => Buffer.from(tx, 'hex')));
-    console.log('Spell created successfully:', JSON.stringify(output, json_1.bufferReplacer, '\t'));
+    console.log('Spell created successfully:', JSON.stringify(output, json_1.bufferReplacer, 2));
     return {
         commitmentTxBytes: output.commitmentTxBytes,
         spellTxBytes: output.spellTxBytes,
     };
+}
+async function getTokenInfoForUtxo(context, utxo) {
+    const spell = await (0, charms_sdk_2.showSpell)(context, utxo.txid);
+    if (!spell || !spell.apps) {
+        throw new Error(`No token info found for transaction ${utxo.txid}`);
+    }
+    const tokenId = `t/${context.appId}/${context.appVk}`;
+    const appKey = Object.keys(spell.apps).find(key => spell.apps[key] === tokenId);
+    if (!appKey) {
+        throw new Error(`No app key found for token ${tokenId}`);
+    }
+    const outs = spell.outs
+        .map((out, index) => ({ index, ...out.charms[appKey] }))
+        .filter(Boolean);
+    return (0, array_utils_1.arrayFromArrayWithIndex)(outs)[utxo.vout];
+}
+async function findCharmsUtxos(context, minTotal) {
+    const unspent = (await context.bitcoinClient.listUnspent()).filter(utxo => utxo.spendable);
+    let total = 0;
+    const charmsUtxos = (await (0, array_utils_1.mapAsync)(unspent, async (utxo) => {
+        if (minTotal != undefined && total >= minTotal)
+            return { ...utxo, amount: 0 };
+        const info = await getTokenInfoForUtxo(context, utxo).catch(_ => { });
+        console.log('!!! 1', utxo, info);
+        if (!info?.amount)
+            return { ...utxo, amount: 0 };
+        console.log('!!! 2', utxo, info);
+        total += info.amount;
+        return { ...utxo, amount: info.amount };
+    })).filter(t => t.amount > 0);
+    return charmsUtxos;
 }

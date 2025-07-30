@@ -131,17 +131,35 @@ class BitcoinClient {
         const txHex = await this.getTransactionHex(txid);
         return Buffer.from(txHex, 'hex');
     }
-    async signTransaction(txHex, prevtxs, sighashType) {
-        const result = await this.client.signTransactionInputs(txHex, prevtxs, sighashType);
+    async signTransaction(txBytes, prevtxsBytesMap, sighashType) {
+        const tx = bitcoin.Transaction.fromBuffer(txBytes);
+        const prevtxinfo = prevtxsBytesMap ? tx.ins.map((input, index) => {
+            const prevtxid = hashToTxid(input.hash);
+            const prevtxbytes = prevtxsBytesMap[prevtxid];
+            if (!prevtxbytes) {
+                throw new Error(`Previous transaction ${prevtxid} not found`);
+            }
+            const prevtxObj = bitcoin.Transaction.fromBuffer(prevtxbytes);
+            const output = prevtxObj.outs[input.index];
+            return {
+                txid: prevtxid,
+                vout: input.index,
+                scriptPubKey: output.script.toString('hex'),
+                redeemScript: '',
+                witnessScript: '',
+                amount: output.value,
+            };
+        }) : undefined;
+        const result = await this.client.signTransactionInputs(txBytes.toString('hex'), prevtxinfo, sighashType);
         if (!result.complete)
             throw new Error('Transaction signing failed');
-        return result.hex;
+        return Buffer.from(result.hex, 'hex');
     }
-    async transmitTransaction(txHex) {
-        return this.client.sendRawTransaction(txHex);
+    async transmitTransaction(txBytes) {
+        return this.client.sendRawTransaction(txBytes.toString('hex'));
     }
     async listUnspent(address) {
-        return this.client.listUnspent(1, 9999999, address ? [address] : []).then(utxos => utxos.map(utxo => ({
+        return this.client.listUnspent(0, 9999999, address ? [address] : []).then(utxos => utxos.map(utxo => ({
             spendable: utxo.spendable,
             value: Math.floor(utxo.amount * 1e8), // Convert BTC to satoshis
             txid: utxo.txid,
@@ -179,6 +197,10 @@ class BitcoinClient {
     }
     async isUtxoSpendable(txid, vout) {
         return !!(await this.client.getTxOut(txid, vout, true));
+    }
+    async generateBlocks(txids) {
+        const output = await this.getAddress();
+        await this.client.command('generateblock', output, txids);
     }
 }
 exports.BitcoinClient = BitcoinClient;

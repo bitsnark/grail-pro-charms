@@ -67,6 +67,6 @@ async function createPeginSpell(context, feerate, previousNftTxid, nextGrailStat
         ],
         outgoingUserBtc: [],
     }, fundingUtxo);
-    console.log('Peg-in spell created:', JSON.stringify(spell, json_1.bufferReplacer, '\t'));
+    console.log('Peg-in spell created:', JSON.stringify(spell, json_1.bufferReplacer, 2));
     return { spell, signatureRequest };
 }
