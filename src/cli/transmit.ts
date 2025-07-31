@@ -1,3 +1,4 @@
+import { logger } from '../core/logger';
 import minimist from 'minimist';
 import dotenv from 'dotenv';
 import { BitcoinClient } from '../core/bitcoin';
@@ -9,10 +10,9 @@ import {
 	transmitSpell,
 } from '../api/spell-operations';
 import { bufferReplacer } from '../core/json';
-import { TICKER, ZKAPP_BIN } from './consts';
+import { DEFAULT_FEERATE, TICKER, ZKAPP_BIN } from './consts';
 import { createTransmitSpell } from '../api/create-transmit-spell';
 import { findCharmsUtxos } from '../core/spells';
-import { get } from 'http';
 
 export async function transmitCli(_argv: string[]): Promise<[string, string]> {
 	dotenv.config({ path: ['.env.test', '.env.local', '.env'] });
@@ -22,7 +22,7 @@ export async function transmitCli(_argv: string[]): Promise<[string, string]> {
 		boolean: ['transmit', 'mock-proof'],
 		default: {
 			network: 'regtest',
-			feerate: 0.00002,
+			feerate: DEFAULT_FEERATE,
 			transmit: true,
 			'mock-proof': false,
 		},
@@ -66,14 +66,15 @@ export async function transmitCli(_argv: string[]): Promise<[string, string]> {
 	if (inputUtxos.length === 0) {
 		throw new Error('No Charms UTXOs found for the specified amount.');
 	}
+	logger.log('Found Charms UTXOs:', inputUtxos);
 
 	const outputAddress =
 		(argv['output-address'] as string) ?? (await bitcoinClient.getAddress());
-	console.log('Output address:', outputAddress);
+	logger.log('Output address:', outputAddress);
 
 	const changeAddress =
 		(argv['change-address'] as string) ?? (await bitcoinClient.getAddress());
-	console.log('Change address:', changeAddress);
+	logger.log('Change address:', changeAddress);
 
 	const spell = await createTransmitSpell(
 		context,
@@ -84,7 +85,7 @@ export async function transmitCli(_argv: string[]): Promise<[string, string]> {
 		amount,
 		fundingUtxo
 	);
-	console.log('Spell created:', JSON.stringify(spell, bufferReplacer, 2));
+	logger.log('Spell created:', JSON.stringify(spell, bufferReplacer, 2));
 
 	const previousTransactionsMap = await getPreviousTransactions(
 		context,
@@ -97,7 +98,7 @@ export async function transmitCli(_argv: string[]): Promise<[string, string]> {
 		previousTransactionsMap,
 		'ALL|ANYONECANPAY'
 	);
-	console.log(
+	logger.log(
 		'Signed spell transaction bytes:',
 		spell.spellTxBytes.toString('hex')
 	);
@@ -114,6 +115,6 @@ export async function transmitCli(_argv: string[]): Promise<[string, string]> {
 
 if (require.main === module) {
 	transmitCli(process.argv.slice(2)).catch(error => {
-		console.error(error);
+		logger.error(error);
 	});
 }

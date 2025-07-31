@@ -4,6 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.transmitCli = transmitCli;
+const logger_1 = require("../core/logger");
 const minimist_1 = __importDefault(require("minimist"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const bitcoin_1 = require("../core/bitcoin");
@@ -21,7 +22,7 @@ async function transmitCli(_argv) {
         boolean: ['transmit', 'mock-proof'],
         default: {
             network: 'regtest',
-            feerate: 0.00002,
+            feerate: consts_1.DEFAULT_FEERATE,
             transmit: true,
             'mock-proof': false,
         },
@@ -57,15 +58,16 @@ async function transmitCli(_argv) {
     if (inputUtxos.length === 0) {
         throw new Error('No Charms UTXOs found for the specified amount.');
     }
+    logger_1.logger.log('Found Charms UTXOs:', inputUtxos);
     const outputAddress = argv['output-address'] ?? (await bitcoinClient.getAddress());
-    console.log('Output address:', outputAddress);
+    logger_1.logger.log('Output address:', outputAddress);
     const changeAddress = argv['change-address'] ?? (await bitcoinClient.getAddress());
-    console.log('Change address:', changeAddress);
+    logger_1.logger.log('Change address:', changeAddress);
     const spell = await (0, create_transmit_spell_1.createTransmitSpell)(context, feerate, inputUtxos, outputAddress, changeAddress, amount, fundingUtxo);
-    console.log('Spell created:', JSON.stringify(spell, json_1.bufferReplacer, 2));
+    logger_1.logger.log('Spell created:', JSON.stringify(spell, json_1.bufferReplacer, 2));
     const previousTransactionsMap = await (0, spell_operations_1.getPreviousTransactions)(context, spell.spellTxBytes, spell.commitmentTxBytes);
     spell.spellTxBytes = await bitcoinClient.signTransaction(spell.spellTxBytes, previousTransactionsMap, 'ALL|ANYONECANPAY');
-    console.log('Signed spell transaction bytes:', spell.spellTxBytes.toString('hex'));
+    logger_1.logger.log('Signed spell transaction bytes:', spell.spellTxBytes.toString('hex'));
     if (transmit) {
         const transmittedTxids = await (0, spell_operations_1.transmitSpell)(context, spell);
         // if (network === 'regtest') {
@@ -77,6 +79,6 @@ async function transmitCli(_argv) {
 }
 if (require.main === module) {
     transmitCli(process.argv.slice(2)).catch(error => {
-        console.error(error);
+        logger_1.logger.error(error);
     });
 }

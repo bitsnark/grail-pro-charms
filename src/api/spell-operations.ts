@@ -1,7 +1,7 @@
+import { logger } from '../core/logger';
 import * as bitcoin from 'bitcoinjs-lib';
 import {
 	CosignerSignatures,
-	GeneralizedRequest,
 	PreviousTransactions,
 	SignatureRequest,
 	SignatureResponse,
@@ -11,11 +11,10 @@ import {
 } from '../core/types';
 import {
 	KeyPair,
-	generateSpendingScriptForGrail,
 	generateSpendingScriptsForUserPayment,
 	generateUserPaymentAddress,
 } from '../core/taproot';
-import { GrailState, UserPaymentDetails, GeneralizedInfo } from '../core/types';
+import { GrailState, GeneralizedInfo } from '../core/types';
 import { IContext } from '../core/i-context';
 import {
 	createSpell,
@@ -25,13 +24,14 @@ import {
 import { showSpell } from '../core/charms-sdk';
 import { bitcoinjslibNetworks, Network } from '../core/taproot/taproot-common';
 import { hashToTxid, txBytesToTxid } from '../core/bitcoin';
+import { generateSpendingScriptForGrail } from '../core/taproot';
 
 export async function getPreviousGrailState(
 	context: IContext,
 	previousNftTxid: string
 ): Promise<GrailState> {
 	const previousSpellData = await showSpell(context, previousNftTxid);
-	if (!previousSpellData) {
+	if (!previousSpellData || !previousSpellData.outs || previousSpellData.outs.length === 0) {
 		throw new Error('Invalid previous NFT spell data');
 	}
 	return {
@@ -85,6 +85,27 @@ export async function createUpdatingSpell(
 		spellTx.ins[userInputIndex++].witness = [
 			spendingScriptUser.grail.script,
 			spendingScriptUser.grail.controlBlock,
+		];
+	}
+	for (const input of generalizedInfo.incomingUserCharms) {
+		const spendingScriptUser = generateSpendingScriptsForUserPayment(
+			input,
+			context.network
+		);
+		spellTx.ins[userInputIndex++].witness = [
+			spendingScriptUser.grail.script,
+			spendingScriptUser.grail.controlBlock,
+		];
+	}
+	for (const utxo of generalizedInfo.incomingGrailBtc) {
+		const grailState = await getPreviousGrailState(context, utxo.txid);
+		const spendingScript = generateSpendingScriptForGrail(
+			grailState,
+			context.network
+		);
+		spellTx.ins[userInputIndex++].witness = [
+			spendingScript.script,
+			spendingScript.controlBlock,
 		];
 	}
 
@@ -175,7 +196,7 @@ export async function transmitSpell(
 	context: IContext,
 	transactions: Spell
 ): Promise<[string, string]> {
-	console.log('Transmitting spell...');
+	logger.log('Transmitting spell...');
 
 	const signedCommitmentTxBytes = await context.bitcoinClient.signTransaction(
 		transactions.commitmentTxBytes,
@@ -183,7 +204,7 @@ export async function transmitSpell(
 		'ALL|ANYONECANPAY'
 	);
 
-	console.info(
+	logger.info(
 		'Sending commitment transaction:',
 		signedCommitmentTxBytes.toString('hex')
 	);
@@ -191,13 +212,16 @@ export async function transmitSpell(
 		signedCommitmentTxBytes
 	);
 
-	console.info('Sending spell transaction:', transactions.spellTxBytes.toString('hex'));
+	logger.info(
+		'Sending spell transaction:',
+		transactions.spellTxBytes.toString('hex')
+	);
 	const spellTxid = await context.bitcoinClient.transmitTransaction(
 		transactions.spellTxBytes
 	);
 
 	const output: [string, string] = [commitmentTxid, spellTxid];
-	console.log('Spell transmitted successfully:', output);
+	logger.log('Spell transmitted successfully:', output);
 
 	return output;
 }
@@ -216,8 +240,8 @@ export async function getPreviousTransactions(
 	for (const input of tx.ins) {
 		const txid = hashToTxid(input.hash);
 		if (!(txid in result)) {
-			const txBytes = await context.bitcoinClient.getTransactionHex(txid);
-			result[txid] = Buffer.from(txBytes, 'hex');
+			const txBytes = await context.bitcoinClient.getTransactionBytes(txid);
+			result[txid] = txBytes;
 		}
 	}
 	return result;
@@ -265,6 +289,9 @@ export async function findUserPaymentVout(
 		const outScript = bitcoin.address.toOutputScript(
 			userPaymentAddress,
 			bitcoinjslibNetworks[context.network]
+		);
+		logger.log(
+			`Comparing user payment address ${out.script.toString('hex')} with output script ${out.script.toString('hex')}`
 		);
 		return out.script.compare(outScript) == 0;
 	});

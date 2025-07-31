@@ -1,3 +1,4 @@
+import { logger } from '../core/logger';
 import minimist from 'minimist';
 import dotenv from 'dotenv';
 import * as secp from '@bitcoinerlab/secp256k1';
@@ -52,14 +53,14 @@ function main() {
 	});
 
 	if (argv.count === undefined) {
-		console.error('Parameter --count is required');
+		logger.error('Parameter --count is required');
 		return;
 	}
 
 	// Generate the random roster
 	const roster = generateRandomKeypairs(argv.count || 1);
 	// Print the roster
-	console.log(JSON.stringify(roster, bufferReplacer, 2));
+	logger.log(JSON.stringify(roster, bufferReplacer, 2));
 }
 
 if (require.main === module) {

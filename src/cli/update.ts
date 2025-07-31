@@ -1,3 +1,4 @@
+import { logger } from '../core/logger';
 import minimist from 'minimist';
 import dotenv from 'dotenv';
 import { BitcoinClient } from '../core/bitcoin';
@@ -14,6 +15,7 @@ import {
 import { bufferReplacer } from '../core/json';
 import { getNewGrailStateFromArgv } from './utils';
 import { SignatureResponse } from '../core/types';
+import { DEFAULT_FEERATE } from './consts';
 
 async function main() {
 	dotenv.config({ path: ['.env.test', '.env.local', '.env'] });
@@ -23,7 +25,7 @@ async function main() {
 		boolean: ['transmit', 'mock-proof'],
 		default: {
 			network: 'regtest',
-			feerate: 0.00002,
+			feerate: DEFAULT_FEERATE,
 			transmit: true,
 			'mock-proof': false,
 		},
@@ -35,7 +37,7 @@ async function main() {
 
 	const appId = argv['app-id'] as string;
 	if (!appId) {
-		console.error('--app-id is required');
+		logger.error('--app-id is required');
 		return;
 	}
 	const appVk = argv['app-vk'] as string;
@@ -52,14 +54,14 @@ async function main() {
 
 	const previousNftTxid = argv['previous-nft-txid'] as string;
 	if (!previousNftTxid) {
-		console.error('--previous-nft-txid is required');
+		logger.error('--previous-nft-txid is required');
 		return;
 	}
 
 	const transmit = !!argv['transmit'];
 
 	if (!argv['private-keys']) {
-		console.error('--private-keys is required');
+		logger.error('--private-keys is required');
 		return;
 	}
 	const privateKeys = (argv['private-keys'] as string)
@@ -67,14 +69,14 @@ async function main() {
 		.map(s => s.trim().replace('0x', ''));
 
 	if (!argv['feerate']) {
-		console.error('--feerate is required: ', argv);
+		logger.error('--feerate is required: ', argv);
 		return;
 	}
 	const feerate = Number.parseFloat(argv['feerate']);
 
 	const newGrailState = getNewGrailStateFromArgv(argv);
 	if (!newGrailState) {
-		console.error('Invalid new grail state');
+		logger.error('Invalid new grail state');
 		return;
 	}
 
@@ -85,8 +87,8 @@ async function main() {
 		newGrailState,
 		fundingUtxo
 	);
-	console.log('Spell created:', JSON.stringify(spell, bufferReplacer, 2));
-	console.log('Signature request:', JSON.stringify(signatureRequest, bufferReplacer, 2));
+	logger.log('Spell created:', JSON.stringify(spell, bufferReplacer, 2));
+	logger.log('Signature request:', JSON.stringify(signatureRequest, bufferReplacer, 2));
 
 	const fromCosigners: SignatureResponse[] = privateKeys
 		.map(pk => Buffer.from(pk, 'hex'))
@@ -102,7 +104,7 @@ async function main() {
 		signatureRequest,
 		fromCosigners
 	);
-	console.log(
+	logger.log(
 		'Signed spell:',
 		JSON.stringify(signedSpell, bufferReplacer, 2)
 	);
@@ -114,6 +116,6 @@ async function main() {
 
 if (require.main === module) {
 	main().catch(error => {
-		console.error('Error during NFT update:', error);
+		logger.error('Error during NFT update:', error);
 	});
 }

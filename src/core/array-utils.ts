@@ -64,6 +64,17 @@ export async function mapAsync<T1, T2>(
 	return results;
 }
 
+export async function filterAsync<T>(
+	a: T[],
+	f: (item: T, index: number) => Promise<boolean>
+): Promise<T[]> {
+	const results: T[] = [];
+	for (let i = 0; i < a.length; i++) {
+		if (await f(a[i], i)) results.push(a[i]);
+	}
+	return results;
+}
+
 export function arrayFromArrayWithIndex<T extends { index: number }>(
 	array: T[]
 ): Exclude<T, 'index'>[] {

@@ -42,6 +42,7 @@ exports.getPreviousTransactions = getPreviousTransactions;
 exports.signAsCosigner = signAsCosigner;
 exports.findUserPaymentVout = findUserPaymentVout;
 exports.getUserWalletAddressFromUserPaymentUtxo = getUserWalletAddressFromUserPaymentUtxo;
+const logger_1 = require("../core/logger");
 const bitcoin = __importStar(require("bitcoinjs-lib"));
 const taproot_1 = require("../core/taproot");
 const spells_1 = require("../core/spells");
@@ -131,14 +132,14 @@ async function injectSignaturesIntoSpell(context, spell, signatureRequest, fromC
     return spell;
 }
 async function transmitSpell(context, transactions) {
-    console.log('Transmitting spell...');
+    logger_1.logger.log('Transmitting spell...');
     const signedCommitmentTxBytes = await context.bitcoinClient.signTransaction(transactions.commitmentTxBytes, undefined, 'ALL|ANYONECANPAY');
-    console.info('Sending commitment transaction:', signedCommitmentTxBytes.toString('hex'));
+    logger_1.logger.info('Sending commitment transaction:', signedCommitmentTxBytes.toString('hex'));
     const commitmentTxid = await context.bitcoinClient.transmitTransaction(signedCommitmentTxBytes);
-    console.info('Sending spell transaction:', transactions.spellTxBytes.toString('hex'));
+    logger_1.logger.info('Sending spell transaction:', transactions.spellTxBytes.toString('hex'));
     const spellTxid = await context.bitcoinClient.transmitTransaction(transactions.spellTxBytes);
     const output = [commitmentTxid, spellTxid];
-    console.log('Spell transmitted successfully:', output);
+    logger_1.logger.log('Spell transmitted successfully:', output);
     return output;
 }
 async function getPreviousTransactions(context, spellTxBytes, commitmentTxBytes) {
@@ -151,8 +152,8 @@ async function getPreviousTransactions(context, spellTxBytes, commitmentTxBytes)
     for (const input of tx.ins) {
         const txid = (0, bitcoin_1.hashToTxid)(input.hash);
         if (!(txid in result)) {
-            const txBytes = await context.bitcoinClient.getTransactionHex(txid);
-            result[txid] = Buffer.from(txBytes, 'hex');
+            const txBytes = await context.bitcoinClient.getTransactionBytes(txid);
+            result[txid] = txBytes;
         }
     }
     return result;
@@ -174,6 +175,7 @@ async function findUserPaymentVout(context, grailState, userPaymentTxid, recover
     const index = userPaymentTx.outs.findIndex(out => {
         // Convert address to script and compare
         const outScript = bitcoin.address.toOutputScript(userPaymentAddress, taproot_common_1.bitcoinjslibNetworks[context.network]);
+        logger_1.logger.log(`Comparing user payment address ${out.script.toString('hex')} with output script ${out.script.toString('hex')}`);
         return out.script.compare(outScript) == 0;
     });
     if (index === -1) {

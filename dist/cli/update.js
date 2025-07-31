@@ -3,6 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+const logger_1 = require("../core/logger");
 const minimist_1 = __importDefault(require("minimist"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const bitcoin_1 = require("../core/bitcoin");
@@ -13,6 +14,7 @@ const generate_random_keypairs_1 = require("./generate-random-keypairs");
 const spell_operations_1 = require("../api/spell-operations");
 const json_1 = require("../core/json");
 const utils_1 = require("./utils");
+const consts_1 = require("./consts");
 async function main() {
     dotenv_1.default.config({ path: ['.env.test', '.env.local', '.env'] });
     const argv = (0, minimist_1.default)(process.argv.slice(2), {
@@ -20,7 +22,7 @@ async function main() {
         boolean: ['transmit', 'mock-proof'],
         default: {
             network: 'regtest',
-            feerate: 0.00002,
+            feerate: consts_1.DEFAULT_FEERATE,
             transmit: true,
             'mock-proof': false,
         },
@@ -30,7 +32,7 @@ async function main() {
     const fundingUtxo = await bitcoinClient.getFundingUtxo();
     const appId = argv['app-id'];
     if (!appId) {
-        console.error('--app-id is required');
+        logger_1.logger.error('--app-id is required');
         return;
     }
     const appVk = argv['app-vk'];
@@ -45,30 +47,30 @@ async function main() {
     });
     const previousNftTxid = argv['previous-nft-txid'];
     if (!previousNftTxid) {
-        console.error('--previous-nft-txid is required');
+        logger_1.logger.error('--previous-nft-txid is required');
         return;
     }
     const transmit = !!argv['transmit'];
     if (!argv['private-keys']) {
-        console.error('--private-keys is required');
+        logger_1.logger.error('--private-keys is required');
         return;
     }
     const privateKeys = argv['private-keys']
         .split(',')
         .map(s => s.trim().replace('0x', ''));
     if (!argv['feerate']) {
-        console.error('--feerate is required: ', argv);
+        logger_1.logger.error('--feerate is required: ', argv);
         return;
     }
     const feerate = Number.parseFloat(argv['feerate']);
     const newGrailState = (0, utils_1.getNewGrailStateFromArgv)(argv);
     if (!newGrailState) {
-        console.error('Invalid new grail state');
+        logger_1.logger.error('Invalid new grail state');
         return;
     }
     const { spell, signatureRequest } = await (0, create_update_nft_spell_1.createUpdateNftSpell)(context, feerate, previousNftTxid, newGrailState, fundingUtxo);
-    console.log('Spell created:', JSON.stringify(spell, json_1.bufferReplacer, 2));
-    console.log('Signature request:', JSON.stringify(signatureRequest, json_1.bufferReplacer, 2));
+    logger_1.logger.log('Spell created:', JSON.stringify(spell, json_1.bufferReplacer, 2));
+    logger_1.logger.log('Signature request:', JSON.stringify(signatureRequest, json_1.bufferReplacer, 2));
     const fromCosigners = privateKeys
         .map(pk => Buffer.from(pk, 'hex'))
         .map(privateKey => {
@@ -77,13 +79,13 @@ async function main() {
         return { publicKey: keypair.publicKey.toString('hex'), signatures };
     });
     const signedSpell = await (0, spell_operations_1.injectSignaturesIntoSpell)(context, spell, signatureRequest, fromCosigners);
-    console.log('Signed spell:', JSON.stringify(signedSpell, json_1.bufferReplacer, 2));
+    logger_1.logger.log('Signed spell:', JSON.stringify(signedSpell, json_1.bufferReplacer, 2));
     if (transmit) {
         await (0, spell_operations_1.transmitSpell)(context, signedSpell);
     }
 }
 if (require.main === module) {
     main().catch(error => {
-        console.error('Error during NFT update:', error);
+        logger_1.logger.error('Error during NFT update:', error);
     });
 }

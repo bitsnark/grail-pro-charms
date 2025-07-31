@@ -2,12 +2,12 @@ import { generateRandomKeypair } from '../src/cli/generate-random-keypairs';
 import { deployNftCli } from '../src/cli/deploy';
 import { peginCli } from '../src/cli/pegin';
 import { userPaymentCli } from '../src/cli/user-payment';
-import { transmitCli } from '../src/cli/transmit';
+import { pegoutCli } from '../src/cli/pegout';
 import { generateBlocks } from './bitcoin-utils';
 
 jest.setTimeout(600000);
 
-describe('peg-in and transmit e2e test', () => {
+describe('peg-in and peg-out e2e test', () => {
 	it('should deploy, then peg-in, then transmit successfully', async () => {
 		const deployerKaypair = generateRandomKeypair();
 		const deployerPublicKey = deployerKaypair.publicKey.toString('hex');
@@ -37,11 +37,6 @@ describe('peg-in and transmit e2e test', () => {
 
 		console.log('*** User payment ***');
 
-		const newKeypair = generateRandomKeypair();
-		const newPublicKey = newKeypair.publicKey.toString('hex');
-		const newPrivateKey = newKeypair.privateKey.toString('hex');
-		console.log('New Public Key:', newPublicKey);
-
 		const peginAmount = 1000000;
 
 		const userPaymentResult = await userPaymentCli([
@@ -52,7 +47,7 @@ describe('peg-in and transmit e2e test', () => {
 			'--type',
 			'btc',
 			'--current-public-keys',
-			newPublicKey,
+			deployerPublicKey,
 			'--current-threshold',
 			'1',
 			'--amount',
@@ -73,7 +68,7 @@ describe('peg-in and transmit e2e test', () => {
 			'--previous-nft-txid',
 			deployResult.spellTxid,
 			'--new-public-keys',
-			newPublicKey,
+			deployerPublicKey,
 			'--new-threshold',
 			'1',
 			'--user-payment-txid',
@@ -81,7 +76,7 @@ describe('peg-in and transmit e2e test', () => {
 			'--recovery-public-key',
 			userPaymentResult.recoveryPublicKey,
 			'--private-keys',
-			[deployerPrivateKey, newPrivateKey].join(','),
+			[deployerPrivateKey].join(','),
 			'--mock-proof',
 			'true',
 			'--network',
@@ -100,11 +95,36 @@ describe('peg-in and transmit e2e test', () => {
 
 		await generateBlocks(1);
 
-		console.log('*** Transmit ***');
+		console.log('*** User payment ***');
 
-		const transmitAmount = 666666;
+		const pegoutAmount = 666666;
 
-		const transmitResult = await transmitCli([
+		const charmsUserPaymentResult = await userPaymentCli([
+			'--app-id',
+			deployResult.appId,
+			'--app-vk',
+			deployResult.appVk,
+			'--type',
+			'charms',
+			'--current-public-keys',
+			deployerPublicKey,
+			'--current-threshold',
+			'1',
+			'--amount',
+			pegoutAmount.toString(),
+			'--network',
+			'regtest',
+			'--feerate',
+			'0.00002',
+			'--mock-proof',
+			'true',
+		]);
+		expect(charmsUserPaymentResult).toBeTruthy();
+		console.log('Charms User Payment Result:', charmsUserPaymentResult);
+
+		console.log('*** Peg-out ***');
+
+		const pegoutResult = await pegoutCli([
 			'--app-id',
 			deployResult.appId,
 			'--app-vk',
@@ -118,9 +138,23 @@ describe('peg-in and transmit e2e test', () => {
 			'--transmit',
 			'true',
 			'--amount',
-			transmitAmount.toString(),
+			pegoutAmount.toString(),
+			'--previous-nft-txid',
+			peginResult[1],
+			'--new-public-keys',
+			deployerPublicKey,
+			'--new-threshold',
+			'1',
+			'--private-keys',
+			[deployerPrivateKey].join(','),
+			'--user-payment-txid',
+			charmsUserPaymentResult.txid,
+			'--recovery-public-key',
+			charmsUserPaymentResult.recoveryPublicKey,
+			'--ticker',
+			'TESTNFT',
 		]);
-		expect(transmitResult).toBeTruthy();
-		console.log('Transmit Result:', transmitResult);
+		expect(pegoutResult).toBeTruthy();
+		console.log('Pegout Result:', pegoutResult);
 	});
 });

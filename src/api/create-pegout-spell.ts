@@ -1,57 +1,59 @@
+import { logger } from '../core/logger';
 import * as bitcoin from 'bitcoinjs-lib';
-import {
-	GrailState,
-	SignatureRequest,
-	Spell,
-	UserPaymentDetails,
-	Utxo,
-} from '../core/types';
+import { GrailState, SignatureRequest, Spell, Utxo } from '../core/types';
 import { bufferReplacer } from '../core/json';
 import { IContext } from '../core/i-context';
 import { createGeneralizedSpell } from './create-generalized-spell';
-import { showSpell } from '../core/charms-sdk';
-import {
-	getPreviousGrailState,
-	getPreviousTransactions,
-} from './spell-operations';
+import { getPreviousGrailState } from './spell-operations';
+import { hashToTxid } from '../core/bitcoin';
+import { getCharmsAmountFromUtxo, getStateFromNft } from '../core/spells';
+import { UserPaymentDetails } from '../core/types';
+import { generateGrailPaymentAddress } from '../core/taproot';
+import { bitcoinjslibNetworks } from '../core/taproot/taproot-common';
+import { filterAsync } from '../core/array-utils';
+import { LOCKED_BTC_MIN_AMOUNT } from '../cli/consts';
 
 export async function findLockedBtcUtxos(
 	context: IContext,
-	lestNftTxid: string,
+	lastNftTxid: string,
 	minAmount: number
 ): Promise<Utxo[]> {
 	const selectedUtxos: Utxo[] = [];
-	let totalAmount = 0;
-
-	let nftTxid = lestNftTxid;
+	let nftTxid: string | null = lastNftTxid;
 	while (nftTxid) {
-		const nftTxBytes = await context.bitcoinClient.getTransactionBytes(nftTxid);
-		const previousTransactions = await getPreviousTransactions(
-			context,
-			nftTxBytes
+		const state = await getStateFromNft(context, nftTxid); // Ensure the state is fetched
+		if (!state) break;
+		const grailAddress = generateGrailPaymentAddress(state, context.network);
+		const tx = bitcoin.Transaction.fromBuffer(
+			await context.bitcoinClient.getTransactionBytes(nftTxid)
 		);
-		const spellData = await showSpell(
-			context,
-			nftTxid
+		const outputScript = bitcoin.address.toOutputScript(
+			grailAddress,
+			bitcoinjslibNetworks[context.network]
 		);
-		if (!spellData) {
-			throw new Error(`Spell data for transaction ${nftTxid} not found`);
-		}
-		const utxos = spellData.outs
-			.map((out: any, index: number) => ({
-				index,
-				amount: out.charms['$0000'].amount,
-				type: out.type,
+		const utxos = tx.outs
+			.map((out, index) => ({
+				txid: nftTxid!,
+				vout: index,
+				value: out.value,
+				script: out.script,
 			}))
-			.filter((t: any) => t.type == 'locked_btc');
-		for (const utxo of utxos) {
-			if (await context.bitcoinClient.isUtxoSpendable(utxo.txid, utxo.index)) {
-				selectedUtxos.push(utxo);
-				totalAmount += utxo.amount;
-			}
-		}
-		nftTxid = spellData.ins[0].prevout.txid; // Assuming the first input is the NFT input
+			.filter(
+				utxo =>
+					utxo.value >= LOCKED_BTC_MIN_AMOUNT &&
+					utxo.script.equals(outputScript)
+			);
+		const unspent = await filterAsync(utxos, async utxo => {
+			return await context.bitcoinClient.isUtxoSpendable(utxo.txid, utxo.vout);
+		});
+		selectedUtxos.push(...unspent);
+		nftTxid = tx.ins[0] ? hashToTxid(tx.ins[0].hash) : null;
 	}
+
+	const totalAmount = selectedUtxos.reduce(
+		(sum, utxo) => sum + (utxo?.value ?? 0),
+		0
+	);
 
 	if (totalAmount < minAmount) {
 		throw new Error(
@@ -86,17 +88,11 @@ export async function createPegoutSpell(
 
 	fundingUtxo = fundingUtxo || (await context.bitcoinClient.getFundingUtxo());
 
-	const userPaymentTxBytes = await context.bitcoinClient.getTransactionBytes(
-		userPaymentDetails.txid
+	const userPaymentAmount = await getCharmsAmountFromUtxo(
+		context,
+		userPaymentDetails
 	);
-	if (!userPaymentTxBytes) {
-		throw new Error(
-			`User payment transaction ${userPaymentDetails.txid} not found`
-		);
-	}
-	const userPaymentTx = bitcoin.Transaction.fromBuffer(userPaymentTxBytes);
-	const userPaymentAmount = userPaymentTx.outs[userPaymentDetails.vout].value;
-	console.log('User payment transaction amount:', userPaymentAmount);
+	logger.log('User payment transaction amount: ', userPaymentAmount);
 
 	const lockedBtcUtxos = await findLockedBtcUtxos(
 		context,
@@ -110,7 +106,7 @@ export async function createPegoutSpell(
 		previousNftTxid,
 		nextGrailState,
 		{
-			incomingUserBtc: [userPaymentDetails],
+			incomingUserBtc: [],
 			incomingUserCharms: [userPaymentDetails],
 			incomingGrailBtc: lockedBtcUtxos,
 			outgoingUserCharms: [],
@@ -124,10 +120,7 @@ export async function createPegoutSpell(
 		fundingUtxo
 	);
 
-	console.log(
-		'Peg-in spell created:',
-		JSON.stringify(spell, bufferReplacer, 2)
-	);
+	logger.log('Peg-in spell created:', JSON.stringify(spell, bufferReplacer, 2));
 
 	return { spell, signatureRequest };
 }

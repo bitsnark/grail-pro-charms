@@ -1,6 +1,6 @@
+import { logger } from '../core/logger';
 import { BitcoinClient } from '../core/bitcoin';
 import {
-	SignatureRequest,
 	Spell,
 	TokenUtxo,
 	TransmitRequest,
@@ -9,7 +9,6 @@ import {
 import { IContext } from '../core/i-context';
 import { createSpell } from '../core/spells';
 import { bufferReplacer } from '../core/json';
-import { PreviousTransactions } from '../core/types';
 
 export async function createTransmitSpell(
 	context: IContext,
@@ -90,7 +89,7 @@ export async function createTransmitSpell(
 
 	const previousTxids = inputUtxos.map(utxo => utxo.txid);
 	const spell = await createSpell(context, previousTxids, request);
-	console.log(
+	logger.log(
 		'Transmit spell created:',
 		JSON.stringify(spell, bufferReplacer, 2)
 	);

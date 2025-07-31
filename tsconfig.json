@@ -1,5 +1,5 @@
 {
-    "include": ["src/**/*.ts"],
+    "include": ["src/**/*.ts", "src/core/logger.ts_"],
     "compilerOptions": {
         "target": "ES2020",
         "module": "CommonJS",
