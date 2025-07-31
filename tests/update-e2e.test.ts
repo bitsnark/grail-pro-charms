@@ -1,6 +1,7 @@
 import { generateRandomKeypair } from "../src/cli/generate-random-keypairs";
 import { deployNftCli } from "../src/cli/deploy";
 import { updateNftCli } from "../src/cli/update";
+import { BitcoinClient } from "../src/core/bitcoin";
 import fs from 'fs';
 import path from 'path';
 
@@ -99,6 +100,17 @@ describe('update e2e test', () => {
         fs.unlinkSync(tempGrailStateFile);
       }
     }
+  });
+
+  it('should mint a block to confirm the first update', async () => {
+    // Mint a block in regtest to confirm the first update
+    const bitcoinClient = await BitcoinClient.initialize();
+    const address = await bitcoinClient.getAddress();
+    const blockHashes = await bitcoinClient.generateToAddress(1, address);
+    
+    expect(blockHashes).toBeDefined();
+    expect(blockHashes.length).toBe(1);
+    expect(blockHashes[0]).toBeDefined();
   });
 
   it('should update the NFT removing deployer and cosigner1, keeping cosigner2 and cosigner3 with threshold 1', async () => {

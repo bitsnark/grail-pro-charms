@@ -1,15 +1,15 @@
 import { BitcoinClient } from '../core/bitcoin';
+import { showSpell } from '../core/charms-sdk';
+import { IContext } from '../core/i-context';
+import { bufferReplacer } from '../core/json';
 import {
-	generalizeInfoBlank,
+	GeneralizedInfo,
 	GrailState,
 	SignatureRequest,
 	Spell,
-	Utxo,
+	Utxo
 } from '../core/types';
-import { showSpell } from '../core/charms-sdk';
-import { IContext } from '../core/i-context';
 import { createGeneralizedSpell } from './create-generalized-spell';
-import { bufferReplacer } from '../core/json';
 
 export async function createUpdateNftSpell(
 	context: IContext,
@@ -33,12 +33,21 @@ export async function createUpdateNftSpell(
 		throw new Error('Invalid previous NFT spell data');
 	}
 
+	// Create a fresh copy of generalizeInfoBlank to avoid mutation issues
+	const freshGeneralizedInfo: GeneralizedInfo = {
+		incomingUserBtc: [],
+		incomingGrailBtc: [],
+		incomingUserCharms: [],
+		outgoingUserBtc: [],
+		outgoingUserCharms: [],
+	};
+
 	return await createGeneralizedSpell(
 		context,
 		feerate,
 		previousNftTxid,
 		grailState,
-		generalizeInfoBlank,
+		freshGeneralizedInfo,
 		fundingUtxo
 	);
 }
