@@ -68,10 +68,10 @@ export class ExtendedClient {
 		vout: number,
 		includeMempool: boolean = true
 	): Promise<any> {
-		return this.command('gettxout', txid, vout, includeMempool);
+		return this.client.command('gettxout', txid, vout, includeMempool);
 	}
 	generateToAddress(blocks: number, address: string): Promise<string[]> {
-		return this.command('generatetoaddress', blocks, address);
+		return this.client.command('generatetoaddress', blocks, address);
 	}
 }
 
