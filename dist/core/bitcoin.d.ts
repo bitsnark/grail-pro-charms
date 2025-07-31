@@ -5,8 +5,9 @@ export declare function txidToHash(txid: string): Buffer;
 export declare function hashToTxid(hash: Buffer): string;
 export declare function txBytesToTxid(txBytes: Buffer): string;
 export declare function txHexToTxid(txHex: string): string;
-export declare class ExtendedClient extends Client {
-    constructor(options: any);
+export declare class ExtendedClient {
+    client: Client;
+    constructor(client: Client);
     getRawTransaction(txid: string): Promise<any>;
     sendRawTransaction(txHex: string): Promise<string>;
     signTransactionInputs(txHex: string, prevtxs?: string[], sighashType?: string): Promise<any>;
@@ -15,12 +16,13 @@ export declare class ExtendedClient extends Client {
     loadWallet(name: string): Promise<any>;
     sendToAddress(toAddress: string, amountBtc: number): Promise<string>;
     getTxOut(txid: string, vout: number, includeMempool?: boolean): Promise<any>;
+    generateToAddress(blocks: number, address: string): Promise<string[]>;
 }
 export declare class BitcoinClient {
     private client;
     private static txhash;
     private constructor();
-    static initialize(client?: ExtendedClient): Promise<BitcoinClient>;
+    static initialize(client?: Client): Promise<BitcoinClient>;
     getTransactionHex(txid: string): Promise<string>;
     getTransactionBytes(txid: string): Promise<Buffer>;
     signTransaction(txHex: string, prevtxs?: string[], sighashType?: string): Promise<string>;
@@ -39,4 +41,5 @@ export declare class BitcoinClient {
         [txid: string]: Buffer;
     }>;
     isUtxoSpendable(txid: string, vout: number): Promise<boolean>;
+    generateToAddress(blocks: number, address: string): Promise<string[]>;
 }
