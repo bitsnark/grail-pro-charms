@@ -11,6 +11,10 @@ describe('update e2e test', () => {
   let deployerPrivateKey: string;
   let deploymentResult: any;
   let updateResult: any;
+  let cosigner1: any;
+  let cosigner2: any;
+  let cosigner3: any;
+  let updateResult2: any;
 
   it('should generate random keypair for deployer', async () => {
     // Generate a random keypair for the deployer
@@ -50,9 +54,9 @@ describe('update e2e test', () => {
     expect(deployerPrivateKey).toBeDefined();
 
     // Generate 3 additional cosigners
-    const cosigner1 = generateRandomKeypair();
-    const cosigner2 = generateRandomKeypair();
-    const cosigner3 = generateRandomKeypair();
+    cosigner1 = generateRandomKeypair();
+    cosigner2 = generateRandomKeypair();
+    cosigner3 = generateRandomKeypair();
 
     // Create new grail state with 4 cosigners total (original + 3 new) and threshold 2
     const newGrailState = {
@@ -93,6 +97,51 @@ describe('update e2e test', () => {
       // Clean up temporary file
       if (fs.existsSync(tempGrailStateFile)) {
         fs.unlinkSync(tempGrailStateFile);
+      }
+    }
+  });
+
+  it('should update the NFT removing deployer and cosigner1, keeping cosigner2 and cosigner3 with threshold 1', async () => {
+    expect(updateResult).toBeDefined();
+    expect(cosigner2).toBeDefined();
+    expect(cosigner3).toBeDefined();
+
+    // Create new grail state with only cosigner2 and cosigner3, threshold 1
+    const newGrailState2 = {
+      publicKeys: [
+        cosigner2.publicKey.toString('hex'),
+        cosigner3.publicKey.toString('hex')
+      ],
+      threshold: 1
+    };
+
+    // Create temporary grail state file
+    const tempGrailStateFile2 = path.join(__dirname, 'temp-grail-state-2.json');
+    fs.writeFileSync(tempGrailStateFile2, JSON.stringify(newGrailState2, null, 2));
+
+    try {
+      // Execute update using cosigner2 and cosigner3 private keys (previous threshold was 2, so we need 2 signatures)
+      updateResult2 = await updateNftCli([
+        '--app-id', deploymentResult.appId,
+        '--app-vk', deploymentResult.appVk,
+        '--previous-nft-txid', updateResult.spellTxid,
+        '--private-keys', cosigner2.privateKey.toString('hex') + ',' + cosigner3.privateKey.toString('hex'),
+        '--new-grail-state-file', tempGrailStateFile2,
+        '--feerate', '0.00002',
+        '--mock-proof', 'true',
+        '--transmit', 'true'
+      ]);
+      
+      expect(updateResult2).toBeTruthy();
+      expect(updateResult2.spellTxid).toBeDefined();
+      console.log('Second Update Result:', updateResult2);
+      console.log('Remaining cosigners:');
+      console.log('Cosigner 2:', cosigner2.publicKey.toString('hex'));
+      console.log('Cosigner 3:', cosigner3.publicKey.toString('hex'));
+    } finally {
+      // Clean up temporary file
+      if (fs.existsSync(tempGrailStateFile2)) {
+        fs.unlinkSync(tempGrailStateFile2);
       }
     }
   });
