@@ -6,24 +6,33 @@ import { setupLog } from '../core/log';
 import { bufferReplacer } from '../core/json';
 import { Context } from '../core/context';
 import { parse } from '../core/env-parser';
-import { createPeginSpell } from '../api/create-pegin-spell';
-import { SignatureResponse, UserPaymentDetails } from '../core/types';
+import {
+	SignatureRequest,
+	SignatureResponse,
+	UserPaymentDetails,
+} from '../core/types';
 import {
 	findUserPaymentVout,
+	getPreviousGrailState,
+	getPreviousTransactions,
 	getUserWalletAddressFromUserPaymentUtxo,
 	injectSignaturesIntoSpell,
 	signAsCosigner,
 	transmitSpell,
 } from '../api/spell-operations';
+import {
+	generateSpendingScriptForGrail,
+	generateSpendingScriptsForUserPayment,
+} from '../core/taproot';
 import { privateToKeypair } from './generate-random-keypairs';
+import { createPegoutSpell } from '../api/create-pegout-spell';
+import { TIMELOCK_BLOCKS } from './pegin';
 
-export const TIMELOCK_BLOCKS = 100; // Default timelock for user payments
-
-export async function peginCli(_argv: string[]): Promise<[string, string]> {
+async function main() {
 	dotenv.config({ path: ['.env.test', '.env.local', '.env'] });
 	setupLog();
 
-	const argv = minimist(_argv, {
+	const argv = minimist(process.argv.slice(2), {
 		alias: {},
 		string: ['new-public-keys', 'private-keys'],
 		boolean: ['transmit', 'mock-proof'],
@@ -32,7 +41,6 @@ export async function peginCli(_argv: string[]): Promise<[string, string]> {
 			feerate: 0.00002,
 			transmit: true,
 			'mock-proof': false,
-			'user-payment-vout': 0,
 		},
 		'--': true,
 	});
@@ -42,7 +50,8 @@ export async function peginCli(_argv: string[]): Promise<[string, string]> {
 
 	const appId = argv['app-id'] as string;
 	if (!appId) {
-		throw new Error('--app-id is required');
+		console.error('--app-id is required');
+		return;
 	}
 	const appVk = argv['app-vk'] as string;
 
@@ -53,13 +62,14 @@ export async function peginCli(_argv: string[]): Promise<[string, string]> {
 		appVk,
 		charmsBin: parse.string('CHARMS_BIN'),
 		zkAppBin: './zkapp/target/charms-app',
-		network,
+		network: argv['network'] as Network,
 		mockProof: argv['mock-proof'],
 		ticker: 'GRAIL-NFT',
 	});
 
 	if (!argv['new-public-keys']) {
-		throw new Error('--new-public-keys is required');
+		console.error('--new-public-keys is required');
+		return;
 	}
 	const newPublicKeys = (argv['new-public-keys'] as string)
 		.split(',')
@@ -70,27 +80,35 @@ export async function peginCli(_argv: string[]): Promise<[string, string]> {
 		newThreshold < 1 ||
 		newThreshold > newPublicKeys.length
 	) {
-		throw new Error(
+		console.error(
 			'Invalid new threshold. It must be a number between 1 and the number of public keys.'
 		);
+		return;
 	}
 
 	const previousNftTxid = argv['previous-nft-txid'] as string;
 	if (!previousNftTxid) {
-		throw new Error('--previous-nft-txid is required');
+		console.error('--previous-nft-txid is required');
+		return;
 	}
 
 	const transmit = !!argv['transmit'];
 
 	if (!argv['private-keys']) {
-		throw new Error('--private-keys is required');
+		console.error('--private-keys is required');
+		return;
 	}
 	const privateKeys = (argv['private-keys'] as string)
 		.split(',')
 		.map(s => s.trim().replace('0x', ''));
 
+	if (!argv['user-payment-txid']) {
+		console.error('--user-payment-txid is required');
+		return;
+	}
 	if (!argv['recovery-public-key']) {
-		throw new Error('--recovery-public-key is required');
+		console.error('--recovery-public-key is required');
+		return;
 	}
 	const recoveryPublicKey = (argv['recovery-public-key'] as string).replace(
 		'0x',
@@ -104,7 +122,8 @@ export async function peginCli(_argv: string[]): Promise<[string, string]> {
 
 	const userPaymentTxid = argv['user-payment-txid'] as string;
 	if (!userPaymentTxid) {
-		throw new Error('--user-payment-txid is required');
+		console.error('--user-payment-txid is required');
+		return;
 	}
 	const userPaymentVout = await findUserPaymentVout(
 		context,
@@ -130,11 +149,12 @@ export async function peginCli(_argv: string[]): Promise<[string, string]> {
 	};
 
 	if (!argv['feerate']) {
-		throw new Error('--feerate is required');
+		console.error('--feerate is required');
+		return;
 	}
 	const feerate = Number.parseFloat(argv['feerate']);
 
-	const { spell, signatureRequest } = await createPeginSpell(
+	const { spell, signatureRequest } = await createPegoutSpell(
 		context,
 		feerate,
 		previousNftTxid,
@@ -164,13 +184,12 @@ export async function peginCli(_argv: string[]): Promise<[string, string]> {
 	);
 
 	if (transmit) {
-		return await transmitSpell(context, signedSpell);
+		await transmitSpell(context, signedSpell);
 	}
-	return ['', ''];
 }
 
 if (require.main === module) {
-	peginCli(process.argv.slice(2)).catch(err => {
+	main().catch(err => {
 		console.error(err);
-	}).then
+	});
 }

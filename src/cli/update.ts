@@ -6,29 +6,15 @@ import { setupLog } from '../core/log';
 import { Context } from '../core/context';
 import { parse } from '../core/env-parser';
 import { createUpdateNftSpell } from '../api/create-update-nft-spell';
-import { generateSpendingScriptForGrail, KeyPair } from '../core/taproot';
+import { privateToKeypair } from './generate-random-keypairs';
 import {
-	privateToKeypair,
-	publicFromPrivate,
-} from './generate-random-keypairs';
-import {
-	getPreviousGrailState,
-	getPreviousTransactions,
 	injectSignaturesIntoSpell,
 	signAsCosigner,
 	transmitSpell,
 } from '../api/spell-operations';
 import { bufferReplacer } from '../core/json';
-import { SignatureRequest, SignatureResponse } from '../core/types';
-
-export function prepareKeypairs(privateKeys: string[]): KeyPair[] {
-	return privateKeys.map(priv => ({
-		publicKey: publicFromPrivate(
-			Buffer.from(priv.trim().replace('0x', ''), 'hex')
-		),
-		privateKey: Buffer.from(priv.trim().replace('0x', ''), 'hex'),
-	}));
-}
+import { getNewGrailStateFromArgv } from './utils';
+import { SignatureResponse } from '../core/types';
 
 async function main() {
 	dotenv.config({ path: ['.env.test', '.env.local', '.env'] });
@@ -66,25 +52,6 @@ async function main() {
 		ticker: 'GRAIL-NFT',
 	});
 
-	if (!argv['new-public-keys']) {
-		console.error('--new-public-keys is required');
-		return;
-	}
-	const newPublicKeys = (argv['new-public-keys'] as string)
-		.split(',')
-		.map(pk => pk.trim().replace('0x', ''));
-	const newThreshold = Number.parseInt(argv['new-threshold']);
-	if (
-		isNaN(newThreshold) ||
-		newThreshold < 1 ||
-		newThreshold > newPublicKeys.length
-	) {
-		console.error(
-			'Invalid new threshold. It must be a number between 1 and the number of public keys.'
-		);
-		return;
-	}
-
 	const previousNftTxid = argv['previous-nft-txid'] as string;
 	if (!previousNftTxid) {
 		console.error('--previous-nft-txid is required');
@@ -107,37 +74,21 @@ async function main() {
 	}
 	const feerate = Number.parseFloat(argv['feerate']);
 
-	const spell = await createUpdateNftSpell(
+	const newGrailState = getNewGrailStateFromArgv(argv);
+	if (!newGrailState) {
+		console.error('Invalid new grail state');
+		return;
+	}
+
+	const { spell, signatureRequest } = await createUpdateNftSpell(
 		context,
 		feerate,
 		previousNftTxid,
-		{
-			publicKeys: newPublicKeys,
-			threshold: newThreshold,
-		},
+		newGrailState,
 		fundingUtxo
 	);
 	console.log('Spell created:', JSON.stringify(spell, bufferReplacer, '\t'));
-
-	const previousGrailState = await getPreviousGrailState(
-		context,
-		previousNftTxid
-	);
-
-	const signatureRequest: SignatureRequest = {
-		transactionBytes: spell.spellTxBytes,
-		previousTransactions: await getPreviousTransactions(context, spell),
-		inputs: [
-			{
-				index: 0,
-				state: previousGrailState,
-				script: generateSpendingScriptForGrail(
-					previousGrailState,
-					context.network
-				).script,
-			},
-		],
-	};
+	console.log('Signature request:', JSON.stringify(signatureRequest, bufferReplacer, '\t'));
 
 	const fromCosigners: SignatureResponse[] = privateKeys
 		.map(pk => Buffer.from(pk, 'hex'))

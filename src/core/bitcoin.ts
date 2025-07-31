@@ -1,5 +1,27 @@
 import Client from 'bitcoin-core';
 import { Utxo } from './types';
+import * as bitcoin from 'bitcoinjs-lib';
+import { Network, bitcoinjslibNetworks } from './taproot/taproot-common';
+
+export const DUST_LIMIT = 546;
+
+export function txidToHash(txid: string): Buffer {
+	return Buffer.from(txid, 'hex').reverse();
+}
+
+export function hashToTxid(hash: Buffer): string {
+	// This is a hack to avoid Buffer.reverse() which behaves unexpectedly
+	return Buffer.from(Array.from(hash).reverse()).toString('hex');
+}
+
+export function txBytesToTxid(txBytes: Buffer): string {
+	return bitcoin.Transaction.fromBuffer(txBytes).getId();
+}
+
+export function txHexToTxid(txHex: string): string {
+	const txBytes = Buffer.from(txHex, 'hex');
+	return txBytesToTxid(txBytes);
+}
 
 export class ExtendedClient {
 	client!: Client;
@@ -41,10 +63,21 @@ export class ExtendedClient {
 	sendToAddress(toAddress: string, amountBtc: number): Promise<string> {
 		return this.client.command('sendtoaddress', toAddress, amountBtc);
 	}
+	getTxOut(
+		txid: string,
+		vout: number,
+		includeMempool: boolean = true
+	): Promise<any> {
+		return this.command('gettxout', txid, vout, includeMempool);
+	}
+	generateToAddress(blocks: number, address: string): Promise<string[]> {
+		return this.command('generatetoaddress', blocks, address);
+	}
 }
 
 export class BitcoinClient {
 	private client: ExtendedClient | null = null;
+	private static txhash: { [txid: string]: Buffer } = {};
 
 	private constructor() { }
 
@@ -75,8 +108,20 @@ export class BitcoinClient {
 	}
 
 	public async getTransactionHex(txid: string): Promise<string> {
+		if (BitcoinClient.txhash[txid]) {
+			return BitcoinClient.txhash[txid].toString('hex');
+		}
 		const tx = (await this.client!.getRawTransaction(txid)) as { hex: string };
+		BitcoinClient.txhash[txid] = Buffer.from(tx.hex, 'hex');
 		return tx.hex;
+	}
+
+	public async getTransactionBytes(txid: string): Promise<Buffer> {
+		if (BitcoinClient.txhash[txid]) {
+			return BitcoinClient.txhash[txid];
+		}
+		const txHex = await this.getTransactionHex(txid);
+		return Buffer.from(txHex, 'hex');
 	}
 
 	public async signTransaction(
@@ -133,5 +178,35 @@ export class BitcoinClient {
 			amount / 1e8
 		); // Convert satoshis to BTC
 		return txId;
+	}
+
+	public async getTransactionsBytes(txids: string[]): Promise<Buffer[]> {
+		const transactions = [];
+		for (const txid of txids) {
+			const tx = await this.getTransactionBytes(txid);
+			transactions.push(tx);
+		}
+		return transactions;
+	}
+
+	public async getTransactionsMap(
+		txids: string[]
+	): Promise<{ [txid: string]: Buffer }> {
+		const transactions = await this.getTransactionsBytes(txids);
+		return transactions.reduce(
+			(acc, txBytes) => {
+				acc[txBytesToTxid(txBytes)] = txBytes;
+				return acc;
+			},
+			{} as { [key: string]: Buffer }
+		);
+	}
+
+	public async isUtxoSpendable(txid: string, vout: number): Promise<boolean> {
+		return !!(await this.client!.getTxOut(txid, vout, true));
+	}
+
+	public async generateToAddress(blocks: number, address: string): Promise<string[]> {
+		return this.client!.generateToAddress(blocks, address);
 	}
 }

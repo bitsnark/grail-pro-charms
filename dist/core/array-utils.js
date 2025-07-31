@@ -10,6 +10,8 @@ exports.chunk = chunk;
 exports.isIn = isIn;
 exports.unique = unique;
 exports.reverse = reverse;
+exports.forEachAsync = forEachAsync;
+exports.mapAsync = mapAsync;
 function range(start, end) {
     return new Array(end - start).fill(0).map((_, i) => i);
 }
@@ -45,4 +47,16 @@ function unique(a) {
 }
 function reverse(a) {
     return a.slice().reverse();
+}
+async function forEachAsync(a, f) {
+    for (let i = 0; i < a.length; i++) {
+        await f(a[i], i);
+    }
+}
+async function mapAsync(a, f) {
+    const results = [];
+    for (let i = 0; i < a.length; i++) {
+        results.push(await f(a[i], i));
+    }
+    return results;
 }

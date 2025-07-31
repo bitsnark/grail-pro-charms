@@ -34,6 +34,7 @@ export interface CharmerRequest {
 
 export interface NftRequest extends CharmerRequest {
 	// NFT chain
+	ticker: String;
 	previousUtxo?: Utxo;
 	nextNftAddress: string;
 	currentNftState: { publicKeysAsString: string; threshold: number };
@@ -43,16 +44,33 @@ export interface DeployRequest extends NftRequest {}
 
 export interface UpdateRequest extends NftRequest {
 	previousNftTxid: string;
+	previousGrailState: GrailState;
 }
 
-export interface PegInRequest extends UpdateRequest {
+interface Outgoing {
 	amount: number;
-	userWalletAddress: string;
+	address: string;
 }
 
-export interface PegOutRequest extends UpdateRequest {
-	amount: number;
-	userWalletAddress: string;
+export interface GeneralizedInfo {
+	incomingUserBtc: UserPaymentDetails[];
+	incomingGrailBtc: Utxo[];
+	incomingUserCharms: UserPaymentDetails[];
+	outgoingUserBtc: Outgoing[];
+	outgoingUserCharms: Outgoing[];
+	outgoingGrailBtc?: Outgoing;
+}
+
+export const generalizeInfoBlank: GeneralizedInfo = {
+	incomingUserBtc: [],
+	incomingGrailBtc: [],
+	incomingUserCharms: [],
+	outgoingUserBtc: [],
+	outgoingUserCharms: [],
+};
+
+export interface GeneralizedRequest extends UpdateRequest {
+	generalizedInfo: GeneralizedInfo;
 }
 
 export interface LabeledSignature {
@@ -67,6 +85,8 @@ export interface UserPaymentDetails {
 	timelockBlocks: number;
 	txid: string;
 	vout: number;
+	grailState: GrailState;
+	userWalletAddress: string;
 }
 
 export interface Spell {
@@ -79,10 +99,10 @@ export type PreviousTransactions = { [key: string]: Buffer };
 export interface SignatureRequest {
 	transactionBytes: Buffer;
 	previousTransactions: PreviousTransactions;
-	inputs: { index: number; state: GrailState, script: Buffer }[];
+	inputs: { index: number; state: GrailState; script: Buffer }[];
 }
 
-export type CosignerSignatures = { index: number, signature: Buffer };
+export type CosignerSignatures = { index: number; signature: Buffer };
 
 export interface SignatureResponse {
 	publicKey: string;

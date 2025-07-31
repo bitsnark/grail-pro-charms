@@ -4,6 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.deployNft = deployNft;
+exports.deployNftCli = deployNftCli;
 const minimist_1 = __importDefault(require("minimist"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const log_1 = require("../core/log");
@@ -22,10 +23,13 @@ async function deployNft(context, deployerPublicKey, feerate, fundingUtxo, trans
     const grailAddress = (0, taproot_1.generateGrailPaymentAddress)(initialNftState, context.network);
     const fundingChangeAddress = await context.bitcoinClient.getAddress();
     const request = {
+        appId: context.appId,
+        appVk: context.appVk,
         fundingUtxo,
         fundingChangeAddress,
         feerate,
         nextNftAddress: grailAddress,
+        ticker: context.ticker,
         currentNftState: {
             publicKeysAsString: initialNftState.publicKeys.join(','),
             threshold: initialNftState.threshold,
@@ -33,8 +37,10 @@ async function deployNft(context, deployerPublicKey, feerate, fundingUtxo, trans
         toYamlObj: function () {
             return {
                 version: 4,
-                apps: { $00: `n/${context.appId}/${context.appVk}` },
-                private_inputs: { $00: `${fundingUtxo.txid}:${fundingUtxo.vout}` },
+                apps: { $00: `n/${this.appId}/${this.appVk}` },
+                private_inputs: {
+                    $00: `${this.fundingUtxo.txid}:${this.fundingUtxo.vout}`,
+                },
                 public_inputs: { $00: { action: 'deploy' } },
                 ins: [],
                 outs: [
@@ -42,7 +48,7 @@ async function deployNft(context, deployerPublicKey, feerate, fundingUtxo, trans
                         address: this.nextNftAddress,
                         charms: {
                             $00: {
-                                ticker: context.ticker,
+                                ticker: this.ticker,
                                 current_cosigners: this.currentNftState.publicKeysAsString,
                                 current_threshold: this.currentNftState.threshold,
                             },
@@ -55,13 +61,14 @@ async function deployNft(context, deployerPublicKey, feerate, fundingUtxo, trans
     const spell = await (0, spells_1.createSpell)(context, [], request);
     console.log('Spell created:', JSON.stringify(spell, json_1.bufferReplacer, '\t'));
     if (transmit) {
-        await (0, spell_operations_1.transmitSpell)(context, spell);
+        return await (0, spell_operations_1.transmitSpell)(context, spell);
     }
+    return ['', ''];
 }
-async function main() {
+async function deployNftCli(_argv) {
     dotenv_1.default.config({ path: ['.env.test', '.env.local', '.env'] });
     (0, log_1.setupLog)();
-    const argv = (0, minimist_1.default)(process.argv.slice(2), {
+    const argv = (0, minimist_1.default)(_argv, {
         alias: {},
         boolean: ['transmit', 'mock-proof'],
         default: {
@@ -72,14 +79,12 @@ async function main() {
         },
         '--': true,
     });
-    if (!argv['deployerPublicKey']) {
-        console.error('--deployerPublicKey is required');
-        return;
+    if (!argv['deployer-public-key']) {
+        throw new Error('--deployerPublicKey is required');
     }
-    const deployerPublicKey = Buffer.from(argv['deployerPublicKey'].trim().replace('0x', ''), 'hex');
+    const deployerPublicKey = Buffer.from(argv['deployer-public-key'].trim().replace('0x', ''), 'hex');
     if (!argv['feerate']) {
-        console.error('--feerate is required');
-        return;
+        throw new Error('--feerate is required');
     }
     const feerate = Number.parseFloat(argv['feerate']);
     const transmit = !!argv['transmit'];
@@ -89,13 +94,28 @@ async function main() {
         charmsBin: env_parser_1.parse.string('CHARMS_BIN'),
         zkAppBin: './zkapp/target/charms-app',
         network: argv['network'],
-        mockProof: argv['mock-proof'],
+        mockProof: !!argv['mock-proof'],
         ticker: 'GRAIL-NFT',
     }, fundingUtxo);
-    await deployNft(context, deployerPublicKey, feerate, fundingUtxo, transmit);
+    const [_, spellTxid] = await deployNft(context, deployerPublicKey, feerate, fundingUtxo, transmit);
+    return {
+        appId: context.appId,
+        appVk: context.appVk,
+        spellTxid: spellTxid,
+    };
 }
 if (require.main === module) {
-    main().catch(error => {
+    deployNftCli(process.argv.slice(2))
+        .catch(error => {
         console.error('Error during NFT deployment:', error);
+    })
+        .then(flag => {
+        if (flag) {
+            console.log('NFT deployment completed successfully.');
+        }
+        else {
+            console.error('NFT deployment failed.');
+        }
+        process.exit(flag ? 0 : 1);
     });
 }

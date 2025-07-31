@@ -1,9 +1,15 @@
 import { BitcoinClient } from '../core/bitcoin';
-import { generateGrailPaymentAddress } from '../core/taproot';
-import { GrailState, Spell, UpdateRequest, Utxo } from '../core/types';
+import {
+	generalizeInfoBlank,
+	GrailState,
+	SignatureRequest,
+	Spell,
+	Utxo,
+} from '../core/types';
 import { showSpell } from '../core/charms-sdk';
 import { IContext } from '../core/i-context';
-import { createUpdatingSpell } from './spell-operations';
+import { createGeneralizedSpell } from './create-generalized-spell';
+import { bufferReplacer } from '../core/json';
 
 export async function createUpdateNftSpell(
 	context: IContext,
@@ -11,85 +17,28 @@ export async function createUpdateNftSpell(
 	previousNftTxid: string,
 	grailState: GrailState,
 	fundingUtxo?: Utxo
-): Promise<Spell> {
+): Promise<{ spell: Spell; signatureRequest: SignatureRequest }> {
 	const bitcoinClient = await BitcoinClient.initialize();
-
-	const grailAddress = generateGrailPaymentAddress(grailState, context.network);
-	const fundingChangeAddress = await bitcoinClient.getAddress();
 
 	if (!fundingUtxo) {
 		fundingUtxo = await bitcoinClient.getFundingUtxo();
 	}
 
-	const previousNftTxhex =
-		await bitcoinClient.getTransactionHex(previousNftTxid);
-	if (!previousNftTxhex) {
-		throw new Error(`Previous NFT transaction ${previousNftTxid} not found`);
-	}
-	const previousSpellData = await showSpell(context, previousNftTxhex);
+	const previousSpellData = await showSpell(context, previousNftTxid);
 	console.log(
 		'Previous NFT spell:',
-		JSON.stringify(previousSpellData, null, '\t')
+		JSON.stringify(previousSpellData, bufferReplacer, '\t')
 	);
 	if (!previousSpellData) {
 		throw new Error('Invalid previous NFT spell data');
 	}
 
-	const previousPublicKeys =
-		previousSpellData.outs[0].charms['$0000'].current_cosigners.split(',');
-	const previousThreshold =
-		previousSpellData.outs[0].charms['$0000'].current_threshold;
-
-	const request: UpdateRequest = {
-		fundingUtxo,
-		fundingChangeAddress,
+	return await createGeneralizedSpell(
+		context,
 		feerate,
 		previousNftTxid,
-		nextNftAddress: grailAddress,
-		currentNftState: {
-			publicKeysAsString: grailState.publicKeys.join(','),
-			threshold: grailState.threshold,
-		},
-
-		toYamlObj: function () {
-			return {
-				version: 4,
-				apps: { $00: `n/${context.appId}/${context.appVk}` },
-				public_inputs: { $00: { action: 'update' } },
-				ins: [
-					{
-						utxo_id: `${previousNftTxid}:0`,
-						charms: {
-							$00: {
-								ticker: context.ticker,
-								current_cosigners: previousPublicKeys,
-								current_threshold: previousThreshold,
-							},
-						},
-					},
-				],
-				outs: [
-					{
-						address: this.nextNftAddress,
-						charms: {
-							$00: {
-								ticker: context.ticker,
-								current_cosigners: this.currentNftState.publicKeysAsString,
-								current_threshold: this.currentNftState.threshold,
-							},
-						},
-					},
-				],
-			};
-		},
-	};
-
-	return await createUpdatingSpell(
-		context,
-		request,
-		[previousNftTxid],
-		{ publicKeys: previousPublicKeys, threshold: previousThreshold },
 		grailState,
-		null
+		generalizeInfoBlank,
+		fundingUtxo
 	);
 }

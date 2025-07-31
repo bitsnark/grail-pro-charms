@@ -44,28 +44,129 @@ ts-node ./src/cli/generate-random-keypairs.ts --count 1
     publicKey: '660614dc3a81bb9f7bc098897852b0a2c4111214a10e3f7d809e9624c76f5c14',
   }
 
-ts-node ./src/cli/deploy.ts --deployerPublicKey 660614dc3a81bb9f7bc098897852b0a2c4111214a10e3f7d809e9624c76f5c14
-App ID: a13c27aaef0c60e122f85db465eb75890024511ac198c02fd2fd4f234bd9ac5f
-App Verification Key: d1929545464b091d0514a4087ccebc212483db21c391861a3cf043051b262936
-
-Spell transmitted successfully: [
-  "...",
-  "d9d78ab7bdbbf2082e7615ebc125d724f9eb5f8ffabf7542b97961b22a40f97e"
+[2025-07-28T10:46:00.582Z] [
+        {
+                "publicKey": "0xaf6644ddd084ac99ffbc0f3e233694cf4356c4106709913210413779d17e8486",
+                "privateKey": "0x88eab7fda0159b008a2f3636c88b8af0196fc2fc9a34bbb1b63c1958488223ce"
+        }
 ]
 
-private-keys
-state new <-new roster //should be ordered?
+***
 
-ts-node ./src/cli/update.ts --app-id a13c27aaef0c60e122f85db465eb75890024511ac198c02fd2fd4f234bd9ac5f -app-vk d1929545464b091d0514a4087ccebc212483db21c391861a3cf043051b262936 --private-keys 660614dc3a81bb9f7bc098897852b0a2c4111214a10e3f7d809e9624c76f5c14 --new-public-keys 9ad051ec4798d22004f2cad73c30ffa6fc4e62c3b3f20aa5675f01afc83682a6, --new-threshold 1 --previous-nft-txid 7c90524aa142db6f1f5046bdf0076ef81f48eedfc3db6a8a525c513dd3580c97 --mock-proof --transmit &> update.log
+ts-node ./src/cli/deploy.ts --deployerPublicKey af6644ddd084ac99ffbc0f3e233694cf4356c4106709913210413779d17e8486 --mock-proof --transmit &> deploy.log
 
-Spell transmitted successfully: [
-  "2c464132c28e98a5d3f3c374da70f9678e87a7815ab0c32b3b64e49b88eb2f19",
-  "71c962be6689f73c3f976647391397429571fd12f96cd942f59b7284565ff9bc"
+[2025-07-28T10:48:33.823Z] App ID: 3b0ad31236878d16961cdd16f99c37b048943747c09a4a9eed97c9592a25fb87
+[2025-07-28T10:48:37.051Z] App Verification Key: ead64b28a5854f4be43637305362f33b32fa533ebd21cc2cda96840450f42151
+[2025-07-28T10:49:17.318Z] Spell transmitted successfully: [
+  "38f02936e121cd854fcbbf0a6236c22c61dc1f56c5002c7c77dd318daa6fa20e",
+  "961a2734d3b9bcd0049b15dbf8c5f11fa6623d4cd0bd3f2ed2b6e237b1c4fdd3"
 ]
 
+***
+
+ts-node ./src/cli/user-payment.ts --current-public-keys af6644ddd084ac99ffbc0f3e233694cf4356c4106709913210413779d17e8486 --current-threshold 1 --amount 666666 &> user-payment.log
+
+[2025-07-28T10:53:18.843Z] Recovery keypair generated: {
+  "publicKey": "0x213c1539be1fb847318ab399053cd89f10ad449bdffa3969e72b275d1e2b811f",
+  "privateKey": "0x24eee63154ab7934ea272ca72edb966e649bdcdc62d5525c94477eefd4f3b37a"
+}
+[2025-07-28T10:53:18.883Z] Sending funds to user payment address: bcrt1p4dj20vtz4l7wxgj738pyalrvt0440d33v0zta43yzjnjrjuy0dyq6yjdsp
+[2025-07-28T10:53:18.917Z] Funds sent successfully, txid:  01c59201c89cd07137b5f510d60286c4a23893b0153581d39cf0ccfa7c59c390
+[2025-07-28T10:53:18.917Z] Recovery public key: 213c1539be1fb847318ab399053cd89f10ad449bdffa3969e72b275d1e2b811f
+
+***
+
+ts-node ./src/cli/pegin.ts --app-id 3b0ad31236878d16961cdd16f99c37b048943747c09a4a9eed97c9592a25fb87 --app-vk ead64b28a5854f4be43637305362f33b32fa533ebd21cc2cda96840450f42151 --new-public-keys af6644ddd084ac99ffbc0f3e233694cf4356c4106709913210413779d17e8486 --new-threshold 1 --previous-nft-txid 961a2734d3b9bcd0049b15dbf8c5f11fa6623d4cd0bd3f2ed2b6e237b1c4fdd3 --recovery-public-key 213c1539be1fb847318ab399053cd89f10ad449bdffa3969e72b275d1e2b811f --private-keys 88eab7fda0159b008a2f3636c88b8af0196fc2fc9a34bbb1b63c1958488223ce --user-payment-txid 01c59201c89cd07137b5f510d60286c4a23893b0153581d39cf0ccfa7c59c390 --mock-proof --transmit &> pegin.log
+
+[2025-07-28T11:02:10.719Z] Spell transmitted successfully: [
+  "dec430075feddbc98388d5a9d8acfd87c7ba660c334a861711aab759789b534f",
+  "acbe668971eac0865ce28c026af649a954beddbbe80c09dd2714bfc65a85d41c"
+]
+
+***
+
+# How to Run E2E Tests
+
+## Prerequisites
+
+- Bitcoin Core with regtest configuration
+- Charms CLI tool installed from [bitsnark/charms](https://github.com/bitsnark/charms) (stable version)
 
 
+## Environment Setup
+
+Set the following environment variables:
+
+```bash
+export BTC_WALLET_NAME=testwallet
+export CHARMS_BIN=~/.cargo/bin/charms
+```
+
+## Bitcoin Regtest Node Configuration
+
+### 1. Bitcoin Configuration File
+
+Create or update your `bitcoin.conf` file with the following settings:
+
+```ini
+server=1
+txindex=1
+
+daemon=0
+addresstype=bech32m
+changetype=bech32m
+
+rpcport=18443
+# Enable regtest mode
+regtest=1
+
+# RPC authentication
+rpcuser=bitcoin
+rpcpassword=1234
+
+# Allow RPC connections only from localhost
+rpcallowip=127.0.0.1
+
+# Optional: Enable timestamps in logs
+logtimestamps=1
+
+# Optional: Enable debugging logs
+debug=1
+
+# estimation is available. It helps ensure transactions are processed even
+fallbackfee=0.0001
+```
+
+### 2. Bitcoin Node Setup
+
+Start the Bitcoin regtest node and perform initial setup:
+
+```bash
+# Start bitcoind
+bitcoind
+
+# Create wallet
+b createwallet testwallet
+
+# Unload wallet (if needed)
+b loadwallet "testwallet"
+
+# Generate new address
+b getnewaddress
+# Example output: bcrt1pyezp8aenr3d779g6hg7z8jhjmrdwuvw3lnt9a2gdlec72hrkfpxqqx6m5p
+
+# Generate 101 blocks to the address (for coinbase maturity)
+b generatetoaddress 101 bcrt1pyezp8aenr3d779g6hg7z8jhjmrdwuvw3lnt9a2gdlec72hrkfpxqqx6m5p
+
+# List unspent transactions
+b listunspent
+```
 
 
+# Running the Tests
 
+```bash
+$ npm run test:e2e
+```
 
+_Note:_ See pegin-e2e-test-log.md

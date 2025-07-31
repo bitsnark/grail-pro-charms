@@ -102,9 +102,13 @@ function generateSpendingScriptForUserRecovery(userPaymentDetails) {
     ]);
     return timelockScript;
 }
-function generateSpendingScriptsForUserPayment(grailState, userPaymentDetails, network) {
-    debugLog({ grailState, userPaymentDetails, network });
-    const grailScript = generateSpendingScriptForUserPayment(grailState);
+function generateSpendingScriptsForUserPayment(userPaymentDetails, network) {
+    debugLog({
+        grailState: userPaymentDetails.grailState,
+        userPaymentDetails,
+        network,
+    });
+    const grailScript = generateSpendingScriptForUserPayment(userPaymentDetails.grailState);
     const recoveryScript = generateSpendingScriptForUserRecovery(userPaymentDetails);
     const stt = new taptree_1.SimpleTapTree([grailScript, recoveryScript], network);
     return {
