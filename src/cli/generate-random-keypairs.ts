@@ -60,7 +60,7 @@ function main() {
 	// Generate the random roster
 	const roster = generateRandomKeypairs(argv.count || 1);
 	// Print the roster
-	logger.log(JSON.stringify(roster, bufferReplacer, 2));
+	logger.log(roster);
 }
 
 if (require.main === module) {

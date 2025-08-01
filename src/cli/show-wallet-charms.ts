@@ -43,7 +43,7 @@ export async function showWalletCharmsCli(
 	});
 
 	const utxos = await findCharmsUtxos(context, Number.MAX_VALUE);
-	logger.log('Found Charms UTXOs:', JSON.stringify(utxos, bufferReplacer, 2));
+	logger.debug('Found Charms UTXOs:', utxos);
 	return utxos;
 }
 

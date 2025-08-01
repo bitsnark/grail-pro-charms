@@ -87,8 +87,8 @@ async function main() {
 		newGrailState,
 		fundingUtxo
 	);
-	logger.log('Spell created:', JSON.stringify(spell, bufferReplacer, 2));
-	logger.log('Signature request:', JSON.stringify(signatureRequest, bufferReplacer, 2));
+	logger.debug('Spell created:', spell);
+	logger.debug('Signature request:', signatureRequest);
 
 	const fromCosigners: SignatureResponse[] = privateKeys
 		.map(pk => Buffer.from(pk, 'hex'))
@@ -104,10 +104,7 @@ async function main() {
 		signatureRequest,
 		fromCosigners
 	);
-	logger.log(
-		'Signed spell:',
-		JSON.stringify(signedSpell, bufferReplacer, 2)
-	);
+	logger.debug('Signed spell:', signedSpell);
 
 	if (transmit) {
 		await transmitSpell(context, signedSpell);

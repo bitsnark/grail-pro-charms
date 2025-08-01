@@ -17,7 +17,7 @@ async function viewNft(context: IContext, nftTxid: string) {
 		return;
 	}
 	const spell = await showSpell(context, txhex);
-	logger.log('spell: ' + JSON.stringify(spell, null, 2));
+	logger.debug('spell: ', spell);
 }
 
 async function main() {

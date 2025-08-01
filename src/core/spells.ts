@@ -20,7 +20,7 @@ export async function getStateFromNft(
 	nftTxId: string
 ): Promise<GrailState | null> {
 	const previousSpellData = await showSpell(context, nftTxId);
-	logger.log('NFT Spell:', JSON.stringify(previousSpellData, null, 2));
+	logger.debug('NFT Spell:', previousSpellData);
 	if (
 		!previousSpellData ||
 		!previousSpellData.outs ||
@@ -164,7 +164,7 @@ export async function createSpell(
 	previousTxids: string[],
 	request: CharmerRequest
 ): Promise<Spell> {
-	logger.log('Creating spell...');
+	logger.debug('Creating spell...');
 
 	const previousTransactions = await Promise.all(
 		previousTxids.map(async txid =>
@@ -172,7 +172,7 @@ export async function createSpell(
 		)
 	);
 	const yamlStr = yaml.dump(request.toYamlObj());
-	logger.log('Executing spell creation with Yaml: ', yamlStr);
+	logger.debug('Executing spell creation with Yaml: ', yamlStr);
 	const output = await executeSpell(
 		context,
 		request.fundingUtxo,
@@ -182,10 +182,7 @@ export async function createSpell(
 		previousTransactions.map(tx => Buffer.from(tx, 'hex'))
 	);
 
-	logger.log(
-		'Spell created successfully:',
-		JSON.stringify(output, bufferReplacer, 2)
-	);
+	logger.debug('Spell created successfully:', output);
 
 	return {
 		commitmentTxBytes: output.commitmentTxBytes,

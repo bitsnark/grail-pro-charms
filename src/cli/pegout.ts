@@ -143,11 +143,8 @@ export async function pegoutCli(_argv: string[]): Promise<[string, string]> {
 		userPaymentDetails,
 		fundingUtxo
 	);
-	logger.log('Spell created:', JSON.stringify(spell, bufferReplacer, 2));
-	logger.log(
-		'Signature request:',
-		JSON.stringify(signatureRequest, bufferReplacer, 2)
-	);
+	logger.debug('Spell created:', spell);
+	logger.debug('Signature request:', signatureRequest);
 
 	const fromCosigners: SignatureResponse[] = privateKeys
 		.map(pk => Buffer.from(pk, 'hex'))
@@ -157,10 +154,7 @@ export async function pegoutCli(_argv: string[]): Promise<[string, string]> {
 			return { publicKey: keypair.publicKey.toString('hex'), signatures };
 		});
 
-	logger.log(
-		'Signing spell with cosigners:',
-		JSON.stringify(fromCosigners, bufferReplacer, 2)
-	);
+	logger.debug('Signing spell with cosigners:', fromCosigners);
 
 	const signedSpell = await injectSignaturesIntoSpell(
 		context,
@@ -168,7 +162,7 @@ export async function pegoutCli(_argv: string[]): Promise<[string, string]> {
 		signatureRequest,
 		fromCosigners
 	);
-	logger.log('Signed spell:', JSON.stringify(signedSpell, bufferReplacer, 2));
+	logger.debug('Signed spell:', signedSpell);
 
 	if (transmit) {
 		return await transmitSpell(context, signedSpell);

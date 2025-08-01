@@ -142,7 +142,7 @@ export async function peginCli(_argv: string[]): Promise<[string, string]> {
 		userPaymentDetails,
 		fundingUtxo
 	);
-	logger.log('Spell created:', JSON.stringify(spell, bufferReplacer, 2));
+	logger.debug('Spell created:', spell);
 
 	const fromCosigners: SignatureResponse[] = privateKeys
 		.map(pk => Buffer.from(pk, 'hex'))
@@ -158,10 +158,7 @@ export async function peginCli(_argv: string[]): Promise<[string, string]> {
 		signatureRequest,
 		fromCosigners
 	);
-	logger.log(
-		'Signed spell:',
-		JSON.stringify(signedSpell, bufferReplacer, 2)
-	);
+	logger.debug('Signed spell:', signedSpell);
 
 	if (transmit) {
 		const transmittedTxids = await transmitSpell(context, signedSpell);
@@ -177,5 +174,5 @@ export async function peginCli(_argv: string[]): Promise<[string, string]> {
 if (require.main === module) {
 	peginCli(process.argv.slice(2)).catch(err => {
 		logger.error(err);
-	}).then;
+	});
 }

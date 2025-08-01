@@ -196,7 +196,7 @@ export async function transmitSpell(
 	context: IContext,
 	transactions: Spell
 ): Promise<[string, string]> {
-	logger.log('Transmitting spell...');
+	logger.debug('Transmitting spell...');
 
 	const signedCommitmentTxBytes = await context.bitcoinClient.signTransaction(
 		transactions.commitmentTxBytes,
@@ -204,7 +204,7 @@ export async function transmitSpell(
 		'ALL|ANYONECANPAY'
 	);
 
-	logger.info(
+	logger.debug(
 		'Sending commitment transaction:',
 		signedCommitmentTxBytes.toString('hex')
 	);
@@ -212,7 +212,7 @@ export async function transmitSpell(
 		signedCommitmentTxBytes
 	);
 
-	logger.info(
+	logger.debug(
 		'Sending spell transaction:',
 		transactions.spellTxBytes.toString('hex')
 	);
@@ -221,7 +221,7 @@ export async function transmitSpell(
 	);
 
 	const output: [string, string] = [commitmentTxid, spellTxid];
-	logger.log('Spell transmitted successfully:', output);
+	logger.info('Spell transmitted successfully:', output);
 
 	return output;
 }
@@ -290,7 +290,7 @@ export async function findUserPaymentVout(
 			userPaymentAddress,
 			bitcoinjslibNetworks[context.network]
 		);
-		logger.log(
+		logger.debug(
 			`Comparing user payment address ${out.script.toString('hex')} with output script ${out.script.toString('hex')}`
 		);
 		return out.script.compare(outScript) == 0;

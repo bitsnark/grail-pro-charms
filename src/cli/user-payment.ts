@@ -39,9 +39,9 @@ export async function sendUserPaymentCharms(
 	if (charmsUtxos.length === 0) {
 		throw new Error('No sufficient Charms UTXOs found for user payment.');
 	}
-	logger.log('Found Charms UTXOs:', charmsUtxos);
+	logger.debug('Found Charms UTXOs:', charmsUtxos);
 
-	logger.log('Sending charms to user payment address:', userPaymentAddress);
+	logger.debug('Sending charms to user payment address:', userPaymentAddress);
 	const spell = await createTransmitSpell(
 		context,
 		feerate,
@@ -90,13 +90,13 @@ export async function sendUserPaymentBtc(
 		network
 	);
 
-	logger.log('Sending funds to user payment address:', userPaymentAddress);
+	logger.debug('Sending funds to user payment address:', userPaymentAddress);
 	const txid = await context.bitcoinClient.fundAddress(
 		userPaymentAddress,
 		amount
 	);
-	logger.log('Funds sent successfully, txid: ', txid);
-	logger.log('Recovery public key:', recoveryKeypair.publicKey.toString('hex'));
+	logger.debug('Funds sent successfully, txid: ', txid);
+	logger.debug('Recovery public key:', recoveryKeypair.publicKey.toString('hex'));
 
 	return { txid, recoveryPublicKey: recoveryKeypair.publicKey.toString('hex') };
 }
