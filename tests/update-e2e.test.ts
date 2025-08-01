@@ -132,12 +132,12 @@ describe('update e2e test', () => {
     fs.writeFileSync(tempGrailStateFile2, JSON.stringify(newGrailState2, null, 2));
 
     try {
-      // Execute update using cosigner2 and cosigner3 private keys (previous threshold was 2, so we need 2 signatures)
+      // Execute update using all cosigners private keys (previous threshold was 2, so we need 2 signatures)
       updateResult2 = await updateNftCli([
         '--app-id', deploymentResult.appId,
         '--app-vk', deploymentResult.appVk,
         '--previous-nft-txid', updateResult.spellTxid,
-        '--private-keys', cosigner2.privateKey.toString('hex') + ',' + cosigner3.privateKey.toString('hex'),
+        '--private-keys', deployerPrivateKey + ',' + cosigner1.privateKey.toString('hex') + ',' + cosigner2.privateKey.toString('hex') + ',' + cosigner3.privateKey.toString('hex'),
         '--new-grail-state-file', tempGrailStateFile2,
         '--feerate', '0.00002',
         '--mock-proof', 'true',
