@@ -40,7 +40,7 @@ exports.generateSpendingScriptForGrail = generateSpendingScriptForGrail;
 exports.generateSpendingScriptsForUserPayment = generateSpendingScriptsForUserPayment;
 exports.generateUserPaymentAddress = generateUserPaymentAddress;
 exports.generateGrailPaymentAddress = generateGrailPaymentAddress;
-/* eslint-disable no-console */
+const logger_1 = require("./logger");
 const node_fs_1 = __importDefault(require("node:fs"));
 const bitcoin = __importStar(require("bitcoinjs-lib"));
 const taptree_1 = require("./taproot/taptree");
@@ -52,7 +52,7 @@ if (!!process.env.DEBUG_TAPROOT) {
         }
     }
     catch (e) {
-        console.error('Error in debugLog:', e);
+        logger_1.logger.error('Error in debugLog:', e);
     }
 }
 function debugLog(obj) {
@@ -63,7 +63,7 @@ function debugLog(obj) {
         node_fs_1.default.writeFileSync(`./debuglog/taproot/${new Date()}`, JSON.stringify(obj, json_1.bufferReplacer, 2));
     }
     catch (e) {
-        console.error('Error writing debug log:', e);
+        logger_1.logger.error('Error writing debug log:', e);
     }
 }
 function generateSpendingScriptForGrail(grailState, network) {

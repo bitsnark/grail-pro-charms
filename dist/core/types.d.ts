@@ -91,7 +91,9 @@ export interface SignatureResponse {
     publicKey: string;
     signatures: CosignerSignatures[];
 }
-export interface TokenUtxo extends Utxo {
+export interface TokenUtxo {
+    txid: string;
+    vout: number;
     amount: number;
 }
 export {};

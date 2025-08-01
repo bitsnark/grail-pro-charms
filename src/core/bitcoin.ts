@@ -1,7 +1,7 @@
+import { logger } from './logger';
 import Client from 'bitcoin-core';
 import { PreviousTransactions, Utxo } from './types';
 import * as bitcoin from 'bitcoinjs-lib';
-import { Network, bitcoinjslibNetworks } from './taproot/taproot-common';
 
 export const DUST_LIMIT = 546;
 
@@ -153,7 +153,7 @@ export class BitcoinClient {
 			};
 		}) : undefined;
 
-		console.log('!!!!!! Signing transaction with inputs:', prevtxinfo);
+		logger.debug('Signing transaction with inputs:', prevtxinfo);
 
 		const result = await this.client!.signTransactionInputs(
 			txBytes.toString('hex'),

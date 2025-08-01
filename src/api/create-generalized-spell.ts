@@ -1,3 +1,4 @@
+import { logger } from '../core/logger';
 import * as bitcoin from 'bitcoinjs-lib';
 import {
 	generateGrailPaymentAddress,
@@ -17,12 +18,12 @@ import { bufferReplacer } from '../core/json';
 import { IContext } from '../core/i-context';
 import {
 	createUpdatingSpell,
-	getPreviousGrailState,
 	getPreviousGrailStateMap,
 } from './spell-operations';
 import { getCharmsAmountFromUtxo } from '../core/spells';
 import { mapAsync } from '../core/array-utils';
 import { DUST_LIMIT, txBytesToTxid } from '../core/bitcoin';
+import { LOCKED_BTC_MIN_AMOUNT } from '../cli/consts';
 
 function getAmountFromUtxo(
 	previousTransactions: { [key: string]: Buffer },
@@ -61,7 +62,7 @@ async function sanityCheck(
 				`Outgoing BTC to ${outgoing.address} not matched by incoming charms`
 			);
 		}
-		const amount = getAmountFromUtxo(previousTransactions, upd);
+		const amount = await getCharmsAmountFromUtxo(context, upd);
 		if (amount !== outgoing.amount) {
 			throw new Error(
 				`Outgoing BTC amount ${outgoing.amount} does not match incoming charms ${amount} for address ${outgoing.address}`
@@ -87,36 +88,6 @@ async function sanityCheck(
 		}
 	}
 
-	// Let's check that this operation does not create or destroy the total amount of BTC and Charms
-	const totalIncomingBtc = [
-		...generalizedInfo.incomingUserBtc,
-		...generalizedInfo.incomingGrailBtc,
-	]
-		.map(payment => getAmountFromUtxo(previousTransactions, payment))
-		.reduce((a, b) => a + b, 0);
-	const totalIncomingCharms = (
-		await mapAsync(generalizedInfo.incomingUserCharms, utxo =>
-			getCharmsAmountFromUtxo(context, utxo)
-		)
-	).reduce((a, b) => a + b, 0);
-	const totalOutgoingBtc = [
-		...generalizedInfo.outgoingUserBtc,
-		generalizedInfo.outgoingGrailBtc,
-	]
-		.map(outgoing => outgoing.amount)
-		.reduce((a, b) => a + b, 0);
-	const totalOutgoingCharms = generalizedInfo.outgoingUserCharms
-		.map(outgoing => outgoing.amount)
-		.reduce((a, b) => a + b, 0);
-	if (
-		totalIncomingBtc + totalIncomingCharms !==
-		totalOutgoingBtc + totalOutgoingCharms
-	) {
-		throw new Error(
-			`Total incoming (${totalIncomingBtc} BTC + ${totalIncomingCharms} Charms) does not match total outgoing (${totalOutgoingBtc} BTC + ${totalOutgoingCharms} Charms)`
-		);
-	}
-
 	// No output amount is allowed to be lower than dust limit
 	for (const outgoing of [
 		...generalizedInfo.outgoingUserBtc,
@@ -130,35 +101,42 @@ async function sanityCheck(
 	}
 }
 
-async function calculateExcessBitcoin(
+async function calculateBitcoinToLock(
 	context: IContext,
 	previousTransactions: { [key: string]: Buffer },
 	generalizedInfo: GeneralizedInfo
 ): Promise<number> {
 	// Let's check that this operation does not create or destroy the total amount of BTC and Charms
-	const totalIncomingBtc = [
-		...generalizedInfo.incomingUserBtc,
-		...generalizedInfo.incomingGrailBtc,
-	]
+	const incomingUserBtc = generalizedInfo.incomingUserBtc
 		.map(payment => getAmountFromUtxo(previousTransactions, payment))
 		.reduce((a, b) => a + b, 0);
-	const totalIncomingCharms = (
+	const incomingUserCharms = (
 		await mapAsync(generalizedInfo.incomingUserCharms, utxo =>
 			getCharmsAmountFromUtxo(context, utxo)
 		)
 	).reduce((a, b) => a + b, 0);
-	const totalOutgoingBtc = generalizedInfo.outgoingUserBtc
+	const outgoingUserCharms = generalizedInfo.outgoingUserCharms
 		.map(outgoing => outgoing.amount)
 		.reduce((a, b) => a + b, 0);
-	const totalOutgoingCharms = generalizedInfo.outgoingUserCharms
+	const outgoingUserBtc = generalizedInfo.outgoingUserBtc
 		.map(outgoing => outgoing.amount)
 		.reduce((a, b) => a + b, 0);
-	return (
-		totalIncomingBtc +
-		totalIncomingCharms -
-		totalOutgoingBtc -
-		totalOutgoingCharms
-	);
+	const incomingGrailBtc = generalizedInfo.incomingGrailBtc
+		.map(utxo => getAmountFromUtxo(previousTransactions, utxo))
+		.reduce((a, b) => a + b, 0);
+
+	if (incomingUserBtc !== outgoingUserCharms) {
+		throw new Error(
+			`Incoming BTC (${incomingUserBtc}) does not match outgoing user charms (${outgoingUserCharms})`
+		);
+	}
+	if (incomingUserCharms !== outgoingUserBtc) {
+		throw new Error(
+			`Incoming user charms (${incomingUserCharms}) does not match outgoing BTC (${outgoingUserBtc})`
+		);
+	}
+
+	return incomingGrailBtc + incomingUserBtc - outgoingUserBtc;
 }
 
 export async function createGeneralizedSpell(
@@ -190,7 +168,7 @@ export async function createGeneralizedSpell(
 	}
 
 	generalizedInfo.outgoingGrailBtc = {
-		amount: await calculateExcessBitcoin(
+		amount: await calculateBitcoinToLock(
 			context,
 			previousTransactions,
 			generalizedInfo
@@ -198,7 +176,7 @@ export async function createGeneralizedSpell(
 		address: grailAddress,
 	};
 	// If under dust limit, just contribute it to the fee
-	if (generalizedInfo.outgoingGrailBtc.amount < DUST_LIMIT) {
+	if (generalizedInfo.outgoingGrailBtc.amount <= LOCKED_BTC_MIN_AMOUNT) {
 		generalizedInfo.outgoingGrailBtc.amount = 0;
 	}
 
@@ -209,10 +187,7 @@ export async function createGeneralizedSpell(
 	fundingUtxo = fundingUtxo || (await context.bitcoinClient.getFundingUtxo());
 
 	const previousSpellData = await showSpell(context, previousNftTxid);
-	console.log(
-		'Previous NFT spell:',
-		JSON.stringify(previousSpellData, null, 2)
-	);
+	logger.log('Previous NFT spell:', JSON.stringify(previousSpellData, null, 2));
 
 	const previousPublicKeys = previousSpellData.outs[0].charms[
 		'$0000'
@@ -266,10 +241,10 @@ export async function createGeneralizedSpell(
 					...this.generalizedInfo.incomingUserBtc.map(payment => ({
 						utxo_id: `${payment.txid}:${payment.vout}`,
 					})),
-					...this.generalizedInfo.incomingGrailBtc.map(utxo => ({
+					...this.generalizedInfo.incomingUserCharms.map(utxo => ({
 						utxo_id: `${utxo.txid}:${utxo.vout}`,
 					})),
-					...this.generalizedInfo.incomingUserCharms.map(utxo => ({
+					...this.generalizedInfo.incomingGrailBtc.map(utxo => ({
 						utxo_id: `${utxo.txid}:${utxo.vout}`,
 					})),
 				],
@@ -324,17 +299,17 @@ export async function createGeneralizedSpell(
 		context,
 		request,
 		allPreviousTxids,
-		{ publicKeys: previousPublicKeys, threshold: previousThreshold },
+		previousGrailState,
 		nextGrailState,
 		generalizedInfo
 	);
 	previousTransactions[txBytesToTxid(spell.commitmentTxBytes)] =
 		spell.commitmentTxBytes;
 
-	const previousSpellMap = await getPreviousGrailStateMap(context, [
-		...generalizedInfo.incomingGrailBtc.map(utxo => utxo.txid),
-		...generalizedInfo.incomingUserCharms.map(utxo => utxo.txid),
-	]);
+	const previousSpellMap = await getPreviousGrailStateMap(
+		context,
+		generalizedInfo.incomingGrailBtc.map(utxo => utxo.txid)
+	);
 
 	const signatureRequest: SignatureRequest = {
 		transactionBytes: spell.spellTxBytes,
@@ -354,6 +329,12 @@ export async function createGeneralizedSpell(
 				script: generateSpendingScriptsForUserPayment(payment, context.network)
 					.grail.script,
 			})),
+			...generalizedInfo.incomingUserCharms.map(payment => ({
+				index: 0,
+				state: payment.grailState,
+				script: generateSpendingScriptsForUserPayment(payment, context.network)
+					.grail.script,
+			})),
 			...generalizedInfo.incomingGrailBtc.map(utxo => ({
 				index: 0,
 				state: previousSpellMap[utxo.txid],
@@ -362,18 +343,12 @@ export async function createGeneralizedSpell(
 					context.network
 				).script,
 			})),
-			...generalizedInfo.incomingUserCharms.map(payment => ({
-				index: 0,
-				state: payment.grailState,
-				script: generateSpendingScriptsForUserPayment(payment, context.network)
-					.grail.script,
-			})),
 		].map((input, index) => ({
 			...input,
 			index,
 		})),
 	};
 
-	console.log('Spell created:', JSON.stringify(spell, bufferReplacer, 2));
+	logger.log('Spell created:', JSON.stringify(spell, bufferReplacer, 2));
 	return { spell, signatureRequest };
 }

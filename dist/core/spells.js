@@ -40,6 +40,7 @@ exports.resignSpellWithTemporarySecret = resignSpellWithTemporarySecret;
 exports.createSpell = createSpell;
 exports.getTokenInfoForUtxo = getTokenInfoForUtxo;
 exports.findCharmsUtxos = findCharmsUtxos;
+const logger_1 = require("./logger");
 const bitcoin = __importStar(require("bitcoinjs-lib"));
 const yaml = __importStar(require("js-yaml"));
 const secp256k1_1 = require("@noble/curves/secp256k1");
@@ -53,25 +54,36 @@ const array_utils_1 = require("./array-utils");
 const sighashType = bitcoin.Transaction.SIGHASH_DEFAULT;
 async function getStateFromNft(context, nftTxId) {
     const previousSpellData = await (0, charms_sdk_2.showSpell)(context, nftTxId);
-    console.log('Previous NFT spell:', JSON.stringify(previousSpellData, null, 2));
-    const previousPublicKeys = previousSpellData.outs[0].charms['$0000'].current_cosigners.split(',');
-    const previousThreshold = previousSpellData.outs[0].charms['$0000'].current_threshold;
+    logger_1.logger.log('NFT Spell:', JSON.stringify(previousSpellData, null, 2));
+    if (!previousSpellData ||
+        !previousSpellData.outs ||
+        previousSpellData.outs.length < 1) {
+        return null;
+    }
+    const nftId = `n/${context.appId}/${context.appVk}`;
+    const appKey = Object.keys(previousSpellData.apps).find(key => previousSpellData.apps[key] === nftId);
+    if (!appKey || !previousSpellData.outs[0].charms[appKey]) {
+        return null;
+    }
+    const previousPublicKeys = previousSpellData.outs[0].charms[appKey].current_cosigners?.split(',');
+    const previousThreshold = previousSpellData.outs[0].charms[appKey].current_threshold;
     return {
         publicKeys: previousPublicKeys,
         threshold: previousThreshold,
     };
 }
 async function getCharmsAmountFromUtxo(context, utxo) {
-    const previousSpellData = await (0, charms_sdk_2.showSpell)(context, utxo.txid);
-    const output = previousSpellData.outs[utxo.vout];
-    if (!output || !output.charms || !output.charms['$0001']) {
-        throw new Error(`No charms found in UTXO ${utxo.txid}:${utxo.vout}`);
+    const tokenId = `t/${context.appId}/${context.appVk}`;
+    const spellData = await (0, charms_sdk_2.showSpell)(context, utxo.txid);
+    if (!spellData || !spellData.outs) {
+        throw new Error(`No spell data found for UTXO ${utxo.txid}`);
     }
-    const charms = output.charms['$0001'];
-    if (typeof charms.amount !== 'number') {
-        throw new Error(`Invalid charms amount in UTXO ${utxo.txid}:${utxo.vout}`);
+    const appKey = Object.keys(spellData.apps).find(key => spellData.apps[key] === tokenId);
+    if (!appKey) {
+        throw new Error(`No app key found for token ${tokenId}`);
     }
-    return charms.amount;
+    const amount = spellData.outs[utxo.vout]?.charms[appKey]?.amount ?? 0;
+    return amount;
 }
 function signTransactionInput(context, txBytes, inputIndex, script, previousTxBytesMap, keypair) {
     // Load the transaction to sign
@@ -134,12 +146,12 @@ async function resignSpellWithTemporarySecret(context, spellTxBytes, previousTxB
     return tx.toBuffer();
 }
 async function createSpell(context, previousTxids, request) {
-    console.log('Creating spell...');
+    logger_1.logger.log('Creating spell...');
     const previousTransactions = await Promise.all(previousTxids.map(async (txid) => context.bitcoinClient.getTransactionHex(txid)));
     const yamlStr = yaml.dump(request.toYamlObj());
-    console.log('Executing spell creation with Yaml: ', yamlStr);
+    logger_1.logger.log('Executing spell creation with Yaml: ', yamlStr);
     const output = await (0, charms_sdk_1.executeSpell)(context, request.fundingUtxo, request.feerate, request.fundingChangeAddress, yamlStr, previousTransactions.map(tx => Buffer.from(tx, 'hex')));
-    console.log('Spell created successfully:', JSON.stringify(output, json_1.bufferReplacer, 2));
+    logger_1.logger.log('Spell created successfully:', JSON.stringify(output, json_1.bufferReplacer, 2));
     return {
         commitmentTxBytes: output.commitmentTxBytes,
         spellTxBytes: output.spellTxBytes,
@@ -160,17 +172,22 @@ async function getTokenInfoForUtxo(context, utxo) {
         .filter(Boolean);
     return (0, array_utils_1.arrayFromArrayWithIndex)(outs)[utxo.vout];
 }
-async function findCharmsUtxos(context, minTotal) {
-    const unspent = (await context.bitcoinClient.listUnspent()).filter(utxo => utxo.spendable);
+async function findCharmsUtxos(context, minTotal, utxos) {
     let total = 0;
-    const charmsUtxos = (await (0, array_utils_1.mapAsync)(unspent, async (utxo) => {
-        if (minTotal != undefined && total >= minTotal)
+    if (!utxos) {
+        utxos = await context.bitcoinClient.listUnspent();
+    }
+    if (utxos.length === 0) {
+        throw new Error('No UTXOs found');
+    }
+    const charmsUtxos = (await (0, array_utils_1.mapAsync)(utxos, async (utxo) => {
+        logger_1.logger.debug('Checking UTXO:', utxo);
+        if (total >= minTotal)
             return { ...utxo, amount: 0 };
         const info = await getTokenInfoForUtxo(context, utxo).catch(_ => { });
-        console.log('!!! 1', utxo, info);
         if (!info?.amount)
             return { ...utxo, amount: 0 };
-        console.log('!!! 2', utxo, info);
+        logger_1.logger.info('Charms UTXO found: ', utxo, info);
         total += info.amount;
         return { ...utxo, amount: info.amount };
     })).filter(t => t.amount > 0);

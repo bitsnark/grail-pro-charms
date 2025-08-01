@@ -5,6 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TIMELOCK_BLOCKS = void 0;
 exports.peginCli = peginCli;
+const logger_1 = require("../core/logger");
 const minimist_1 = __importDefault(require("minimist"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const bitcoin_1 = require("../core/bitcoin");
@@ -14,6 +15,7 @@ const env_parser_1 = require("../core/env-parser");
 const create_pegin_spell_1 = require("../api/create-pegin-spell");
 const spell_operations_1 = require("../api/spell-operations");
 const generate_random_keypairs_1 = require("./generate-random-keypairs");
+const consts_1 = require("./consts");
 exports.TIMELOCK_BLOCKS = 100; // Default timelock for user payments
 async function peginCli(_argv) {
     dotenv_1.default.config({ path: ['.env.test', '.env.local', '.env'] });
@@ -23,7 +25,7 @@ async function peginCli(_argv) {
         boolean: ['transmit', 'mock-proof'],
         default: {
             network: 'regtest',
-            feerate: 0.00002,
+            feerate: consts_1.DEFAULT_FEERATE,
             transmit: true,
             'mock-proof': false,
             'user-payment-vout': 0,
@@ -97,7 +99,7 @@ async function peginCli(_argv) {
     }
     const feerate = Number.parseFloat(argv['feerate']);
     const { spell, signatureRequest } = await (0, create_pegin_spell_1.createPeginSpell)(context, feerate, previousNftTxid, newGrailState, userPaymentDetails, fundingUtxo);
-    console.log('Spell created:', JSON.stringify(spell, json_1.bufferReplacer, 2));
+    logger_1.logger.log('Spell created:', JSON.stringify(spell, json_1.bufferReplacer, 2));
     const fromCosigners = privateKeys
         .map(pk => Buffer.from(pk, 'hex'))
         .map(privateKey => {
@@ -106,7 +108,7 @@ async function peginCli(_argv) {
         return { publicKey: keypair.publicKey.toString('hex'), signatures };
     });
     const signedSpell = await (0, spell_operations_1.injectSignaturesIntoSpell)(context, spell, signatureRequest, fromCosigners);
-    console.log('Signed spell:', JSON.stringify(signedSpell, json_1.bufferReplacer, 2));
+    logger_1.logger.log('Signed spell:', JSON.stringify(signedSpell, json_1.bufferReplacer, 2));
     if (transmit) {
         const transmittedTxids = await (0, spell_operations_1.transmitSpell)(context, signedSpell);
         // if (network === 'regtest') {
@@ -118,6 +120,6 @@ async function peginCli(_argv) {
 }
 if (require.main === module) {
     peginCli(process.argv.slice(2)).catch(err => {
-        console.error(err);
+        logger_1.logger.error(err);
     }).then;
 }

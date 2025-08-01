@@ -39,6 +39,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.getVerificationKey = getVerificationKey;
 exports.executeSpell = executeSpell;
 exports.showSpell = showSpell;
+const logger_1 = require("./logger");
 const node_fs_1 = __importDefault(require("node:fs"));
 const node_os_1 = __importDefault(require("node:os"));
 const node_path_1 = __importDefault(require("node:path"));
@@ -47,7 +48,7 @@ const child_process_1 = require("child_process");
 const env_parser_1 = require("./env-parser");
 function executeCommand(context, command, pwd) {
     return new Promise((resolve, reject) => {
-        console.info(`Executing command: ${command.join(' ')}`);
+        logger_1.logger.info(`Executing command: ${command.join(' ')}`);
         (0, child_process_1.exec)([
             pwd ? `cd ${pwd}` : '',
             'export RUST_BACKTRACE=full',
@@ -57,17 +58,17 @@ function executeCommand(context, command, pwd) {
             .filter(Boolean)
             .join(' && '), (error, stdout, stderr) => {
             if (error) {
-                console.error(`Execution error: ${error.message}`);
+                logger_1.logger.error(`Execution error: ${error.message}`);
                 reject(error);
             }
             if (stderr) {
-                console.error(`Stderr: ${stderr}`);
+                logger_1.logger.warn(`Stderr: ${stderr}`);
             }
-            console.info(`Executed successfully: ${stdout}`);
+            logger_1.logger.debug(`Executed successfully: ${stdout}`);
             resolve(stdout);
         });
     }).catch((error) => {
-        console.error('Execution error:', error);
+        logger_1.logger.error('Execution error:', error);
         throw error;
     });
 }

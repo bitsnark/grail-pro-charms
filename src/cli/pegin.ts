@@ -1,3 +1,4 @@
+import { logger } from '../core/logger';
 import minimist from 'minimist';
 import dotenv from 'dotenv';
 import { BitcoinClient } from '../core/bitcoin';
@@ -15,6 +16,7 @@ import {
 	transmitSpell,
 } from '../api/spell-operations';
 import { privateToKeypair } from './generate-random-keypairs';
+import { DEFAULT_FEERATE } from './consts';
 
 export const TIMELOCK_BLOCKS = 100; // Default timelock for user payments
 
@@ -27,7 +29,7 @@ export async function peginCli(_argv: string[]): Promise<[string, string]> {
 		boolean: ['transmit', 'mock-proof'],
 		default: {
 			network: 'regtest',
-			feerate: 0.00002,
+			feerate: DEFAULT_FEERATE,
 			transmit: true,
 			'mock-proof': false,
 			'user-payment-vout': 0,
@@ -140,7 +142,7 @@ export async function peginCli(_argv: string[]): Promise<[string, string]> {
 		userPaymentDetails,
 		fundingUtxo
 	);
-	console.log('Spell created:', JSON.stringify(spell, bufferReplacer, 2));
+	logger.log('Spell created:', JSON.stringify(spell, bufferReplacer, 2));
 
 	const fromCosigners: SignatureResponse[] = privateKeys
 		.map(pk => Buffer.from(pk, 'hex'))
@@ -156,7 +158,7 @@ export async function peginCli(_argv: string[]): Promise<[string, string]> {
 		signatureRequest,
 		fromCosigners
 	);
-	console.log(
+	logger.log(
 		'Signed spell:',
 		JSON.stringify(signedSpell, bufferReplacer, 2)
 	);
@@ -174,6 +176,6 @@ export async function peginCli(_argv: string[]): Promise<[string, string]> {
 
 if (require.main === module) {
 	peginCli(process.argv.slice(2)).catch(err => {
-		console.error(err);
+		logger.error(err);
 	}).then;
 }

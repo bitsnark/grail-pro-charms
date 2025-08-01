@@ -117,6 +117,8 @@ export interface SignatureResponse {
 	signatures: CosignerSignatures[];
 }
 
-export interface TokenUtxo extends Utxo {
+export interface TokenUtxo {
+	txid: string;
+	vout: number;
 	amount: number; // Amount in satoshis
 }

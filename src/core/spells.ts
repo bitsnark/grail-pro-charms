@@ -1,3 +1,4 @@
+import { logger } from './logger';
 import * as bitcoin from 'bitcoinjs-lib';
 import * as yaml from 'js-yaml';
 import { schnorr } from '@noble/curves/secp256k1';
@@ -17,17 +18,27 @@ const sighashType = bitcoin.Transaction.SIGHASH_DEFAULT;
 export async function getStateFromNft(
 	context: IContext,
 	nftTxId: string
-): Promise<GrailState> {
+): Promise<GrailState | null> {
 	const previousSpellData = await showSpell(context, nftTxId);
-	console.log(
-		'Previous NFT spell:',
-		JSON.stringify(previousSpellData, null, 2)
+	logger.log('NFT Spell:', JSON.stringify(previousSpellData, null, 2));
+	if (
+		!previousSpellData ||
+		!previousSpellData.outs ||
+		previousSpellData.outs.length < 1
+	) {
+		return null;
+	}
+	const nftId = `n/${context.appId}/${context.appVk}`;
+	const appKey = Object.keys(previousSpellData.apps).find(
+		key => previousSpellData.apps[key] === nftId
 	);
-
+	if (!appKey || !previousSpellData.outs[0].charms[appKey]) {
+		return null;
+	}
 	const previousPublicKeys =
-		previousSpellData.outs[0].charms['$0000'].current_cosigners.split(',');
+		previousSpellData.outs[0].charms[appKey].current_cosigners?.split(',');
 	const previousThreshold =
-		previousSpellData.outs[0].charms['$0000'].current_threshold;
+		previousSpellData.outs[0].charms[appKey].current_threshold;
 
 	return {
 		publicKeys: previousPublicKeys,
@@ -39,16 +50,19 @@ export async function getCharmsAmountFromUtxo(
 	context: IContext,
 	utxo: Utxo
 ): Promise<number> {
-	const previousSpellData = await showSpell(context, utxo.txid);
-	const output = previousSpellData.outs[utxo.vout];
-	if (!output || !output.charms || !output.charms['$0001']) {
-		throw new Error(`No charms found in UTXO ${utxo.txid}:${utxo.vout}`);
+	const tokenId = `t/${context.appId}/${context.appVk}`;
+	const spellData = await showSpell(context, utxo.txid);
+	if (!spellData || !spellData.outs) {
+		throw new Error(`No spell data found for UTXO ${utxo.txid}`);
 	}
-	const charms = output.charms['$0001'];
-	if (typeof charms.amount !== 'number') {
-		throw new Error(`Invalid charms amount in UTXO ${utxo.txid}:${utxo.vout}`);
+	const appKey = Object.keys(spellData.apps).find(
+		key => spellData.apps[key] === tokenId
+	);
+	if (!appKey) {
+		throw new Error(`No app key found for token ${tokenId}`);
 	}
-	return charms.amount;
+	const amount = spellData.outs[utxo.vout]?.charms[appKey]?.amount ?? 0;
+	return amount;
 }
 
 export function signTransactionInput(
@@ -150,7 +164,7 @@ export async function createSpell(
 	previousTxids: string[],
 	request: CharmerRequest
 ): Promise<Spell> {
-	console.log('Creating spell...');
+	logger.log('Creating spell...');
 
 	const previousTransactions = await Promise.all(
 		previousTxids.map(async txid =>
@@ -158,7 +172,7 @@ export async function createSpell(
 		)
 	);
 	const yamlStr = yaml.dump(request.toYamlObj());
-	console.log('Executing spell creation with Yaml: ', yamlStr);
+	logger.log('Executing spell creation with Yaml: ', yamlStr);
 	const output = await executeSpell(
 		context,
 		request.fundingUtxo,
@@ -168,7 +182,7 @@ export async function createSpell(
 		previousTransactions.map(tx => Buffer.from(tx, 'hex'))
 	);
 
-	console.log(
+	logger.log(
 		'Spell created successfully:',
 		JSON.stringify(output, bufferReplacer, 2)
 	);
@@ -202,20 +216,23 @@ export async function getTokenInfoForUtxo(
 
 export async function findCharmsUtxos(
 	context: IContext,
-	minTotal?: number
+	minTotal: number,
+	utxos?: Utxo[]
 ): Promise<TokenUtxo[]> {
-	const unspent = (await context.bitcoinClient.listUnspent()).filter(
-		utxo => utxo.spendable
-	);
 	let total = 0;
+	if (!utxos) {
+		utxos = await context.bitcoinClient.listUnspent();
+	}
+	if (utxos.length === 0) {
+		throw new Error('No UTXOs found');
+	}
 	const charmsUtxos = (
-		await mapAsync(unspent, async utxo => {
-			if (minTotal != undefined && total >= minTotal)
-				return { ...utxo, amount: 0 };
+		await mapAsync(utxos, async utxo => {
+			logger.debug('Checking UTXO:', utxo);
+			if (total >= minTotal) return { ...utxo, amount: 0 };
 			const info = await getTokenInfoForUtxo(context, utxo).catch(_ => {});
-			console.log('!!! 1', utxo, info);
 			if (!info?.amount) return { ...utxo, amount: 0 };
-			console.log('!!! 2', utxo, info);
+			logger.info('Charms UTXO found: ', utxo, info);
 			total += info.amount;
 			return { ...utxo, amount: info.amount };
 		})

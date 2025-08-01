@@ -1,4 +1,5 @@
 import minimist from 'minimist';
+import { logger } from '../core/logger';
 import dotenv from 'dotenv';
 import { Network } from '../core/taproot/taproot-common';
 import { Context } from '../core/context';
@@ -10,7 +11,7 @@ import { createSpell } from '../core/spells';
 import { transmitSpell } from '../api/spell-operations';
 import { parse } from '../core/env-parser';
 import { bufferReplacer } from '../core/json';
-import { TICKER, ZKAPP_BIN } from './consts';
+import { DEFAULT_FEERATE, TICKER, ZKAPP_BIN } from './consts';
 
 export async function deployNft(
 	context: IContext,
@@ -69,7 +70,7 @@ export async function deployNft(
 	};
 
 	const spell = await createSpell(context, [], request);
-	console.log('Spell created:', JSON.stringify(spell, bufferReplacer, 2));
+	logger.log('Spell created:', JSON.stringify(spell, bufferReplacer, 2));
 
 	if (transmit) {
 		return await transmitSpell(context, spell);
@@ -87,7 +88,7 @@ export async function deployNftCli(
 		boolean: ['transmit', 'mock-proof'],
 		default: {
 			network: 'regtest',
-			feerate: 0.00002,
+			feerate: DEFAULT_FEERATE,
 			transmit: true,
 			'mock-proof': false,
 		},
@@ -146,13 +147,13 @@ export async function deployNftCli(
 if (require.main === module) {
 	deployNftCli(process.argv.slice(2))
 		.catch(error => {
-			console.error('Error during NFT deployment:', error);
+			logger.error('Error during NFT deployment:', error);
 		})
 		.then(flag => {
 			if (flag) {
-				console.log('NFT deployment completed successfully.');
+				logger.log('NFT deployment completed successfully.');
 			} else {
-				console.error('NFT deployment failed.');
+				logger.error('NFT deployment failed.');
 			}
 			process.exit(flag ? 0 : 1);
 		});

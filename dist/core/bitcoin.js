@@ -41,6 +41,7 @@ exports.txidToHash = txidToHash;
 exports.hashToTxid = hashToTxid;
 exports.txBytesToTxid = txBytesToTxid;
 exports.txHexToTxid = txHexToTxid;
+const logger_1 = require("./logger");
 const bitcoin_core_1 = __importDefault(require("bitcoin-core"));
 const bitcoin = __importStar(require("bitcoinjs-lib"));
 exports.DUST_LIMIT = 546;
@@ -147,9 +148,10 @@ class BitcoinClient {
                 scriptPubKey: output.script.toString('hex'),
                 redeemScript: '',
                 witnessScript: '',
-                amount: output.value,
+                amount: output.value / 100000000, // Convert satoshis to BTC
             };
         }) : undefined;
+        logger_1.logger.debug('Signing transaction with inputs:', prevtxinfo);
         const result = await this.client.signTransactionInputs(txBytes.toString('hex'), prevtxinfo, sighashType);
         if (!result.complete)
             throw new Error('Transaction signing failed');

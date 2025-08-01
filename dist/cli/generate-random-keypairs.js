@@ -40,6 +40,7 @@ exports.publicFromPrivate = publicFromPrivate;
 exports.privateToKeypair = privateToKeypair;
 exports.generateRandomKeypair = generateRandomKeypair;
 exports.generateRandomKeypairs = generateRandomKeypairs;
+const logger_1 = require("../core/logger");
 const minimist_1 = __importDefault(require("minimist"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const secp = __importStar(require("@bitcoinerlab/secp256k1"));
@@ -82,13 +83,13 @@ function main() {
         '--': true,
     });
     if (argv.count === undefined) {
-        console.error('Parameter --count is required');
+        logger_1.logger.error('Parameter --count is required');
         return;
     }
     // Generate the random roster
     const roster = generateRandomKeypairs(argv.count || 1);
     // Print the roster
-    console.log(JSON.stringify(roster, json_1.bufferReplacer, 2));
+    logger_1.logger.log(JSON.stringify(roster, json_1.bufferReplacer, 2));
 }
 if (require.main === module) {
     main();

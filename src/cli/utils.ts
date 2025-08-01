@@ -1,3 +1,4 @@
+import { logger } from '../core/logger';
 import fs from 'node:fs';
 import minimist from 'minimist';
 import { GrailState, UserPaymentDetails } from '../core/types';

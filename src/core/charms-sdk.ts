@@ -1,3 +1,4 @@
+import { logger } from './logger';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -13,7 +14,7 @@ function executeCommand(
 	pwd?: string
 ): Promise<string> {
 	return new Promise<string>((resolve, reject) => {
-		console.info(`Executing command: ${command.join(' ')}`);
+		logger.info(`Executing command: ${command.join(' ')}`);
 		exec(
 			[
 				pwd ? `cd ${pwd}` : '',
@@ -25,18 +26,18 @@ function executeCommand(
 				.join(' && '),
 			(error, stdout, stderr) => {
 				if (error) {
-					console.error(`Execution error: ${error.message}`);
+					logger.error(`Execution error: ${error.message}`);
 					reject(error);
 				}
 				if (stderr) {
-					console.error(`Stderr: ${stderr}`);
+					logger.warn(`Stderr: ${stderr}`);
 				}
-				console.info(`Executed successfully: ${stdout}`);
+				logger.debug(`Executed successfully: ${stdout}`);
 				resolve(stdout);
 			}
 		);
 	}).catch((error: Error) => {
-		console.error('Execution error:', error);
+		logger.error('Execution error:', error);
 		throw error;
 	});
 }

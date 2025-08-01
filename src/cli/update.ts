@@ -1,3 +1,4 @@
+import { logger } from '../core/logger';
 import minimist from 'minimist';
 import dotenv from 'dotenv';
 import { BitcoinClient } from '../core/bitcoin';
@@ -14,6 +15,7 @@ import {
 import { bufferReplacer } from '../core/json';
 import { getNewGrailStateFromArgv } from './utils';
 import { SignatureResponse } from '../core/types';
+import { DEFAULT_FEERATE } from './consts';
 
 export async function updateNftCli(
 	_argv: string[]
@@ -25,7 +27,7 @@ export async function updateNftCli(
 		boolean: ['transmit', 'mock-proof'],
 		default: {
 			network: 'regtest',
-			feerate: 0.00002,
+			feerate: DEFAULT_FEERATE,
 			transmit: true,
 			'mock-proof': false,
 		},
@@ -82,8 +84,8 @@ export async function updateNftCli(
 		newGrailState,
 		fundingUtxo
 	);
-	console.log('Spell created:', JSON.stringify(spell, bufferReplacer, 2));
-	console.log('Signature request:', JSON.stringify(signatureRequest, bufferReplacer, 2));
+	logger.log('Spell created:', JSON.stringify(spell, bufferReplacer, 2));
+	logger.log('Signature request:', JSON.stringify(signatureRequest, bufferReplacer, 2));
 
 	const fromCosigners: SignatureResponse[] = privateKeys
 		.map(pk => Buffer.from(pk, 'hex'))
@@ -99,7 +101,7 @@ export async function updateNftCli(
 		signatureRequest,
 		fromCosigners
 	);
-	console.log(
+	logger.log(
 		'Signed spell:',
 		JSON.stringify(signedSpell, bufferReplacer, 2)
 	);
@@ -123,5 +125,7 @@ async function main() {
 }
 
 if (require.main === module) {
-	main();
+	main().catch(error => {
+		logger.error('Error during NFT update:', error);
+	});
 }

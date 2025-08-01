@@ -1,3 +1,4 @@
+import { logger } from '../core/logger';
 import { BitcoinClient } from '../core/bitcoin';
 import { showSpell } from '../core/charms-sdk';
 import { IContext } from '../core/i-context';
@@ -25,7 +26,7 @@ export async function createUpdateNftSpell(
 	}
 
 	const previousSpellData = await showSpell(context, previousNftTxid);
-	console.log(
+	logger.log(
 		'Previous NFT spell:',
 		JSON.stringify(previousSpellData, bufferReplacer, 2)
 	);
