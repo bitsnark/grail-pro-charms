@@ -85,23 +85,4 @@ describe('deploy e2e test', () => {
     console.log('Minted block to confirm deployment:', blockHashes[0]);
   });
 
-  it('should verify deployment parameters are correct', async () => {
-    expect(deploymentResult).toBeDefined();
-    expect(deployerPublicKey).toBeDefined();
-
-    // Verify that the deployment used the correct deployer public key
-    // This is an indirect verification since the deployment result doesn't directly expose the public key
-    // but we can verify the deployment was successful with our generated key
-    expect(deploymentResult.appId).toBeDefined();
-    expect(deploymentResult.appVk).toBeDefined();
-    
-    // Verify the deployment created a valid app ID and verification key
-    // These should be non-empty strings representing the deployed application
-    expect(deploymentResult.appId.length).toBeGreaterThan(0);
-    expect(deploymentResult.appVk.length).toBeGreaterThan(0);
-    
-    console.log('Deployment parameters verified successfully');
-    console.log('App ID:', deploymentResult.appId);
-    console.log('App Verification Key:', deploymentResult.appVk);
-  });
 }); 

@@ -3,8 +3,8 @@
 bitcoin_container_name="${BITCOIN_CONTAINER_NAME:-bitcoin-node}"
 postgres_container_name="${POSTGRES_CONTAINER_NAME:-postgres}"
 bitcoin_data_dir="${BITCOIN_DATA_DIR:-/tmp/bitcoin_data}"
-bitcoin_rpc_user="${BITCOIN_RPC_USER:-rpcuser}"
-bitcoin_rpc_password="${BITCOIN_RPC_PASSWORD:-rpcpassword}"
+bitcoin_rpc_user="${BITCOIN_RPC_USER:-bitcoin}"
+bitcoin_rpc_password="${BITCOIN_RPC_PASSWORD:-1234}"
 
 # On macOS, "System Integrety Protection" clears the DYLD_FALLBACK_LIBRARY_PATH,
 # which leaves the Python executable unable to find the secp256k1 library installed by Homebrew.
@@ -87,7 +87,7 @@ conditionally_remove_container() {
 }
 
 bitcoin_cli() {
-    $docker_cmd exec "$bitcoin_container_name" bitcoin-cli -regtest -rpcuser=rpcuser -rpcpassword=rpcpassword "$@"
+    $docker_cmd exec "$bitcoin_container_name" bitcoin-cli -regtest -rpcuser=$bitcoin_rpc_user -rpcpassword=$bitcoin_rpc_password "$@"
 }
 
 generate_blocks() {

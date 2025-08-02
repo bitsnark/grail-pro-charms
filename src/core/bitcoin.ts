@@ -66,6 +66,9 @@ export class ExtendedClient extends Client {
 	loadWallet(name: string): Promise<any> {
 		return this.command('loadwallet', name);
 	}
+	unloadWallet(name: string): Promise<any> {
+		return this.command('unloadwallet', name);
+	}
 	sendToAddress(toAddress: string, amountBtc: number): Promise<string> {
 		return this.command('sendtoaddress', toAddress, amountBtc);
 	}
@@ -104,8 +107,21 @@ export class BitcoinClient {
 			try {
 				await thus.client.loadWallet(walletName);
 			} catch (error: any) {
-				if (!error.message.includes('is already loaded')) {
+				// Check for various wallet already loaded error messages
+				if (!error.message.includes('is already loaded') && 
+					!error.message.includes('Database is already opened') &&
+					!error.message.includes('Unable to obtain an exclusive lock')) {
 					throw new Error(`Failed to load wallet: ${error.message}`);
+				}
+				// If it's a lock error, try to unload and reload
+				if (error.message.includes('Unable to obtain an exclusive lock')) {
+					try {
+						await thus.client.unloadWallet(walletName);
+						await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
+						await thus.client.loadWallet(walletName);
+					} catch (reloadError: any) {
+						throw new Error(`Failed to reload wallet after lock error: ${reloadError.message}`);
+					}
 				}
 			}
 		}
