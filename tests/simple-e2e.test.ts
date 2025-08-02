@@ -39,7 +39,7 @@ describe('simple e2e test', () => {
     ]);
     expect(deploymentResult).toBeTruthy();
     expect(deploymentResult.appId).toBeDefined();
-    expect(deploymentResult.appVk).toBeDefined();
+    expect(deploymentResult.appVk).toBeDefined(); 
     expect(deploymentResult.spellTxid).toBeDefined();
     console.log('Deployment Result:', deploymentResult);
   });
@@ -50,9 +50,13 @@ describe('simple e2e test', () => {
 
     // Execute user payment
     paymentResult = await userPaymentCli([
+      '--app-id', deploymentResult.appId,
+      '--app-vk', deploymentResult.appVk,
+      '--type', 'btc',
       '--current-public-keys', deployerPublicKey,
       '--current-threshold', '1',
-      '--amount', '666666'
+      '--amount', '666666',
+      '--network', 'regtest'
     ]);
     expect(paymentResult).toBeTruthy();
     expect(paymentResult.txid).toBeDefined();
