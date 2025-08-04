@@ -8,7 +8,6 @@ const logger_1 = require("../core/logger");
 const minimist_1 = __importDefault(require("minimist"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const bitcoin_1 = require("../core/bitcoin");
-const json_1 = require("../core/json");
 const context_1 = require("../core/context");
 const env_parser_1 = require("../core/env-parser");
 const spell_operations_1 = require("../api/spell-operations");
@@ -100,7 +99,8 @@ async function pegoutCli(_argv) {
     };
     const feerate = Number.parseFloat(argv['feerate']);
     const { spell, signatureRequest } = await (0, create_pegout_spell_1.createPegoutSpell)(context, feerate, previousNftTxid, newGrailState, userPaymentDetails, fundingUtxo);
-    logger_1.logger.log('Spell created:', JSON.stringify(spell, json_1.bufferReplacer, 2));
+    logger_1.logger.debug('Spell created:', spell);
+    logger_1.logger.debug('Signature request:', signatureRequest);
     const fromCosigners = privateKeys
         .map(pk => Buffer.from(pk, 'hex'))
         .map(privateKey => {
@@ -108,8 +108,9 @@ async function pegoutCli(_argv) {
         const signatures = (0, spell_operations_1.signAsCosigner)(context, signatureRequest, keypair);
         return { publicKey: keypair.publicKey.toString('hex'), signatures };
     });
+    logger_1.logger.debug('Signing spell with cosigners:', fromCosigners);
     const signedSpell = await (0, spell_operations_1.injectSignaturesIntoSpell)(context, spell, signatureRequest, fromCosigners);
-    logger_1.logger.log('Signed spell:', JSON.stringify(signedSpell, json_1.bufferReplacer, 2));
+    logger_1.logger.debug('Signed spell:', signedSpell);
     if (transmit) {
         return await (0, spell_operations_1.transmitSpell)(context, signedSpell);
     }

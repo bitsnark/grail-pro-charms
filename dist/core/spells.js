@@ -45,7 +45,6 @@ const bitcoin = __importStar(require("bitcoinjs-lib"));
 const yaml = __importStar(require("js-yaml"));
 const secp256k1_1 = require("@noble/curves/secp256k1");
 const charms_sdk_1 = require("./charms-sdk");
-const json_1 = require("./json");
 const taproot_common_1 = require("./taproot/taproot-common");
 const charms_sdk_2 = require("./charms-sdk");
 const bitcoin_1 = require("./bitcoin");
@@ -54,7 +53,7 @@ const array_utils_1 = require("./array-utils");
 const sighashType = bitcoin.Transaction.SIGHASH_DEFAULT;
 async function getStateFromNft(context, nftTxId) {
     const previousSpellData = await (0, charms_sdk_2.showSpell)(context, nftTxId);
-    logger_1.logger.log('NFT Spell:', JSON.stringify(previousSpellData, null, 2));
+    logger_1.logger.debug('NFT Spell:', previousSpellData);
     if (!previousSpellData ||
         !previousSpellData.outs ||
         previousSpellData.outs.length < 1) {
@@ -146,12 +145,12 @@ async function resignSpellWithTemporarySecret(context, spellTxBytes, previousTxB
     return tx.toBuffer();
 }
 async function createSpell(context, previousTxids, request) {
-    logger_1.logger.log('Creating spell...');
+    logger_1.logger.debug('Creating spell...');
     const previousTransactions = await Promise.all(previousTxids.map(async (txid) => context.bitcoinClient.getTransactionHex(txid)));
     const yamlStr = yaml.dump(request.toYamlObj());
-    logger_1.logger.log('Executing spell creation with Yaml: ', yamlStr);
+    logger_1.logger.debug('Executing spell creation with Yaml: ', yamlStr);
     const output = await (0, charms_sdk_1.executeSpell)(context, request.fundingUtxo, request.feerate, request.fundingChangeAddress, yamlStr, previousTransactions.map(tx => Buffer.from(tx, 'hex')));
-    logger_1.logger.log('Spell created successfully:', JSON.stringify(output, json_1.bufferReplacer, 2));
+    logger_1.logger.debug('Spell created successfully:', output);
     return {
         commitmentTxBytes: output.commitmentTxBytes,
         spellTxBytes: output.spellTxBytes,

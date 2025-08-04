@@ -7,7 +7,6 @@ exports.showWalletCharmsCli = showWalletCharmsCli;
 const logger_1 = require("../core/logger");
 const minimist_1 = __importDefault(require("minimist"));
 const dotenv_1 = __importDefault(require("dotenv"));
-const json_1 = require("../core/json");
 const context_1 = require("../core/context");
 const env_parser_1 = require("../core/env-parser");
 const consts_1 = require("./consts");
@@ -40,7 +39,7 @@ async function showWalletCharmsCli(_argv) {
         ticker: consts_1.TICKER,
     });
     const utxos = await (0, spells_1.findCharmsUtxos)(context, Number.MAX_VALUE);
-    logger_1.logger.log('Found Charms UTXOs:', JSON.stringify(utxos, json_1.bufferReplacer, 2));
+    logger_1.logger.debug('Found Charms UTXOs:', utxos);
     return utxos;
 }
 if (require.main === module) {

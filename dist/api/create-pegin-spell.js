@@ -36,7 +36,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.createPeginSpell = createPeginSpell;
 const logger_1 = require("../core/logger");
 const bitcoin = __importStar(require("bitcoinjs-lib"));
-const json_1 = require("../core/json");
 const create_generalized_spell_1 = require("./create-generalized-spell");
 const spell_operations_1 = require("./spell-operations");
 async function createPeginSpell(context, feerate, previousNftTxid, nextGrailState, userPaymentDetails, fundingUtxo) {
@@ -55,7 +54,7 @@ async function createPeginSpell(context, feerate, previousNftTxid, nextGrailStat
     }
     const userPaymentTx = bitcoin.Transaction.fromBuffer(userPaymentTxBytes);
     const userPaymentAmount = userPaymentTx.outs[userPaymentDetails.vout].value;
-    logger_1.logger.log('User payment transaction amount:', userPaymentAmount);
+    logger_1.logger.debug('User payment transaction amount:', userPaymentAmount);
     const { spell, signatureRequest } = await (0, create_generalized_spell_1.createGeneralizedSpell)(context, feerate, previousNftTxid, nextGrailState, {
         incomingUserBtc: [userPaymentDetails],
         incomingUserCharms: [],
@@ -68,6 +67,6 @@ async function createPeginSpell(context, feerate, previousNftTxid, nextGrailStat
         ],
         outgoingUserBtc: [],
     }, fundingUtxo);
-    logger_1.logger.log('Peg-in spell created:', JSON.stringify(spell, json_1.bufferReplacer, 2));
+    logger_1.logger.debug('Peg-in spell created:', spell);
     return { spell, signatureRequest };
 }

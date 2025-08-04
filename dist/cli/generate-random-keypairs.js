@@ -46,7 +46,6 @@ const dotenv_1 = __importDefault(require("dotenv"));
 const secp = __importStar(require("@bitcoinerlab/secp256k1"));
 const node_buffer_1 = require("node:buffer");
 const crypto_1 = require("crypto");
-const json_1 = require("../core/json");
 const array_utils_1 = require("../core/array-utils");
 function publicFromPrivate(privateKey) {
     if (!secp.isPrivate(privateKey)) {
@@ -89,7 +88,7 @@ function main() {
     // Generate the random roster
     const roster = generateRandomKeypairs(argv.count || 1);
     // Print the roster
-    logger_1.logger.log(JSON.stringify(roster, json_1.bufferReplacer, 2));
+    logger_1.logger.log(roster);
 }
 if (require.main === module) {
     main();

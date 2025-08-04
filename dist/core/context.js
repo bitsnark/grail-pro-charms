@@ -28,7 +28,7 @@ class Context {
         if (!obj.appId)
             throw new Error('App ID is required');
         thus.appId = obj.appId;
-        logger_1.logger.log('App ID:', thus.appId);
+        logger_1.logger.info('App ID:', thus.appId);
         thus.network = obj.network || 'regtest';
         thus.mockProof = obj.mockProof || false;
         if (!obj.appVk) {
@@ -38,7 +38,7 @@ class Context {
         else {
             thus.appVk = obj.appVk;
         }
-        logger_1.logger.log('App Verification Key:', thus.appVk);
+        logger_1.logger.info('App Verification Key:', thus.appVk);
         if (!obj.ticker)
             throw new Error('Ticker is required');
         thus.ticker = obj.ticker;
