@@ -1,3 +1,4 @@
+import { createGeneralizedSpell } from './api/create-generalized-spell';
 import { createPeginSpell } from './api/create-pegin-spell';
 import { createPegoutSpell } from './api/create-pegout-spell';
 import { createUpdateNftSpell } from './api/create-update-nft-spell';
@@ -22,4 +23,5 @@ export {
 	injectSignaturesIntoSpell,
 	transmitSpell,
 	filterValidCosignerSignatures,
+	createGeneralizedSpell
 };
