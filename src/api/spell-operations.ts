@@ -353,7 +353,7 @@ export async function getUserWalletAddressFromUserPaymentUtxo(
 	// Get address from the change output
 	// If there is no change output, get it fro the first input
 
-	let script: Buffer;
+	let script: Buffer | null = null;
 	if (tx.outs.length == 2) {
 		const changeOutput = fundingUtxo.vout == 0 ? 1 : 0;
 		script = tx.outs[changeOutput].script;
@@ -367,11 +367,19 @@ export async function getUserWalletAddressFromUserPaymentUtxo(
 				`Transaction ${fundingUtxo.txid} has no inputs, cannot determine address`
 			);
 		}
-		const prevtxbytes = await context.bitcoinClient.getTransactionBytes(
-			hashToTxid(tx.ins[0].hash)
+		for (const input of tx.ins) {
+			const prevtxbytes = await context.bitcoinClient.getTransactionBytes(
+				hashToTxid(input.hash)
+			);
+			const prevtx = bitcoin.Transaction.fromBuffer(prevtxbytes);
+			script = prevtx.outs[input.index].script;
+			if (script) break;
+		}
+	}
+	if (!script || script.length === 0) {
+		throw new Error(
+			`No script found in transaction outpus: ${fundingUtxo.txid}`
 		);
-		const prevtx = bitcoin.Transaction.fromBuffer(prevtxbytes);
-		script = prevtx.ins[tx.ins[0].index].script;
 	}
 
 	// Now try every address type possible
@@ -397,7 +405,7 @@ export async function getUserWalletAddressFromUserPaymentUtxo(
 		})
 		.filter(Boolean)[0];
 	if (!address) {
-		throw new Error('No valid address found for the script');
+		throw new Error('No valid address found, script: ' + script.toString('hex'));
 	}
 	return address;
 }

@@ -1,11 +1,6 @@
 import { logger } from '../core/logger';
 import { BitcoinClient } from '../core/bitcoin';
-import {
-	Spell,
-	TokenUtxo,
-	TransmitRequest,
-	Utxo,
-} from '../core/types';
+import { Spell, TokenUtxo, TransmitRequest, Utxo } from '../core/types';
 import { IContext } from '../core/i-context';
 import { createSpell } from '../core/spells';
 import { bufferReplacer } from '../core/json';
@@ -31,7 +26,7 @@ export async function createTransmitSpell(
 		throw new Error('Insufficient input UTXOs for the specified amount.');
 	}
 
-  const fundingChangeAddress = await context.bitcoinClient.getAddress();
+	const fundingChangeAddress = await context.bitcoinClient.getAddress();
 
 	const request: TransmitRequest = {
 		appId: context.appId,
@@ -57,9 +52,7 @@ export async function createTransmitSpell(
 					...this.inputUtxos.map(utxo => ({
 						utxo_id: `${utxo.txid}:${utxo.vout}`,
 						charms: {
-							$00: {
-								amount: utxo.amount,
-							},
+							$00: utxo.amount,
 						},
 					})),
 				],
@@ -67,18 +60,14 @@ export async function createTransmitSpell(
 					{
 						address: this.outputAddress,
 						charms: {
-							$00: {
-								amount: this.amount,
-							},
+							$00: this.amount,
 						},
 					},
 					this.changeAmount > 0
 						? {
 								address: this.changeAddress,
 								charms: {
-									$00: {
-										amount: this.changeAmount,
-									},
+									$00: this.changeAmount,
 								},
 							}
 						: null,
@@ -89,10 +78,7 @@ export async function createTransmitSpell(
 
 	const previousTxids = inputUtxos.map(utxo => utxo.txid);
 	const spell = await createSpell(context, previousTxids, request);
-	logger.debug(
-		'Transmit spell created:',
-		spell
-	);
+	logger.debug('Transmit spell created:', spell);
 
 	return spell;
 }

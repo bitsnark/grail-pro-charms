@@ -200,6 +200,11 @@ export async function createGeneralizedSpell(
 		threshold: previousThreshold,
 	};
 
+	const charmsAmounts = await mapAsync(
+		generalizedInfo.incomingUserCharms,
+		async utxo => await getCharmsAmountFromUtxo(context, utxo)
+	);
+
 	const request: GeneralizedRequest = {
 		appId: context.appId,
 		appVk: context.appVk,
@@ -241,8 +246,11 @@ export async function createGeneralizedSpell(
 					...this.generalizedInfo.incomingUserBtc.map(payment => ({
 						utxo_id: `${payment.txid}:${payment.vout}`,
 					})),
-					...this.generalizedInfo.incomingUserCharms.map(utxo => ({
+					...this.generalizedInfo.incomingUserCharms.map((utxo, index) => ({
 						utxo_id: `${utxo.txid}:${utxo.vout}`,
+						charms: {
+							$01: charmsAmounts[index],
+						},
 					})),
 					...this.generalizedInfo.incomingGrailBtc.map(utxo => ({
 						utxo_id: `${utxo.txid}:${utxo.vout}`,

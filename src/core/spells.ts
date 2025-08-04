@@ -61,8 +61,7 @@ export async function getCharmsAmountFromUtxo(
 	if (!appKey) {
 		throw new Error(`No app key found for token ${tokenId}`);
 	}
-	const amount = spellData.outs[utxo.vout]?.charms[appKey]?.amount ?? 0;
-	return amount;
+	return Number(spellData.outs[utxo.vout]?.charms[appKey] ?? 0);
 }
 
 export function signTransactionInput(
