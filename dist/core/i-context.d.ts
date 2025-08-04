@@ -1,5 +1,6 @@
-import { BitcoinClient } from './bitcoin';
+import Client from 'bitcoin-core';
 import { Network } from './taproot/taproot-common';
+import { BitcoinClient } from './bitcoin';
 export interface IContext {
     charmsBin: string;
     zkAppBin: string;
@@ -10,4 +11,5 @@ export interface IContext {
     mockProof?: boolean;
     temporarySecret: Buffer;
     bitcoinClient: BitcoinClient;
+    core?: Client;
 }

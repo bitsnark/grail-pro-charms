@@ -1,6 +1,48 @@
-***
+### grail charms
+
+git clone git@github.com:bitsnark/charms.git
+cd charms
+git checkout dm-secret-parameters
+
+cargo build --release --verbose --features prover
+
+this will create the charms sdk is in: target/release
+use this path in your CHARMS_BIN .env param
+
+
+### env params
+
+CHARMS_BIN=path to local charms.
+
+BTC_WALLET_NAME=
+BTC_NODE_USERNAME=
+BTC_NODE_PASSWORD=
+BTC_NODE_HOST=
+
+CHARMS_SECRET= Optional for a static value.
+
+### deploying, updating and peg operations
+
+Those cli commands should be regarded as a template.
+Key-pair may stay or be changed ()
+
+Commands for deploy, update, pegin are available to use.
+The deploy log contains: --app-id,  -app-vk
+Each operation logs contain at its end the [commitment, spell] txids,
+use --previous-nft-txid spellTxid for the next operation.
+
+--private-keys are needed to sign the previous nft.
+Prev threshold amount is needed. comma separated values.
+
+--new-public-keys the full roster,comma separated values.
+--new-threshold its threshold
+
 
 ts-node ./src/cli/generate-random-keypairs.ts --count 1
+ {
+    privateKey: '3ee8b75d7e17ee3846ce440740fca29be938d29253fdda3178172d0db6f444f6',
+    publicKey: '660614dc3a81bb9f7bc098897852b0a2c4111214a10e3f7d809e9624c76f5c14',
+  }
 
 [2025-07-28T10:46:00.582Z] [
         {
@@ -43,3 +85,88 @@ ts-node ./src/cli/pegin.ts --app-id 3b0ad31236878d16961cdd16f99c37b048943747c09a
 
 ***
 
+# How to Run E2E Tests
+
+## Prerequisites
+
+- Bitcoin Core with regtest configuration
+- Charms CLI tool installed from [bitsnark/charms](https://github.com/bitsnark/charms) (stable version)
+
+
+## Environment Setup
+
+Set the following environment variables:
+
+```bash
+export BTC_WALLET_NAME=testwallet
+export CHARMS_BIN=~/.cargo/bin/charms
+```
+
+## Bitcoin Regtest Node Configuration
+
+### 1. Bitcoin Configuration File
+
+Create or update your `bitcoin.conf` file with the following settings:
+
+```ini
+server=1
+txindex=1
+
+daemon=0
+addresstype=bech32m
+changetype=bech32m
+
+rpcport=18443
+# Enable regtest mode
+regtest=1
+
+# RPC authentication
+rpcuser=bitcoin
+rpcpassword=1234
+
+# Allow RPC connections only from localhost
+rpcallowip=127.0.0.1
+
+# Optional: Enable timestamps in logs
+logtimestamps=1
+
+# Optional: Enable debugging logs
+debug=1
+
+# estimation is available. It helps ensure transactions are processed even
+fallbackfee=0.0001
+```
+
+### 2. Bitcoin Node Setup
+
+Start the Bitcoin regtest node and perform initial setup:
+
+```bash
+# Start bitcoind
+bitcoind
+
+# Create wallet
+b createwallet testwallet
+
+# Unload wallet (if needed)
+b loadwallet "testwallet"
+
+# Generate new address
+b getnewaddress
+# Example output: bcrt1pyezp8aenr3d779g6hg7z8jhjmrdwuvw3lnt9a2gdlec72hrkfpxqqx6m5p
+
+# Generate 101 blocks to the address (for coinbase maturity)
+b generatetoaddress 101 bcrt1pyezp8aenr3d779g6hg7z8jhjmrdwuvw3lnt9a2gdlec72hrkfpxqqx6m5p
+
+# List unspent transactions
+b listunspent
+```
+
+
+# Running the Tests
+
+```bash
+$ npm run test:e2e
+```
+
+_Note:_ See pegin-e2e-test-log.md

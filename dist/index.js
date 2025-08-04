@@ -1,6 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.filterValidCosignerSignatures = exports.transmitSpell = exports.injectSignaturesIntoSpell = exports.signAsCosigner = exports.createPegoutSpell = exports.createPeginSpell = exports.createUpdateNftSpell = exports.getPreviousTransactions = exports.getPreviousGrailState = exports.Context = void 0;
+exports.createGeneralizedSpell = exports.filterValidCosignerSignatures = exports.transmitSpell = exports.injectSignaturesIntoSpell = exports.signAsCosigner = exports.createPegoutSpell = exports.createPeginSpell = exports.createUpdateNftSpell = exports.getPreviousTransactions = exports.getPreviousGrailState = exports.Context = void 0;
+const create_generalized_spell_1 = require("./api/create-generalized-spell");
+Object.defineProperty(exports, "createGeneralizedSpell", { enumerable: true, get: function () { return create_generalized_spell_1.createGeneralizedSpell; } });
 const create_pegin_spell_1 = require("./api/create-pegin-spell");
 Object.defineProperty(exports, "createPeginSpell", { enumerable: true, get: function () { return create_pegin_spell_1.createPeginSpell; } });
 const create_pegout_spell_1 = require("./api/create-pegout-spell");

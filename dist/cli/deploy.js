@@ -98,9 +98,6 @@ async function deployNftCli(_argv) {
         ticker: consts_1.TICKER,
     }, fundingUtxo);
     const [_, spellTxid] = await deployNft(context, deployerPublicKey, feerate, fundingUtxo, transmit);
-    // if (network === 'regtest') {
-    // 	await context.bitcoinClient.generateBlocks([commitTxid, spellTxid]);
-    // }
     return {
         appId: context.appId,
         appVk: context.appVk,

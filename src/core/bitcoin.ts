@@ -23,16 +23,17 @@ export function txHexToTxid(txHex: string): string {
 	return txBytesToTxid(txBytes);
 }
 
-export class ExtendedClient extends Client {
-	constructor(options: any) {
-		super(options);
+export class ExtendedClient {
+	client!: Client;
+	constructor(client: Client) {
+		this.client = client;
 	}
 
 	getRawTransaction(txid: string): Promise<any> {
-		return this.command('getrawtransaction', txid, true);
+		return this.client.command('getrawtransaction', txid, true);
 	}
 	sendRawTransaction(txHex: string): Promise<string> {
-		return this.command('sendrawtransaction', txHex);
+		return this.client.command('sendrawtransaction', txHex);
 	}
 	signTransactionInputs(
 		txHex: string,
@@ -46,7 +47,7 @@ export class ExtendedClient extends Client {
 		}[],
 		sighashType?: string
 	): Promise<any> {
-		return this.command(
+		return this.client.command(
 			'signrawtransactionwithwallet',
 			txHex,
 			prevtxs,
@@ -58,23 +59,29 @@ export class ExtendedClient extends Client {
 		maxconf: number,
 		addresses: string[]
 	): Promise<any[]> {
-		return this.command('listunspent', minconf, maxconf, addresses);
+		return this.client.command('listunspent', minconf, maxconf, addresses);
 	}
 	getNewAddress(): Promise<string> {
-		return this.command('getnewaddress');
+		return this.client.command('getnewaddress');
 	}
 	loadWallet(name: string): Promise<any> {
-		return this.command('loadwallet', name);
+		return this.client.command('loadwallet', name);
 	}
 	sendToAddress(toAddress: string, amountBtc: number): Promise<string> {
-		return this.command('sendtoaddress', toAddress, amountBtc);
+		return this.client.command('sendtoaddress', toAddress, amountBtc);
 	}
 	getTxOut(
 		txid: string,
 		vout: number,
 		includeMempool: boolean = true
 	): Promise<any> {
-		return this.command('gettxout', txid, vout, includeMempool);
+		return this.client.command('gettxout', txid, vout, includeMempool);
+	}
+	generateToAddress(blocks: number, address: string): Promise<string[]> {
+		return this.client.command('generatetoaddress', blocks, address);
+	}
+	generateBlocks(address: string, txids: string[]): Promise<void> {
+		return this.client.command('generateblock', address, txids);
 	}
 }
 
@@ -84,19 +91,19 @@ export class BitcoinClient {
 
 	private constructor() {}
 
-	public static async initialize(
-		client?: ExtendedClient
-	): Promise<BitcoinClient> {
+	public static async initialize(client?: Client): Promise<BitcoinClient> {
 		const thus = new BitcoinClient();
 		if (client) {
-			thus.client = client;
+			thus.client = new ExtendedClient(client);
 		} else {
-			thus.client = new ExtendedClient({
-				username: process.env.BTC_NODE_USERNAME || 'bitcoin',
-				password: process.env.BTC_NODE_PASSWORD || '1234',
-				host: process.env.BTC_NODE_HOST || 'http://localhost:18443', // default for regtest
-				timeout: 30000, // 30 seconds
-			});
+			thus.client = new ExtendedClient(
+				new Client({
+					username: process.env.BTC_NODE_USERNAME || 'bitcoin',
+					password: process.env.BTC_NODE_PASSWORD || '1234',
+					host: process.env.BTC_NODE_HOST || 'http://localhost:18443', // default for regtest
+					timeout: 30000, // 30 seconds
+				})
+			);
 			const walletName = process.env.BTC_WALLET_NAME || 'default';
 			try {
 				await thus.client.loadWallet(walletName);
@@ -132,23 +139,25 @@ export class BitcoinClient {
 		sighashType?: string
 	): Promise<Buffer> {
 		const tx = bitcoin.Transaction.fromBuffer(txBytes);
-		const prevtxinfo = prevtxsBytesMap ? tx.ins.map((input, index) => {
-			const prevtxid = hashToTxid(input.hash);
-			const prevtxbytes = prevtxsBytesMap[prevtxid];
-			if (!prevtxbytes) {
-				throw new Error(`Previous transaction ${prevtxid} not found`);
-			}
-			const prevtxObj = bitcoin.Transaction.fromBuffer(prevtxbytes);
-			const output = prevtxObj.outs[input.index];
-			return {
-				txid: prevtxid,
-				vout: input.index,
-				scriptPubKey: output.script.toString('hex'),
-				redeemScript: '',
-				witnessScript: '',
-				amount: output.value / 100000000, // Convert satoshis to BTC
-			};
-		}) : undefined;
+		const prevtxinfo = prevtxsBytesMap
+			? tx.ins.map((input, index) => {
+					const prevtxid = hashToTxid(input.hash);
+					const prevtxbytes = prevtxsBytesMap[prevtxid];
+					if (!prevtxbytes) {
+						throw new Error(`Previous transaction ${prevtxid} not found`);
+					}
+					const prevtxObj = bitcoin.Transaction.fromBuffer(prevtxbytes);
+					const output = prevtxObj.outs[input.index];
+					return {
+						txid: prevtxid,
+						vout: input.index,
+						scriptPubKey: output.script.toString('hex'),
+						redeemScript: '',
+						witnessScript: '',
+						amount: output.value / 100000000, // Convert satoshis to BTC
+					};
+				})
+			: undefined;
 
 		const result = await this.client!.signTransactionInputs(
 			txBytes.toString('hex'),
@@ -229,6 +238,13 @@ export class BitcoinClient {
 
 	public async generateBlocks(txids: string[]): Promise<void> {
 		const output = await this.getAddress();
-		await this.client!.command('generateblock', output, txids);
+		await this.client!.generateBlocks(output, txids);
+	}
+
+	public async generateToAddress(
+		blocks: number,
+		address: string
+	): Promise<string[]> {
+		return this.client!.generateToAddress(blocks, address);
 	}
 }
