@@ -133,10 +133,6 @@ export async function deployNftCli(
 		transmit
 	);
 
-	// if (network === 'regtest') {
-	// 	await context.bitcoinClient.generateBlocks([commitTxid, spellTxid]);
-	// }
-
 	return {
 		appId: context.appId,
 		appVk: context.appVk,
