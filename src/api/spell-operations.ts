@@ -312,8 +312,11 @@ export async function getUserWalletAddressFromUserPaymentUtxo(
 		fundingUtxo.txid
 	);
 	const tx = bitcoin.Transaction.fromBuffer(txBytes);
+
+	// TODO: get address from inputs if change output doesn't exist
+
 	if (tx.outs.length < 2) {
-		throw new Error('Funding UTXO has no inputs');
+		throw new Error("Funding UTXO doesn't have a change output");
 	}
 	const changeOutput = fundingUtxo.vout == 0 ? 1 : 0;
 	const script = tx.outs[changeOutput].script;
