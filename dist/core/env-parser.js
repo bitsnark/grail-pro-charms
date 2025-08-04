@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.parse = void 0;
+const logger_1 = require("./logger");
 function parseEnv(name, parser, defaultValue) {
     const value = process.env[name];
     if (value === undefined) {
@@ -14,7 +15,7 @@ function parseEnv(name, parser, defaultValue) {
     }
     catch (e) {
         const error = e;
-        console.error(`Error parsing environment variable '${name}': ${error.message}`);
+        logger_1.logger.error(`Error parsing environment variable '${name}': ${error.message}`);
         throw new Error(`${error.message} for environment variable: '${name}'`);
     }
 }

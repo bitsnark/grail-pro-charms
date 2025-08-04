@@ -40,17 +40,22 @@ exports.injectSignaturesIntoSpell = injectSignaturesIntoSpell;
 exports.transmitSpell = transmitSpell;
 exports.getPreviousTransactions = getPreviousTransactions;
 exports.signAsCosigner = signAsCosigner;
+exports.filterValidCosignerSignatures = filterValidCosignerSignatures;
 exports.findUserPaymentVout = findUserPaymentVout;
 exports.getUserWalletAddressFromUserPaymentUtxo = getUserWalletAddressFromUserPaymentUtxo;
+const logger_1 = require("../core/logger");
 const bitcoin = __importStar(require("bitcoinjs-lib"));
 const taproot_1 = require("../core/taproot");
 const spells_1 = require("../core/spells");
 const charms_sdk_1 = require("../core/charms-sdk");
 const taproot_common_1 = require("../core/taproot/taproot-common");
 const bitcoin_1 = require("../core/bitcoin");
+const taproot_2 = require("../core/taproot");
 async function getPreviousGrailState(context, previousNftTxid) {
     const previousSpellData = await (0, charms_sdk_1.showSpell)(context, previousNftTxid);
-    if (!previousSpellData) {
+    if (!previousSpellData ||
+        !previousSpellData.outs ||
+        previousSpellData.outs.length === 0) {
         throw new Error('Invalid previous NFT spell data');
     }
     return {
@@ -69,7 +74,7 @@ async function createUpdatingSpell(context, request, previousTxIds, previousGrai
     const spell = await (0, spells_1.createSpell)(context, previousTxIds, request);
     const inputIndexNft = 0; // Assuming the first input is the NFT input
     const spellTx = bitcoin.Transaction.fromBuffer(spell.spellTxBytes);
-    const spendingScriptGrail = (0, taproot_1.generateSpendingScriptForGrail)(previousGrailState, context.network);
+    const spendingScriptGrail = (0, taproot_2.generateSpendingScriptForGrail)(previousGrailState, context.network);
     spellTx.ins[inputIndexNft].witness = [
         // bitcoin.script.compile([bitcoin.opcodes.OP_CODESEPARATOR]),
         spendingScriptGrail.script,
@@ -81,6 +86,21 @@ async function createUpdatingSpell(context, request, previousTxIds, previousGrai
         spellTx.ins[userInputIndex++].witness = [
             spendingScriptUser.grail.script,
             spendingScriptUser.grail.controlBlock,
+        ];
+    }
+    for (const input of generalizedInfo.incomingUserCharms) {
+        const spendingScriptUser = (0, taproot_1.generateSpendingScriptsForUserPayment)(input, context.network);
+        spellTx.ins[userInputIndex++].witness = [
+            spendingScriptUser.grail.script,
+            spendingScriptUser.grail.controlBlock,
+        ];
+    }
+    for (const utxo of generalizedInfo.incomingGrailBtc) {
+        const grailState = await getPreviousGrailState(context, utxo.txid);
+        const spendingScript = (0, taproot_2.generateSpendingScriptForGrail)(grailState, context.network);
+        spellTx.ins[userInputIndex++].witness = [
+            spendingScript.script,
+            spendingScript.controlBlock,
         ];
     }
     spell.spellTxBytes = spellTx.toBuffer();
@@ -131,16 +151,14 @@ async function injectSignaturesIntoSpell(context, spell, signatureRequest, fromC
     return spell;
 }
 async function transmitSpell(context, transactions) {
-    console.log('Transmitting spell...');
-    const commitmentTxHex = transactions.commitmentTxBytes.toString('hex');
-    const signedCommitmentTxHex = await context.bitcoinClient.signTransaction(commitmentTxHex, undefined, 'ALL|ANYONECANPAY');
-    console.info('Sending commitment transaction:', signedCommitmentTxHex);
-    const commitmentTxid = await context.bitcoinClient.transmitTransaction(signedCommitmentTxHex);
-    const spellTransactionHex = transactions.spellTxBytes.toString('hex');
-    console.info('Sending spell transaction:', spellTransactionHex);
-    const spellTxid = await context.bitcoinClient.transmitTransaction(spellTransactionHex);
+    logger_1.logger.debug('Transmitting spell...');
+    const signedCommitmentTxBytes = await context.bitcoinClient.signTransaction(transactions.commitmentTxBytes, undefined, 'ALL|ANYONECANPAY');
+    logger_1.logger.debug('Sending commitment transaction:', signedCommitmentTxBytes.toString('hex'));
+    const commitmentTxid = await context.bitcoinClient.transmitTransaction(signedCommitmentTxBytes);
+    logger_1.logger.debug('Sending spell transaction:', transactions.spellTxBytes.toString('hex'));
+    const spellTxid = await context.bitcoinClient.transmitTransaction(transactions.spellTxBytes);
     const output = [commitmentTxid, spellTxid];
-    console.log('Spell transmitted successfully:', output);
+    logger_1.logger.info('Spell transmitted successfully: ', output);
     return output;
 }
 async function getPreviousTransactions(context, spellTxBytes, commitmentTxBytes) {
@@ -153,8 +171,8 @@ async function getPreviousTransactions(context, spellTxBytes, commitmentTxBytes)
     for (const input of tx.ins) {
         const txid = (0, bitcoin_1.hashToTxid)(input.hash);
         if (!(txid in result)) {
-            const txBytes = await context.bitcoinClient.getTransactionHex(txid);
-            result[txid] = Buffer.from(txBytes, 'hex');
+            const txBytes = await context.bitcoinClient.getTransactionBytes(txid);
+            result[txid] = txBytes;
         }
     }
     return result;
@@ -166,6 +184,21 @@ function signAsCosigner(context, request, keypair) {
     }));
     return sigs;
 }
+function filterValidCosignerSignatures(context, request, signatures, publicKey) {
+    return signatures
+        .map((tsig) => {
+        const index = tsig.index;
+        const input = request.inputs.find(input => input.index === index);
+        tsig.valid =
+            input &&
+                (0, spells_1.verifySignatureForTransactionInput)(context, request.transactionBytes, tsig.signature, input.index, input.script, request.previousTransactions, publicKey);
+        if (!tsig.valid) {
+            logger_1.logger.warn(`Signature for input ${index} is invalid for public key: `, publicKey);
+        }
+        return tsig;
+    })
+        .filter(tsig => tsig.valid);
+}
 async function findUserPaymentVout(context, grailState, userPaymentTxid, recoveryPublicKey, timelockBlocks) {
     const userPaymentTxHex = await context.bitcoinClient.getTransactionHex(userPaymentTxid);
     if (!userPaymentTxHex) {
@@ -176,6 +209,7 @@ async function findUserPaymentVout(context, grailState, userPaymentTxid, recover
     const index = userPaymentTx.outs.findIndex(out => {
         // Convert address to script and compare
         const outScript = bitcoin.address.toOutputScript(userPaymentAddress, taproot_common_1.bitcoinjslibNetworks[context.network]);
+        logger_1.logger.debug(`Comparing user payment address ${out.script.toString('hex')} with output script ${out.script.toString('hex')}`);
         return out.script.compare(outScript) == 0;
     });
     if (index === -1) {
@@ -186,8 +220,9 @@ async function findUserPaymentVout(context, grailState, userPaymentTxid, recover
 async function getUserWalletAddressFromUserPaymentUtxo(context, fundingUtxo, network) {
     const txBytes = await context.bitcoinClient.getTransactionBytes(fundingUtxo.txid);
     const tx = bitcoin.Transaction.fromBuffer(txBytes);
+    // TODO: get address from inputs if change output doesn't exist
     if (tx.outs.length < 2) {
-        throw new Error('Funding UTXO has no inputs');
+        throw new Error("Funding UTXO doesn't have a change output");
     }
     const changeOutput = fundingUtxo.vout == 0 ? 1 : 0;
     const script = tx.outs[changeOutput].script;

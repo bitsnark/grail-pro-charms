@@ -1,7 +1,0 @@
-[2025-07-28T10:53:18.843Z] Recovery keypair generated: {
-  "publicKey": "0x213c1539be1fb847318ab399053cd89f10ad449bdffa3969e72b275d1e2b811f",
-  "privateKey": "0x24eee63154ab7934ea272ca72edb966e649bdcdc62d5525c94477eefd4f3b37a"
-}
-[2025-07-28T10:53:18.883Z] Sending funds to user payment address: bcrt1p4dj20vtz4l7wxgj738pyalrvt0440d33v0zta43yzjnjrjuy0dyq6yjdsp
-[2025-07-28T10:53:18.917Z] Funds sent successfully, txid:  01c59201c89cd07137b5f510d60286c4a23893b0153581d39cf0ccfa7c59c390
-[2025-07-28T10:53:18.917Z] Recovery public key: 213c1539be1fb847318ab399053cd89f10ad449bdffa3969e72b275d1e2b811f

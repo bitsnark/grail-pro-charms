@@ -6,15 +6,15 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.deployNft = deployNft;
 exports.deployNftCli = deployNftCli;
 const minimist_1 = __importDefault(require("minimist"));
+const logger_1 = require("../core/logger");
 const dotenv_1 = __importDefault(require("dotenv"));
-const log_1 = require("../core/log");
 const context_1 = require("../core/context");
 const bitcoin_1 = require("../core/bitcoin");
 const taproot_1 = require("../core/taproot");
 const spells_1 = require("../core/spells");
 const spell_operations_1 = require("../api/spell-operations");
 const env_parser_1 = require("../core/env-parser");
-const json_1 = require("../core/json");
+const consts_1 = require("./consts");
 async function deployNft(context, deployerPublicKey, feerate, fundingUtxo, transmit = false) {
     const initialNftState = {
         publicKeys: [deployerPublicKey.toString('hex')],
@@ -59,7 +59,7 @@ async function deployNft(context, deployerPublicKey, feerate, fundingUtxo, trans
         },
     };
     const spell = await (0, spells_1.createSpell)(context, [], request);
-    console.log('Spell created:', JSON.stringify(spell, json_1.bufferReplacer, '\t'));
+    logger_1.logger.debug('Spell created: ', spell);
     if (transmit) {
         return await (0, spell_operations_1.transmitSpell)(context, spell);
     }
@@ -67,13 +67,12 @@ async function deployNft(context, deployerPublicKey, feerate, fundingUtxo, trans
 }
 async function deployNftCli(_argv) {
     dotenv_1.default.config({ path: ['.env.test', '.env.local', '.env'] });
-    (0, log_1.setupLog)();
     const argv = (0, minimist_1.default)(_argv, {
         alias: {},
         boolean: ['transmit', 'mock-proof'],
         default: {
             network: 'regtest',
-            feerate: 0.00002,
+            feerate: consts_1.DEFAULT_FEERATE,
             transmit: true,
             'mock-proof': false,
         },
@@ -90,32 +89,24 @@ async function deployNftCli(_argv) {
     const transmit = !!argv['transmit'];
     const bitcoinClient = await bitcoin_1.BitcoinClient.initialize();
     const fundingUtxo = await bitcoinClient.getFundingUtxo();
+    const network = argv['network'];
     const context = await context_1.Context.createForDeploy({
         charmsBin: env_parser_1.parse.string('CHARMS_BIN'),
-        zkAppBin: './zkapp/target/charms-app',
-        network: argv['network'],
+        zkAppBin: consts_1.ZKAPP_BIN,
+        network: network,
         mockProof: !!argv['mock-proof'],
-        ticker: 'GRAIL-NFT',
+        ticker: consts_1.TICKER,
     }, fundingUtxo);
     const [_, spellTxid] = await deployNft(context, deployerPublicKey, feerate, fundingUtxo, transmit);
     return {
         appId: context.appId,
         appVk: context.appVk,
-        spellTxid: spellTxid,
+        spellTxid
     };
 }
 if (require.main === module) {
     deployNftCli(process.argv.slice(2))
         .catch(error => {
-        console.error('Error during NFT deployment:', error);
-    })
-        .then(flag => {
-        if (flag) {
-            console.log('NFT deployment completed successfully.');
-        }
-        else {
-            console.error('NFT deployment failed.');
-        }
-        process.exit(flag ? 0 : 1);
+        logger_1.logger.error('Error during NFT deployment: ', error);
     });
 }

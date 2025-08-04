@@ -1,4 +1,4 @@
-/* eslint-disable no-console */
+import { logger } from './logger';
 import fs from 'node:fs';
 import * as bitcoin from 'bitcoinjs-lib';
 import { SimpleTapTree } from './taproot/taptree';
@@ -12,7 +12,7 @@ if (!!process.env.DEBUG_TAPROOT) {
 			fs.mkdirSync('./debuglog/taproot', { recursive: true });
 		}
 	} catch (e) {
-		console.error('Error in debugLog:', e);
+		logger.error('Error in debugLog: ', e);
 	}
 }
 
@@ -26,7 +26,7 @@ function debugLog(obj: any) {
 			JSON.stringify(obj, bufferReplacer, 2)
 		);
 	} catch (e) {
-		console.error('Error writing debug log:', e);
+		logger.error('Error writing debug log: ', e);
 	}
 }
 

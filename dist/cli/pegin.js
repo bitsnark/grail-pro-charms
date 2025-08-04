@@ -5,27 +5,27 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TIMELOCK_BLOCKS = void 0;
 exports.peginCli = peginCli;
+const logger_1 = require("../core/logger");
 const minimist_1 = __importDefault(require("minimist"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const bitcoin_1 = require("../core/bitcoin");
-const log_1 = require("../core/log");
-const json_1 = require("../core/json");
 const context_1 = require("../core/context");
 const env_parser_1 = require("../core/env-parser");
 const create_pegin_spell_1 = require("../api/create-pegin-spell");
 const spell_operations_1 = require("../api/spell-operations");
 const generate_random_keypairs_1 = require("./generate-random-keypairs");
+const consts_1 = require("./consts");
+const spell_operations_2 = require("../api/spell-operations");
 exports.TIMELOCK_BLOCKS = 100; // Default timelock for user payments
 async function peginCli(_argv) {
     dotenv_1.default.config({ path: ['.env.test', '.env.local', '.env'] });
-    (0, log_1.setupLog)();
     const argv = (0, minimist_1.default)(_argv, {
         alias: {},
         string: ['new-public-keys', 'private-keys'],
         boolean: ['transmit', 'mock-proof'],
         default: {
             network: 'regtest',
-            feerate: 0.00002,
+            feerate: consts_1.DEFAULT_FEERATE,
             transmit: true,
             'mock-proof': false,
             'user-payment-vout': 0,
@@ -46,7 +46,7 @@ async function peginCli(_argv) {
         charmsBin: env_parser_1.parse.string('CHARMS_BIN'),
         zkAppBin: './zkapp/target/charms-app',
         network,
-        mockProof: argv['mock-proof'],
+        mockProof: !!argv['mock-proof'],
         ticker: 'GRAIL-NFT',
     });
     if (!argv['new-public-keys']) {
@@ -99,7 +99,7 @@ async function peginCli(_argv) {
     }
     const feerate = Number.parseFloat(argv['feerate']);
     const { spell, signatureRequest } = await (0, create_pegin_spell_1.createPeginSpell)(context, feerate, previousNftTxid, newGrailState, userPaymentDetails, fundingUtxo);
-    console.log('Spell created:', JSON.stringify(spell, json_1.bufferReplacer, '\t'));
+    logger_1.logger.debug('Spell created: ', spell);
     const fromCosigners = privateKeys
         .map(pk => Buffer.from(pk, 'hex'))
         .map(privateKey => {
@@ -107,15 +107,25 @@ async function peginCli(_argv) {
         const signatures = (0, spell_operations_1.signAsCosigner)(context, signatureRequest, keypair);
         return { publicKey: keypair.publicKey.toString('hex'), signatures };
     });
-    const signedSpell = await (0, spell_operations_1.injectSignaturesIntoSpell)(context, spell, signatureRequest, fromCosigners);
-    console.log('Signed spell:', JSON.stringify(signedSpell, json_1.bufferReplacer, '\t'));
+    logger_1.logger.debug('Signature responses from cosigners: ', fromCosigners);
+    const filteredSignatures = fromCosigners.map(response => ({
+        ...response,
+        signatures: (0, spell_operations_2.filterValidCosignerSignatures)(context, signatureRequest, response.signatures, Buffer.from(response.publicKey, 'hex')),
+    }));
+    logger_1.logger.debug('Signature responses from cosigners after fiultering: ', filteredSignatures);
+    const signedSpell = await (0, spell_operations_1.injectSignaturesIntoSpell)(context, spell, signatureRequest, filteredSignatures);
+    logger_1.logger.debug('Signed spell: ', signedSpell);
     if (transmit) {
-        return await (0, spell_operations_1.transmitSpell)(context, signedSpell);
+        const transmittedTxids = await (0, spell_operations_1.transmitSpell)(context, signedSpell);
+        // if (network === 'regtest') {
+        // 	await context.bitcoinClient.generateBlocks([userPaymentDetails.txid, ...transmittedTxids]);
+        // }
+        return transmittedTxids;
     }
     return ['', ''];
 }
 if (require.main === module) {
     peginCli(process.argv.slice(2)).catch(err => {
-        console.error(err);
-    }).then;
+        logger_1.logger.error(err);
+    });
 }

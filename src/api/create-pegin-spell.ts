@@ -1,3 +1,4 @@
+import { logger } from '../core/logger';
 import * as bitcoin from 'bitcoinjs-lib';
 import {
 	GrailState,
@@ -45,7 +46,7 @@ export async function createPeginSpell(
 	}
 	const userPaymentTx = bitcoin.Transaction.fromBuffer(userPaymentTxBytes);
 	const userPaymentAmount = userPaymentTx.outs[userPaymentDetails.vout].value;
-	console.log('User payment transaction amount:', userPaymentAmount);
+	logger.debug('User payment transaction amount: ', userPaymentAmount);
 
 	const { spell, signatureRequest } = await createGeneralizedSpell(
 		context,
@@ -67,10 +68,7 @@ export async function createPeginSpell(
 		fundingUtxo
 	);
 
-	console.log(
-		'Peg-in spell created:',
-		JSON.stringify(spell, bufferReplacer, '\t')
-	);
+	logger.debug('Peg-in spell created: ', spell);
 
 	return { spell, signatureRequest };
 }

@@ -1,44 +1,35 @@
+import { logger } from '../core/logger';
 import minimist from 'minimist';
 import dotenv from 'dotenv';
 import { BitcoinClient } from '../core/bitcoin';
 import { Network } from '../core/taproot/taproot-common';
-import { setupLog } from '../core/log';
 import { bufferReplacer } from '../core/json';
 import { Context } from '../core/context';
 import { parse } from '../core/env-parser';
+import { SignatureResponse, UserPaymentDetails } from '../core/types';
 import {
-	SignatureRequest,
-	SignatureResponse,
-	UserPaymentDetails,
-} from '../core/types';
-import {
+	filterValidCosignerSignatures,
 	findUserPaymentVout,
-	getPreviousGrailState,
-	getPreviousTransactions,
 	getUserWalletAddressFromUserPaymentUtxo,
 	injectSignaturesIntoSpell,
 	signAsCosigner,
 	transmitSpell,
 } from '../api/spell-operations';
-import {
-	generateSpendingScriptForGrail,
-	generateSpendingScriptsForUserPayment,
-} from '../core/taproot';
 import { privateToKeypair } from './generate-random-keypairs';
 import { createPegoutSpell } from '../api/create-pegout-spell';
 import { TIMELOCK_BLOCKS } from './pegin';
+import { DEFAULT_FEERATE } from './consts';
 
-async function main() {
+export async function pegoutCli(_argv: string[]): Promise<[string, string]> {
 	dotenv.config({ path: ['.env.test', '.env.local', '.env'] });
-	setupLog();
 
-	const argv = minimist(process.argv.slice(2), {
+	const argv = minimist(_argv, {
 		alias: {},
 		string: ['new-public-keys', 'private-keys'],
 		boolean: ['transmit', 'mock-proof'],
 		default: {
 			network: 'regtest',
-			feerate: 0.00002,
+			feerate: DEFAULT_FEERATE,
 			transmit: true,
 			'mock-proof': false,
 		},
@@ -50,10 +41,12 @@ async function main() {
 
 	const appId = argv['app-id'] as string;
 	if (!appId) {
-		console.error('--app-id is required');
-		return;
+		throw new Error('--app-id is required');
 	}
 	const appVk = argv['app-vk'] as string;
+	if (appVk === undefined) {
+		throw new Error('--app-vk is required');
+	}
 
 	const network = argv['network'] as Network;
 
@@ -68,8 +61,7 @@ async function main() {
 	});
 
 	if (!argv['new-public-keys']) {
-		console.error('--new-public-keys is required');
-		return;
+		throw new Error('--new-public-keys is required');
 	}
 	const newPublicKeys = (argv['new-public-keys'] as string)
 		.split(',')
@@ -80,35 +72,30 @@ async function main() {
 		newThreshold < 1 ||
 		newThreshold > newPublicKeys.length
 	) {
-		console.error(
+		throw new Error(
 			'Invalid new threshold. It must be a number between 1 and the number of public keys.'
 		);
-		return;
 	}
 
 	const previousNftTxid = argv['previous-nft-txid'] as string;
 	if (!previousNftTxid) {
-		console.error('--previous-nft-txid is required');
-		return;
+		throw new Error('--previous-nft-txid is required');
 	}
 
 	const transmit = !!argv['transmit'];
 
 	if (!argv['private-keys']) {
-		console.error('--private-keys is required');
-		return;
+		throw new Error('--private-keys is required');
 	}
 	const privateKeys = (argv['private-keys'] as string)
 		.split(',')
 		.map(s => s.trim().replace('0x', ''));
 
 	if (!argv['user-payment-txid']) {
-		console.error('--user-payment-txid is required');
-		return;
+		throw new Error('--user-payment-txid is required');
 	}
 	if (!argv['recovery-public-key']) {
-		console.error('--recovery-public-key is required');
-		return;
+		throw new Error('--recovery-public-key is required');
 	}
 	const recoveryPublicKey = (argv['recovery-public-key'] as string).replace(
 		'0x',
@@ -122,8 +109,7 @@ async function main() {
 
 	const userPaymentTxid = argv['user-payment-txid'] as string;
 	if (!userPaymentTxid) {
-		console.error('--user-payment-txid is required');
-		return;
+		throw new Error('--user-payment-txid is required');
 	}
 	const userPaymentVout = await findUserPaymentVout(
 		context,
@@ -148,10 +134,6 @@ async function main() {
 		userWalletAddress,
 	};
 
-	if (!argv['feerate']) {
-		console.error('--feerate is required');
-		return;
-	}
 	const feerate = Number.parseFloat(argv['feerate']);
 
 	const { spell, signatureRequest } = await createPegoutSpell(
@@ -162,7 +144,8 @@ async function main() {
 		userPaymentDetails,
 		fundingUtxo
 	);
-	console.log('Spell created:', JSON.stringify(spell, bufferReplacer, '\t'));
+	logger.debug('Spell created: ', spell);
+	logger.debug('Signature request: ', signatureRequest);
 
 	const fromCosigners: SignatureResponse[] = privateKeys
 		.map(pk => Buffer.from(pk, 'hex'))
@@ -171,25 +154,38 @@ async function main() {
 			const signatures = signAsCosigner(context, signatureRequest, keypair);
 			return { publicKey: keypair.publicKey.toString('hex'), signatures };
 		});
+	logger.debug('Signature responses from cosigners: ', fromCosigners);
+
+	const filteredSignatures = fromCosigners.map(response => ({
+		...response,
+		signatures: filterValidCosignerSignatures(
+			context,
+			signatureRequest,
+			response.signatures,
+			Buffer.from(response.publicKey, 'hex')
+		),
+	}));
+	logger.debug(
+		'Signature responses from cosigners after fiultering: ',
+		filteredSignatures
+	);
 
 	const signedSpell = await injectSignaturesIntoSpell(
 		context,
 		spell,
 		signatureRequest,
-		fromCosigners
+		filteredSignatures
 	);
-	console.log(
-		'Signed spell:',
-		JSON.stringify(signedSpell, bufferReplacer, '\t')
-	);
+	logger.debug('Signed spell: ', signedSpell);
 
 	if (transmit) {
-		await transmitSpell(context, signedSpell);
+		return await transmitSpell(context, signedSpell);
 	}
+	return ['', ''];
 }
 
 if (require.main === module) {
-	main().catch(err => {
-		console.error(err);
+	pegoutCli(process.argv.slice(2)).catch(err => {
+		logger.error(err);
 	});
 }

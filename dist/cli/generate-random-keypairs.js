@@ -40,14 +40,13 @@ exports.publicFromPrivate = publicFromPrivate;
 exports.privateToKeypair = privateToKeypair;
 exports.generateRandomKeypair = generateRandomKeypair;
 exports.generateRandomKeypairs = generateRandomKeypairs;
+const logger_1 = require("../core/logger");
 const minimist_1 = __importDefault(require("minimist"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const secp = __importStar(require("@bitcoinerlab/secp256k1"));
 const node_buffer_1 = require("node:buffer");
 const crypto_1 = require("crypto");
-const json_1 = require("../core/json");
 const array_utils_1 = require("../core/array-utils");
-const log_1 = require("../core/log");
 function publicFromPrivate(privateKey) {
     if (!secp.isPrivate(privateKey)) {
         throw new Error('Invalid private key');
@@ -78,19 +77,18 @@ function generateRandomKeypairs(size) {
 }
 function main() {
     dotenv_1.default.config({ path: ['.env.test', '.env.local', '.env'] });
-    (0, log_1.setupLog)();
     const argv = (0, minimist_1.default)(process.argv.slice(2), {
         alias: { c: 'count' },
         '--': true,
     });
     if (argv.count === undefined) {
-        console.error('Parameter --count is required');
+        logger_1.logger.error('Parameter --count is required');
         return;
     }
     // Generate the random roster
     const roster = generateRandomKeypairs(argv.count || 1);
     // Print the roster
-    console.log(JSON.stringify(roster, json_1.bufferReplacer, '\t'));
+    logger_1.logger.log(roster);
 }
 if (require.main === module) {
     main();

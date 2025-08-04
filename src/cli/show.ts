@@ -1,9 +1,9 @@
+import { logger } from '../core/logger';
 import minimist from 'minimist';
 import dotenv from 'dotenv';
 import { BitcoinClient } from '../core/bitcoin';
 import { showSpell } from '../core/charms-sdk';
 import { IContext } from '../core/i-context';
-import { setupLog } from '../core/log';
 import { parse } from '../core/env-parser';
 import { Context } from '../core/context';
 import { Network } from '../core/taproot/taproot-common';
@@ -13,16 +13,15 @@ async function viewNft(context: IContext, nftTxid: string) {
 
 	const txhex = await bitcoinClient.getTransactionHex(nftTxid);
 	if (!txhex) {
-		console.error(`Transaction ${nftTxid} not found`);
+		logger.error(`Transaction ${nftTxid} not found`);
 		return;
 	}
 	const spell = await showSpell(context, txhex);
-	console.log('spell: ' + JSON.stringify(spell, null, '\t'));
+	logger.debug('spell: ', spell);
 }
 
 async function main() {
 	dotenv.config({ path: ['.env.test', '.env.local', '.env'] });
-	setupLog();
 
 	const argv = minimist(process.argv.slice(2), {
 		alias: {},
@@ -35,7 +34,7 @@ async function main() {
 	const nftTxid = argv['nft-txid'];
 
 	if (!nftTxid) {
-		console.error('Please provide the NFT transaction ID using --nft-txid');
+		logger.error('Please provide the NFT transaction ID using --nft-txid');
 		process.exit(1);
 	}
 
@@ -48,12 +47,12 @@ async function main() {
 	});
 
 	await viewNft(context, nftTxid).catch(error => {
-		console.error('Error viewing NFT:', error);
+		logger.error('Error viewing NFT: ', error);
 	});
 }
 
 if (require.main === module) {
 	main().catch(error => {
-		console.error('Error during NFT view:', error);
+		logger.error('Error during NFT view: ', error);
 	});
 }

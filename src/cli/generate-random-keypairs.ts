@@ -1,3 +1,4 @@
+import { logger } from '../core/logger';
 import minimist from 'minimist';
 import dotenv from 'dotenv';
 import * as secp from '@bitcoinerlab/secp256k1';
@@ -5,7 +6,6 @@ import { Buffer } from 'node:buffer';
 import { randomBytes } from 'crypto';
 import { bufferReplacer } from '../core/json';
 import { array } from '../core/array-utils';
-import { setupLog } from '../core/log';
 
 interface Keypair {
 	publicKey: Buffer;
@@ -46,7 +46,6 @@ export function generateRandomKeypairs(size: number): Keypair[] {
 
 function main() {
 	dotenv.config({ path: ['.env.test', '.env.local', '.env'] });
-	setupLog();
 
 	const argv = minimist(process.argv.slice(2), {
 		alias: { c: 'count' },
@@ -54,14 +53,14 @@ function main() {
 	});
 
 	if (argv.count === undefined) {
-		console.error('Parameter --count is required');
+		logger.error('Parameter --count is required');
 		return;
 	}
 
 	// Generate the random roster
 	const roster = generateRandomKeypairs(argv.count || 1);
 	// Print the roster
-	console.log(JSON.stringify(roster, bufferReplacer, '\t'));
+	logger.log(roster);
 }
 
 if (require.main === module) {

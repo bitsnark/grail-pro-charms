@@ -1,3 +1,5 @@
+import { logger } from './logger';
+
 type ParsedValue = string | number | bigint | boolean;
 type ParsingFunction = (
 	value: string,
@@ -20,7 +22,7 @@ function parseEnv(
 		return parser(value);
 	} catch (e) {
 		const error = e as Error;
-		console.error(
+		logger.error(
 			`Error parsing environment variable '${name}': ${error.message}`
 		);
 		throw new Error(`${error.message} for environment variable: '${name}'`);

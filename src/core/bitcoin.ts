@@ -1,7 +1,7 @@
+import { logger } from './logger';
 import Client from 'bitcoin-core';
-import { Utxo } from './types';
+import { PreviousTransactions, Utxo } from './types';
 import * as bitcoin from 'bitcoinjs-lib';
-import { Network, bitcoinjslibNetworks } from './taproot/taproot-common';
 
 export const DUST_LIMIT = 546;
 
@@ -26,7 +26,7 @@ export function txHexToTxid(txHex: string): string {
 export class ExtendedClient {
 	client!: Client;
 	constructor(client: Client) {
-		this.client = client
+		this.client = client;
 	}
 
 	getRawTransaction(txid: string): Promise<any> {
@@ -37,7 +37,14 @@ export class ExtendedClient {
 	}
 	signTransactionInputs(
 		txHex: string,
-		prevtxs?: string[],
+		prevtxs?: {
+			txid: string;
+			vout: number;
+			scriptPubKey: string;
+			redeemScript: string;
+			witnessScript: string;
+			amount: number;
+		}[],
 		sighashType?: string
 	): Promise<any> {
 		return this.client.command(
@@ -73,17 +80,18 @@ export class ExtendedClient {
 	generateToAddress(blocks: number, address: string): Promise<string[]> {
 		return this.client.command('generatetoaddress', blocks, address);
 	}
+	generateBlocks(address: string, txids: string[]): Promise<void> {
+		return this.client.command('generateblock', address, txids);
+	}
 }
 
 export class BitcoinClient {
 	private client: ExtendedClient | null = null;
 	private static txhash: { [txid: string]: Buffer } = {};
 
-	private constructor() { }
+	private constructor() {}
 
-	public static async initialize(
-		client?: Client
-	): Promise<BitcoinClient> {
+	public static async initialize(client?: Client): Promise<BitcoinClient> {
 		const thus = new BitcoinClient();
 		if (client) {
 			thus.client = new ExtendedClient(client);
@@ -94,7 +102,8 @@ export class BitcoinClient {
 					password: process.env.BTC_NODE_PASSWORD || '1234',
 					host: process.env.BTC_NODE_HOST || 'http://localhost:18443', // default for regtest
 					timeout: 30000, // 30 seconds
-				}));
+				})
+			);
 			const walletName = process.env.BTC_WALLET_NAME || 'default';
 			try {
 				await thus.client.loadWallet(walletName);
@@ -125,21 +134,42 @@ export class BitcoinClient {
 	}
 
 	public async signTransaction(
-		txHex: string,
-		prevtxs?: string[],
+		txBytes: Buffer,
+		prevtxsBytesMap?: PreviousTransactions,
 		sighashType?: string
-	): Promise<string> {
+	): Promise<Buffer> {
+		const tx = bitcoin.Transaction.fromBuffer(txBytes);
+		const prevtxinfo = prevtxsBytesMap
+			? tx.ins.map((input, index) => {
+					const prevtxid = hashToTxid(input.hash);
+					const prevtxbytes = prevtxsBytesMap[prevtxid];
+					if (!prevtxbytes) {
+						throw new Error(`Previous transaction ${prevtxid} not found`);
+					}
+					const prevtxObj = bitcoin.Transaction.fromBuffer(prevtxbytes);
+					const output = prevtxObj.outs[input.index];
+					return {
+						txid: prevtxid,
+						vout: input.index,
+						scriptPubKey: output.script.toString('hex'),
+						redeemScript: '',
+						witnessScript: '',
+						amount: output.value / 100000000, // Convert satoshis to BTC
+					};
+				})
+			: undefined;
+
 		const result = await this.client!.signTransactionInputs(
-			txHex,
-			prevtxs,
+			txBytes.toString('hex'),
+			prevtxinfo,
 			sighashType
 		);
 		if (!result.complete) throw new Error('Transaction signing failed');
-		return result.hex;
+		return Buffer.from(result.hex, 'hex');
 	}
 
-	public async transmitTransaction(txHex: string): Promise<string> {
-		return this.client!.sendRawTransaction(txHex);
+	public async transmitTransaction(txBytes: Buffer): Promise<string> {
+		return this.client!.sendRawTransaction(txBytes.toString('hex'));
 	}
 
 	public async listUnspent(
@@ -147,7 +177,7 @@ export class BitcoinClient {
 	): Promise<
 		{ spendable: boolean; value: number; txid: string; vout: number }[]
 	> {
-		return this.client!.listUnspent(1, 9999999, address ? [address] : []).then(
+		return this.client!.listUnspent(0, 9999999, address ? [address] : []).then(
 			utxos =>
 				utxos.map(utxo => ({
 					spendable: utxo.spendable,
@@ -164,7 +194,7 @@ export class BitcoinClient {
 
 	public async getFundingUtxo(): Promise<Utxo> {
 		const unspent = (await this.listUnspent()).filter(
-			utxo => utxo.spendable && utxo.value >= 10000
+			utxo => utxo.spendable && utxo.value >= 1000000 // 0.01 BTC minimum
 		);
 		if (unspent.length === 0) {
 			throw new Error('No suitable funding UTXO found');
@@ -206,7 +236,15 @@ export class BitcoinClient {
 		return !!(await this.client!.getTxOut(txid, vout, true));
 	}
 
-	public async generateToAddress(blocks: number, address: string): Promise<string[]> {
+	public async generateBlocks(txids: string[]): Promise<void> {
+		const output = await this.getAddress();
+		await this.client!.generateBlocks(output, txids);
+	}
+
+	public async generateToAddress(
+		blocks: number,
+		address: string
+	): Promise<string[]> {
 		return this.client!.generateToAddress(blocks, address);
 	}
 }

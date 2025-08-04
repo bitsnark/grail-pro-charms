@@ -1,3 +1,4 @@
+import { logger } from '../core/logger';
 import { BitcoinClient } from '../core/bitcoin';
 import {
 	generalizeInfoBlank,
@@ -25,10 +26,7 @@ export async function createUpdateNftSpell(
 	}
 
 	const previousSpellData = await showSpell(context, previousNftTxid);
-	console.log(
-		'Previous NFT spell:',
-		JSON.stringify(previousSpellData, bufferReplacer, '\t')
-	);
+	logger.debug('Previous NFT spell: ', previousSpellData);
 	if (!previousSpellData) {
 		throw new Error('Invalid previous NFT spell data');
 	}

@@ -1,3 +1,4 @@
+import { logger } from './logger';
 import fs from 'node:fs';
 import { getVerificationKey } from './charms-sdk';
 import { IContext } from './i-context';
@@ -42,7 +43,7 @@ export class Context implements IContext {
 
 		if (!obj.appId) throw new Error('App ID is required');
 		thus.appId = obj.appId;
-		console.log('App ID:', thus.appId);
+		logger.info('App ID: ', thus.appId);
 
 		thus.network = obj.network || 'regtest';
 		thus.mockProof = obj.mockProof || false;
@@ -51,14 +52,14 @@ export class Context implements IContext {
 		thus.temporarySecret = charmsSecret;
 
 		if (!obj.appVk) {
-			console.warn(
+			logger.warn(
 				'App VK is not provided, using charms app vk command to retrieve it'
 			);
 			thus.appVk = await getVerificationKey(thus);
 		} else {
 			thus.appVk = obj.appVk;
 		}
-		console.log('App Verification Key:', thus.appVk);
+		logger.info('App Verification Key: ', thus.appVk);
 
 		if (!obj.ticker) throw new Error('Ticker is required');
 		thus.ticker = obj.ticker;

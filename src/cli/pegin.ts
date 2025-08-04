@@ -1,8 +1,8 @@
+import { logger } from '../core/logger';
 import minimist from 'minimist';
 import dotenv from 'dotenv';
 import { BitcoinClient } from '../core/bitcoin';
 import { Network } from '../core/taproot/taproot-common';
-import { setupLog } from '../core/log';
 import { bufferReplacer } from '../core/json';
 import { Context } from '../core/context';
 import { parse } from '../core/env-parser';
@@ -16,12 +16,13 @@ import {
 	transmitSpell,
 } from '../api/spell-operations';
 import { privateToKeypair } from './generate-random-keypairs';
+import { DEFAULT_FEERATE } from './consts';
+import { filterValidCosignerSignatures } from '../api/spell-operations';
 
 export const TIMELOCK_BLOCKS = 100; // Default timelock for user payments
 
 export async function peginCli(_argv: string[]): Promise<[string, string]> {
 	dotenv.config({ path: ['.env.test', '.env.local', '.env'] });
-	setupLog();
 
 	const argv = minimist(_argv, {
 		alias: {},
@@ -29,7 +30,7 @@ export async function peginCli(_argv: string[]): Promise<[string, string]> {
 		boolean: ['transmit', 'mock-proof'],
 		default: {
 			network: 'regtest',
-			feerate: 0.00002,
+			feerate: DEFAULT_FEERATE,
 			transmit: true,
 			'mock-proof': false,
 			'user-payment-vout': 0,
@@ -54,7 +55,7 @@ export async function peginCli(_argv: string[]): Promise<[string, string]> {
 		charmsBin: parse.string('CHARMS_BIN'),
 		zkAppBin: './zkapp/target/charms-app',
 		network,
-		mockProof: argv['mock-proof'],
+		mockProof: !!argv['mock-proof'],
 		ticker: 'GRAIL-NFT',
 	});
 
@@ -142,7 +143,7 @@ export async function peginCli(_argv: string[]): Promise<[string, string]> {
 		userPaymentDetails,
 		fundingUtxo
 	);
-	console.log('Spell created:', JSON.stringify(spell, bufferReplacer, '\t'));
+	logger.debug('Spell created: ', spell);
 
 	const fromCosigners: SignatureResponse[] = privateKeys
 		.map(pk => Buffer.from(pk, 'hex'))
@@ -151,26 +152,40 @@ export async function peginCli(_argv: string[]): Promise<[string, string]> {
 			const signatures = signAsCosigner(context, signatureRequest, keypair);
 			return { publicKey: keypair.publicKey.toString('hex'), signatures };
 		});
+	logger.debug('Signature responses from cosigners: ', fromCosigners);
+
+	const filteredSignatures = fromCosigners.map(response => ({
+		...response,
+		signatures: filterValidCosignerSignatures(
+			context,
+			signatureRequest,
+			response.signatures,
+			Buffer.from(response.publicKey, 'hex')
+		),
+	}));
+	logger.debug('Signature responses from cosigners after fiultering: ', filteredSignatures);
 
 	const signedSpell = await injectSignaturesIntoSpell(
 		context,
 		spell,
 		signatureRequest,
-		fromCosigners
+		filteredSignatures
 	);
-	console.log(
-		'Signed spell:',
-		JSON.stringify(signedSpell, bufferReplacer, '\t')
-	);
+	logger.debug('Signed spell: ', signedSpell);
 
 	if (transmit) {
-		return await transmitSpell(context, signedSpell);
+		const transmittedTxids = await transmitSpell(context, signedSpell);
+		// if (network === 'regtest') {
+		// 	await context.bitcoinClient.generateBlocks([userPaymentDetails.txid, ...transmittedTxids]);
+		// }
+		return transmittedTxids;
 	}
+
 	return ['', ''];
 }
 
 if (require.main === module) {
 	peginCli(process.argv.slice(2)).catch(err => {
-		console.error(err);
-	}).then
+		logger.error(err);
+	});
 }

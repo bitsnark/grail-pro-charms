@@ -31,6 +31,13 @@ export interface UpdateRequest extends NftRequest {
     previousNftTxid: string;
     previousGrailState: GrailState;
 }
+export interface TransmitRequest extends CharmerRequest {
+    inputUtxos: TokenUtxo[];
+    outputAddress: string;
+    changeAddress: string;
+    amount: number;
+    changeAmount: number;
+}
 interface Outgoing {
     amount: number;
     address: string;
@@ -79,9 +86,14 @@ export interface SignatureRequest {
 export type CosignerSignatures = {
     index: number;
     signature: Buffer;
-};
+}[];
 export interface SignatureResponse {
     publicKey: string;
-    signatures: CosignerSignatures[];
+    signatures: CosignerSignatures;
+}
+export interface TokenUtxo {
+    txid: string;
+    vout: number;
+    amount: number;
 }
 export {};
