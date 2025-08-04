@@ -220,12 +220,24 @@ async function findUserPaymentVout(context, grailState, userPaymentTxid, recover
 async function getUserWalletAddressFromUserPaymentUtxo(context, fundingUtxo, network) {
     const txBytes = await context.bitcoinClient.getTransactionBytes(fundingUtxo.txid);
     const tx = bitcoin.Transaction.fromBuffer(txBytes);
-    // TODO: get address from inputs if change output doesn't exist
-    if (tx.outs.length < 2) {
-        throw new Error("Funding UTXO doesn't have a change output");
+    // Get address from the change output
+    // If there is no change output, get it fro the first input
+    let script;
+    if (tx.outs.length == 2) {
+        const changeOutput = fundingUtxo.vout == 0 ? 1 : 0;
+        script = tx.outs[changeOutput].script;
     }
-    const changeOutput = fundingUtxo.vout == 0 ? 1 : 0;
-    const script = tx.outs[changeOutput].script;
+    else {
+        const txbytes = await context.bitcoinClient.getTransactionBytes(fundingUtxo.txid);
+        const tx = bitcoin.Transaction.fromBuffer(txbytes);
+        if (tx.ins.length === 0) {
+            throw new Error(`Transaction ${fundingUtxo.txid} has no inputs, cannot determine address`);
+        }
+        const prevtxbytes = await context.bitcoinClient.getTransactionBytes((0, bitcoin_1.hashToTxid)(tx.ins[0].hash));
+        const prevtx = bitcoin.Transaction.fromBuffer(prevtxbytes);
+        script = prevtx.ins[tx.ins[0].index].script;
+    }
+    // Now try every address type possible
     const address = [
         bitcoin.payments.p2ms,
         bitcoin.payments.p2pk,
