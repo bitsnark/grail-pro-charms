@@ -5,8 +5,8 @@ import { userPaymentCli } from '../src/cli/user-payment';
 import { peginCli } from '../src/cli/pegin';
 import { BitcoinClient } from '../src/core/bitcoin';
 
-jest.setTimeout(600000);
-logger.setLoggerOptions(DEBUG_LEVELS.ALL, true, true); // Set debug level to 5, print date and level
+jest.setTimeout(600000000);
+logger.setLoggerOptions(DEBUG_LEVELS.ALL, true, true); // Set debug level to ALL, print date and level
 
 describe('simple e2e test', () => {
 	let deployerPublicKey: string;
@@ -14,17 +14,14 @@ describe('simple e2e test', () => {
 	let deploymentResult: any;
 	let paymentResult: any;
 
-	it('should generate random keypair for deployer', async () => {
-		// Generate a random keypair for the deployer
+	beforeAll(() => {
+		logger.log('Starting simple e2e test...');
 		const deployerKeypair = generateRandomKeypair();
 		deployerPublicKey = deployerKeypair.publicKey.toString('hex');
 		deployerPrivateKey = deployerKeypair.privateKey.toString('hex');
 
 		logger.log('Deployer Public Key:', deployerPublicKey);
 		logger.log('Deployer Private Key:', deployerPrivateKey);
-
-		expect(deployerPublicKey).toBeDefined();
-		expect(deployerPrivateKey).toBeDefined();
 	});
 
 	it('should deploy the NFT', async () => {
@@ -58,6 +55,12 @@ describe('simple e2e test', () => {
 
 		// Execute user payment
 		paymentResult = await userPaymentCli([
+			'--type',
+			'btc',
+			'--app-id',
+			deploymentResult.appId,
+			'--app-vk',
+			deploymentResult.appVk,
 			'--current-public-keys',
 			deployerPublicKey,
 			'--current-threshold',

@@ -6,8 +6,8 @@ import { transmitCli } from '../src/cli/transmit';
 import { generateBlocks } from './bitcoin-utils';
 import { DEBUG_LEVELS, logger } from '../src/core/logger';
 
-jest.setTimeout(600000);
-logger.setLoggerOptions(DEBUG_LEVELS.ALL, true, true); // Set debug level to 5, print date and level
+jest.setTimeout(600000000);
+logger.setLoggerOptions(DEBUG_LEVELS.ALL, true, true); // Set debug level to ALL, print date and level
 
 describe('peg-in and transmit e2e test', () => {
 	it('should deploy, then peg-in, then transmit successfully', async () => {

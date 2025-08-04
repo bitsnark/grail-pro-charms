@@ -7,7 +7,7 @@ import { pegoutCli } from '../src/cli/pegout';
 import { generateBlocks } from './bitcoin-utils';
 
 jest.setTimeout(600000000);
-logger.setLoggerOptions(DEBUG_LEVELS.ALL, true, true); // Set debug level to 5, print date and level
+logger.setLoggerOptions(DEBUG_LEVELS.ALL, true, true); // Set debug level to ALL, print date and level
 
 const USE_MOCK_PROOF = 'true'; // Use mock proof for testing
 logger.warn(`Using mock proof: ${USE_MOCK_PROOF}.`);
