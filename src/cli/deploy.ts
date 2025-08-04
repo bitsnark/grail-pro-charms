@@ -70,7 +70,7 @@ export async function deployNft(
 	};
 
 	const spell = await createSpell(context, [], request);
-	logger.log('Spell created:', JSON.stringify(spell, bufferReplacer, 2));
+	logger.debug('Spell created: ', spell);
 
 	if (transmit) {
 		return await transmitSpell(context, spell);
@@ -133,10 +133,6 @@ export async function deployNftCli(
 		transmit
 	);
 
-	// if (network === 'regtest') {
-	// 	await context.bitcoinClient.generateBlocks([commitTxid, spellTxid]);
-	// }
-
 	return {
 		appId: context.appId,
 		appVk: context.appVk,
@@ -147,14 +143,6 @@ export async function deployNftCli(
 if (require.main === module) {
 	deployNftCli(process.argv.slice(2))
 		.catch(error => {
-			logger.error('Error during NFT deployment:', error);
-		})
-		.then(flag => {
-			if (flag) {
-				logger.log('NFT deployment completed successfully.');
-			} else {
-				logger.error('NFT deployment failed.');
-			}
-			process.exit(flag ? 0 : 1);
+			logger.error('Error during NFT deployment: ', error);
 		});
 }

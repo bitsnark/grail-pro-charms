@@ -37,7 +37,7 @@ function executeCommand(
 			}
 		);
 	}).catch((error: Error) => {
-		logger.error('Execution error:', error);
+		logger.error('Execution error: ', error);
 		throw error;
 	});
 }

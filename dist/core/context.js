@@ -8,17 +8,15 @@ const logger_1 = require("./logger");
 const node_fs_1 = __importDefault(require("node:fs"));
 const charms_sdk_1 = require("./charms-sdk");
 const node_crypto_1 = require("node:crypto");
-const bitcoin_1 = require("./bitcoin");
 const crypto_1 = require("bitcoinjs-lib/src/crypto");
+const bitcoin_1 = require("./bitcoin");
 function assertFileExists(desc, path) {
     if (!node_fs_1.default.existsSync(path || '')) {
         throw new Error(`File not found, desc: ${desc}, path: ${path}`);
     }
 }
 class Context {
-    constructor() {
-        this.temporarySecret = (0, node_crypto_1.randomBytes)(32);
-    }
+    constructor() { }
     static async create(obj) {
         const thus = new Context();
         // assertFileExists('charmsBin', obj.charmsBin);
@@ -28,9 +26,11 @@ class Context {
         if (!obj.appId)
             throw new Error('App ID is required');
         thus.appId = obj.appId;
-        logger_1.logger.log('App ID:', thus.appId);
+        logger_1.logger.info('App ID: ', thus.appId);
         thus.network = obj.network || 'regtest';
         thus.mockProof = obj.mockProof || false;
+        const charmsSecret = process.env.CHARMS_SECRET ? Buffer.from(process.env.CHARMS_SECRET, 'hex') : (0, node_crypto_1.randomBytes)(32);
+        thus.temporarySecret = charmsSecret;
         if (!obj.appVk) {
             logger_1.logger.warn('App VK is not provided, using charms app vk command to retrieve it');
             thus.appVk = await (0, charms_sdk_1.getVerificationKey)(thus);
@@ -38,16 +38,11 @@ class Context {
         else {
             thus.appVk = obj.appVk;
         }
-        logger_1.logger.log('App Verification Key:', thus.appVk);
+        logger_1.logger.info('App Verification Key: ', thus.appVk);
         if (!obj.ticker)
             throw new Error('Ticker is required');
         thus.ticker = obj.ticker;
-        if (obj.bitcoinClient) {
-            thus.bitcoinClient = obj.bitcoinClient;
-        }
-        else {
-            thus.bitcoinClient = await bitcoin_1.BitcoinClient.initialize();
-        }
+        thus.bitcoinClient = await bitcoin_1.BitcoinClient.initialize(obj.core);
         return thus;
     }
     static async createForDeploy(obj, fundingUtxo) {

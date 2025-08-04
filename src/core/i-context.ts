@@ -1,5 +1,6 @@
-import { BitcoinClient } from './bitcoin';
+import Client from 'bitcoin-core';
 import { Network } from './taproot/taproot-common';
+import { BitcoinClient } from './bitcoin';
 
 export interface IContext {
 	charmsBin: string;
@@ -17,4 +18,5 @@ export interface IContext {
 	temporarySecret: Buffer;
 
 	bitcoinClient: BitcoinClient;
+	core?: Client
 }

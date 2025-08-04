@@ -12,7 +12,7 @@ if (!!process.env.DEBUG_TAPROOT) {
 			fs.mkdirSync('./debuglog/taproot', { recursive: true });
 		}
 	} catch (e) {
-		logger.error('Error in debugLog:', e);
+		logger.error('Error in debugLog: ', e);
 	}
 }
 
@@ -26,7 +26,7 @@ function debugLog(obj: any) {
 			JSON.stringify(obj, bufferReplacer, 2)
 		);
 	} catch (e) {
-		logger.error('Error writing debug log:', e);
+		logger.error('Error writing debug log: ', e);
 	}
 }
 

@@ -8,6 +8,7 @@ import { Context } from '../core/context';
 import { parse } from '../core/env-parser';
 import { SignatureResponse, UserPaymentDetails } from '../core/types';
 import {
+	filterValidCosignerSignatures,
 	findUserPaymentVout,
 	getUserWalletAddressFromUserPaymentUtxo,
 	injectSignaturesIntoSpell,
@@ -143,11 +144,8 @@ export async function pegoutCli(_argv: string[]): Promise<[string, string]> {
 		userPaymentDetails,
 		fundingUtxo
 	);
-	logger.log('Spell created:', JSON.stringify(spell, bufferReplacer, 2));
-	logger.log(
-		'Signature request:',
-		JSON.stringify(signatureRequest, bufferReplacer, 2)
-	);
+	logger.debug('Spell created: ', spell);
+	logger.debug('Signature request: ', signatureRequest);
 
 	const fromCosigners: SignatureResponse[] = privateKeys
 		.map(pk => Buffer.from(pk, 'hex'))
@@ -156,19 +154,29 @@ export async function pegoutCli(_argv: string[]): Promise<[string, string]> {
 			const signatures = signAsCosigner(context, signatureRequest, keypair);
 			return { publicKey: keypair.publicKey.toString('hex'), signatures };
 		});
+	logger.debug('Signature responses from cosigners: ', fromCosigners);
 
-	logger.log(
-		'Signing spell with cosigners:',
-		JSON.stringify(fromCosigners, bufferReplacer, 2)
+	const filteredSignatures = fromCosigners.map(response => ({
+		...response,
+		signatures: filterValidCosignerSignatures(
+			context,
+			signatureRequest,
+			response.signatures,
+			Buffer.from(response.publicKey, 'hex')
+		),
+	}));
+	logger.debug(
+		'Signature responses from cosigners after fiultering: ',
+		filteredSignatures
 	);
 
 	const signedSpell = await injectSignaturesIntoSpell(
 		context,
 		spell,
 		signatureRequest,
-		fromCosigners
+		filteredSignatures
 	);
-	logger.log('Signed spell:', JSON.stringify(signedSpell, bufferReplacer, 2));
+	logger.debug('Signed spell: ', signedSpell);
 
 	if (transmit) {
 		return await transmitSpell(context, signedSpell);

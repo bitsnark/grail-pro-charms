@@ -17,7 +17,7 @@ async function viewNft(context: IContext, nftTxid: string) {
 		return;
 	}
 	const spell = await showSpell(context, txhex);
-	logger.log('spell: ' + JSON.stringify(spell, null, 2));
+	logger.debug('spell: ', spell);
 }
 
 async function main() {
@@ -47,12 +47,12 @@ async function main() {
 	});
 
 	await viewNft(context, nftTxid).catch(error => {
-		logger.error('Error viewing NFT:', error);
+		logger.error('Error viewing NFT: ', error);
 	});
 }
 
 if (require.main === module) {
 	main().catch(error => {
-		logger.error('Error during NFT view:', error);
+		logger.error('Error during NFT view: ', error);
 	});
 }

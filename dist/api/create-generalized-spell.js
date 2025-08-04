@@ -38,7 +38,6 @@ const logger_1 = require("../core/logger");
 const bitcoin = __importStar(require("bitcoinjs-lib"));
 const taproot_1 = require("../core/taproot");
 const charms_sdk_1 = require("../core/charms-sdk");
-const json_1 = require("../core/json");
 const spell_operations_1 = require("./spell-operations");
 const spells_1 = require("../core/spells");
 const array_utils_1 = require("../core/array-utils");
@@ -64,7 +63,7 @@ async function sanityCheck(context, previousTransactions, generalizedInfo) {
         if (!upd) {
             throw new Error(`Outgoing BTC to ${outgoing.address} not matched by incoming charms`);
         }
-        const amount = getAmountFromUtxo(previousTransactions, upd);
+        const amount = await (0, spells_1.getCharmsAmountFromUtxo)(context, upd);
         if (amount !== outgoing.amount) {
             throw new Error(`Outgoing BTC amount ${outgoing.amount} does not match incoming charms ${amount} for address ${outgoing.address}`);
         }
@@ -138,7 +137,7 @@ async function createGeneralizedSpell(context, feerate, previousNftTxid, nextGra
     const fundingChangeAddress = await context.bitcoinClient.getAddress();
     fundingUtxo = fundingUtxo || (await context.bitcoinClient.getFundingUtxo());
     const previousSpellData = await (0, charms_sdk_1.showSpell)(context, previousNftTxid);
-    logger_1.logger.log('Previous NFT spell:', JSON.stringify(previousSpellData, null, 2));
+    logger_1.logger.debug('Previous NFT spell: ', previousSpellData);
     const previousPublicKeys = previousSpellData.outs[0].charms['$0000'].current_cosigners.split(',');
     const previousThreshold = previousSpellData.outs[0].charms['$0000']
         .current_threshold;
@@ -186,10 +185,10 @@ async function createGeneralizedSpell(context, feerate, previousNftTxid, nextGra
                     ...this.generalizedInfo.incomingUserBtc.map(payment => ({
                         utxo_id: `${payment.txid}:${payment.vout}`,
                     })),
-                    ...this.generalizedInfo.incomingGrailBtc.map(utxo => ({
+                    ...this.generalizedInfo.incomingUserCharms.map(utxo => ({
                         utxo_id: `${utxo.txid}:${utxo.vout}`,
                     })),
-                    ...this.generalizedInfo.incomingUserCharms.map(utxo => ({
+                    ...this.generalizedInfo.incomingGrailBtc.map(utxo => ({
                         utxo_id: `${utxo.txid}:${utxo.vout}`,
                     })),
                 ],
@@ -239,13 +238,10 @@ async function createGeneralizedSpell(context, feerate, previousNftTxid, nextGra
             };
         },
     };
-    const spell = await (0, spell_operations_1.createUpdatingSpell)(context, request, allPreviousTxids, { publicKeys: previousPublicKeys, threshold: previousThreshold }, nextGrailState, generalizedInfo);
+    const spell = await (0, spell_operations_1.createUpdatingSpell)(context, request, allPreviousTxids, previousGrailState, nextGrailState, generalizedInfo);
     previousTransactions[(0, bitcoin_1.txBytesToTxid)(spell.commitmentTxBytes)] =
         spell.commitmentTxBytes;
-    const previousSpellMap = await (0, spell_operations_1.getPreviousGrailStateMap)(context, [
-        ...generalizedInfo.incomingGrailBtc.map(utxo => utxo.txid),
-        ...generalizedInfo.incomingUserCharms.map(utxo => utxo.txid),
-    ]);
+    const previousSpellMap = await (0, spell_operations_1.getPreviousGrailStateMap)(context, generalizedInfo.incomingGrailBtc.map(utxo => utxo.txid));
     const signatureRequest = {
         transactionBytes: spell.spellTxBytes,
         previousTransactions,
@@ -261,22 +257,22 @@ async function createGeneralizedSpell(context, feerate, previousNftTxid, nextGra
                 script: (0, taproot_1.generateSpendingScriptsForUserPayment)(payment, context.network)
                     .grail.script,
             })),
-            ...generalizedInfo.incomingGrailBtc.map(utxo => ({
-                index: 0,
-                state: previousSpellMap[utxo.txid],
-                script: (0, taproot_1.generateSpendingScriptForGrail)(previousSpellMap[utxo.txid], context.network).script,
-            })),
             ...generalizedInfo.incomingUserCharms.map(payment => ({
                 index: 0,
                 state: payment.grailState,
                 script: (0, taproot_1.generateSpendingScriptsForUserPayment)(payment, context.network)
                     .grail.script,
             })),
+            ...generalizedInfo.incomingGrailBtc.map(utxo => ({
+                index: 0,
+                state: previousSpellMap[utxo.txid],
+                script: (0, taproot_1.generateSpendingScriptForGrail)(previousSpellMap[utxo.txid], context.network).script,
+            })),
         ].map((input, index) => ({
             ...input,
             index,
         })),
     };
-    logger_1.logger.log('Spell created:', JSON.stringify(spell, json_1.bufferReplacer, 2));
+    logger_1.logger.debug('Spell created: ', spell);
     return { spell, signatureRequest };
 }

@@ -9,13 +9,13 @@ const logger_1 = require("../core/logger");
 const minimist_1 = __importDefault(require("minimist"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const bitcoin_1 = require("../core/bitcoin");
-const json_1 = require("../core/json");
 const context_1 = require("../core/context");
 const env_parser_1 = require("../core/env-parser");
 const create_pegin_spell_1 = require("../api/create-pegin-spell");
 const spell_operations_1 = require("../api/spell-operations");
 const generate_random_keypairs_1 = require("./generate-random-keypairs");
 const consts_1 = require("./consts");
+const spell_operations_2 = require("../api/spell-operations");
 exports.TIMELOCK_BLOCKS = 100; // Default timelock for user payments
 async function peginCli(_argv) {
     dotenv_1.default.config({ path: ['.env.test', '.env.local', '.env'] });
@@ -99,7 +99,7 @@ async function peginCli(_argv) {
     }
     const feerate = Number.parseFloat(argv['feerate']);
     const { spell, signatureRequest } = await (0, create_pegin_spell_1.createPeginSpell)(context, feerate, previousNftTxid, newGrailState, userPaymentDetails, fundingUtxo);
-    logger_1.logger.log('Spell created:', JSON.stringify(spell, json_1.bufferReplacer, 2));
+    logger_1.logger.debug('Spell created: ', spell);
     const fromCosigners = privateKeys
         .map(pk => Buffer.from(pk, 'hex'))
         .map(privateKey => {
@@ -107,8 +107,14 @@ async function peginCli(_argv) {
         const signatures = (0, spell_operations_1.signAsCosigner)(context, signatureRequest, keypair);
         return { publicKey: keypair.publicKey.toString('hex'), signatures };
     });
-    const signedSpell = await (0, spell_operations_1.injectSignaturesIntoSpell)(context, spell, signatureRequest, fromCosigners);
-    logger_1.logger.log('Signed spell:', JSON.stringify(signedSpell, json_1.bufferReplacer, 2));
+    logger_1.logger.debug('Signature responses from cosigners: ', fromCosigners);
+    const filteredSignatures = fromCosigners.map(response => ({
+        ...response,
+        signatures: (0, spell_operations_2.filterValidCosignerSignatures)(context, signatureRequest, response.signatures, Buffer.from(response.publicKey, 'hex')),
+    }));
+    logger_1.logger.debug('Signature responses from cosigners after fiultering: ', filteredSignatures);
+    const signedSpell = await (0, spell_operations_1.injectSignaturesIntoSpell)(context, spell, signatureRequest, filteredSignatures);
+    logger_1.logger.debug('Signed spell: ', signedSpell);
     if (transmit) {
         const transmittedTxids = await (0, spell_operations_1.transmitSpell)(context, signedSpell);
         // if (network === 'regtest') {
@@ -121,5 +127,5 @@ async function peginCli(_argv) {
 if (require.main === module) {
     peginCli(process.argv.slice(2)).catch(err => {
         logger_1.logger.error(err);
-    }).then;
+    });
 }

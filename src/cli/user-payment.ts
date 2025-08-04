@@ -39,9 +39,9 @@ export async function sendUserPaymentCharms(
 	if (charmsUtxos.length === 0) {
 		throw new Error('No sufficient Charms UTXOs found for user payment.');
 	}
-	logger.log('Found Charms UTXOs:', charmsUtxos);
+	logger.debug('Found Charms UTXOs: ', charmsUtxos);
 
-	logger.log('Sending charms to user payment address:', userPaymentAddress);
+	logger.debug('Sending charms to user payment address: ', userPaymentAddress);
 	const spell = await createTransmitSpell(
 		context,
 		feerate,
@@ -53,13 +53,13 @@ export async function sendUserPaymentCharms(
 
 	const tx = bitcoin.Transaction.fromHex(spell.spellTxBytes.toString('hex'));
 	const prevTxids = tx.ins.map(input => hashToTxid(input.hash));
-	console.log('Previous transaction IDs:', prevTxids);
+	console.log('Previous transaction IDs: ', prevTxids);
 	const previousTransactions = await getPreviousTransactions(
 		context,
 		spell.spellTxBytes,
 		spell.commitmentTxBytes
 	);
-	console.log('Previous transactions:', previousTransactions);
+	console.log('Previous transactions: ', previousTransactions);
 	spell.spellTxBytes = await context.bitcoinClient.signTransaction(
 		spell.spellTxBytes,
 		previousTransactions
@@ -90,13 +90,13 @@ export async function sendUserPaymentBtc(
 		network
 	);
 
-	logger.log('Sending funds to user payment address:', userPaymentAddress);
+	logger.debug('Sending funds to user payment address: ', userPaymentAddress);
 	const txid = await context.bitcoinClient.fundAddress(
 		userPaymentAddress,
 		amount
 	);
-	logger.log('Funds sent successfully, txid: ', txid);
-	logger.log('Recovery public key:', recoveryKeypair.publicKey.toString('hex'));
+	logger.debug('Funds sent successfully, txid: ', txid);
+	logger.debug('Recovery public key: ', recoveryKeypair.publicKey.toString('hex'));
 
 	return { txid, recoveryPublicKey: recoveryKeypair.publicKey.toString('hex') };
 }
@@ -189,11 +189,11 @@ export async function userPaymentCli(
 if (require.main === module) {
 	userPaymentCli(process.argv.slice(2))
 		.catch(error => {
-			logger.error('Error during NFT update:', error);
+			logger.error('Error during NFT update: ', error);
 		})
 		.then(result => {
 			if (result) {
-				logger.log('User payment created successfully:', result);
+				logger.log('User payment created successfully: ', result);
 			} else {
 				logger.error('User payment creation failed.');
 			}

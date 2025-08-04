@@ -12,7 +12,6 @@ const env_parser_1 = require("../core/env-parser");
 const create_update_nft_spell_1 = require("../api/create-update-nft-spell");
 const generate_random_keypairs_1 = require("./generate-random-keypairs");
 const spell_operations_1 = require("../api/spell-operations");
-const json_1 = require("../core/json");
 const utils_1 = require("./utils");
 const consts_1 = require("./consts");
 async function main() {
@@ -69,8 +68,8 @@ async function main() {
         return;
     }
     const { spell, signatureRequest } = await (0, create_update_nft_spell_1.createUpdateNftSpell)(context, feerate, previousNftTxid, newGrailState, fundingUtxo);
-    logger_1.logger.log('Spell created:', JSON.stringify(spell, json_1.bufferReplacer, 2));
-    logger_1.logger.log('Signature request:', JSON.stringify(signatureRequest, json_1.bufferReplacer, 2));
+    logger_1.logger.debug('Spell created: ', spell);
+    logger_1.logger.debug('Signature request: ', signatureRequest);
     const fromCosigners = privateKeys
         .map(pk => Buffer.from(pk, 'hex'))
         .map(privateKey => {
@@ -79,13 +78,13 @@ async function main() {
         return { publicKey: keypair.publicKey.toString('hex'), signatures };
     });
     const signedSpell = await (0, spell_operations_1.injectSignaturesIntoSpell)(context, spell, signatureRequest, fromCosigners);
-    logger_1.logger.log('Signed spell:', JSON.stringify(signedSpell, json_1.bufferReplacer, 2));
+    logger_1.logger.debug('Signed spell: ', signedSpell);
     if (transmit) {
         await (0, spell_operations_1.transmitSpell)(context, signedSpell);
     }
 }
 if (require.main === module) {
     main().catch(error => {
-        logger_1.logger.error('Error during NFT update:', error);
+        logger_1.logger.error('Error during NFT update: ', error);
     });
 }

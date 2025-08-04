@@ -86,10 +86,10 @@ export interface SignatureRequest {
 export type CosignerSignatures = {
     index: number;
     signature: Buffer;
-};
+}[];
 export interface SignatureResponse {
     publicKey: string;
-    signatures: CosignerSignatures[];
+    signatures: CosignerSignatures;
 }
 export interface TokenUtxo {
     txid: string;

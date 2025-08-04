@@ -4,8 +4,10 @@ import { peginCli } from '../src/cli/pegin';
 import { userPaymentCli } from '../src/cli/user-payment';
 import { transmitCli } from '../src/cli/transmit';
 import { generateBlocks } from './bitcoin-utils';
+import { DEBUG_LEVELS, logger } from '../src/core/logger';
 
-jest.setTimeout(600000);
+jest.setTimeout(600000000);
+logger.setLoggerOptions(DEBUG_LEVELS.ALL, true, true); // Set debug level to ALL, print date and level
 
 describe('peg-in and transmit e2e test', () => {
 	it('should deploy, then peg-in, then transmit successfully', async () => {
@@ -13,10 +15,10 @@ describe('peg-in and transmit e2e test', () => {
 		const deployerPublicKey = deployerKaypair.publicKey.toString('hex');
 		const deployerPrivateKey = deployerKaypair.privateKey.toString('hex');
 
-		console.log('Deployer Public Key:', deployerPublicKey);
-		console.log('Deployer Private Key:', deployerPrivateKey);
+		logger.log('Deployer Public Key:', deployerPublicKey);
+		logger.log('Deployer Private Key:', deployerPrivateKey);
 
-		console.log('*** Deploying NFT ***');
+		logger.log('*** Deploying NFT ***');
 
 		const deployResult = await deployNftCli([
 			'--deployer-public-key',
@@ -33,14 +35,14 @@ describe('peg-in and transmit e2e test', () => {
 			'TESTNFT',
 		]);
 		expect(deployResult).toBeTruthy();
-		console.log('Deployment Result:', deployResult);
+		logger.log('Deployment Result:', deployResult);
 
-		console.log('*** User payment ***');
+		logger.log('*** User payment ***');
 
 		const newKeypair = generateRandomKeypair();
 		const newPublicKey = newKeypair.publicKey.toString('hex');
 		const newPrivateKey = newKeypair.privateKey.toString('hex');
-		console.log('New Public Key:', newPublicKey);
+		logger.log('New Public Key:', newPublicKey);
 
 		const peginAmount = 1000000;
 
@@ -61,9 +63,9 @@ describe('peg-in and transmit e2e test', () => {
 			'regtest',
 		]);
 		expect(userPaymentResult).toBeTruthy();
-		console.log('User Payment Result:', userPaymentResult);
+		logger.log('User Payment Result:', userPaymentResult);
 
-		console.log('*** Peg-in ***');
+		logger.log('*** Peg-in ***');
 
 		const peginResult = await peginCli([
 			'--app-id',
@@ -94,13 +96,13 @@ describe('peg-in and transmit e2e test', () => {
 			'TESTNFT',
 		]);
 		expect(peginResult).toBeTruthy();
-		console.log('Pegin Result:', peginResult);
+		logger.log('Pegin Result:', peginResult);
 
-		console.log('*** Generate a block ***');
+		logger.log('*** Generate a block ***');
 
 		await generateBlocks(1);
 
-		console.log('*** Transmit ***');
+		logger.log('*** Transmit ***');
 
 		const transmitAmount = 666666;
 
@@ -121,6 +123,6 @@ describe('peg-in and transmit e2e test', () => {
 			transmitAmount.toString(),
 		]);
 		expect(transmitResult).toBeTruthy();
-		console.log('Transmit Result:', transmitResult);
+		logger.log('Transmit Result:', transmitResult);
 	});
 });

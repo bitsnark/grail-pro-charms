@@ -92,7 +92,7 @@ export async function createPegoutSpell(
 		context,
 		userPaymentDetails
 	);
-	logger.log('User payment transaction amount: ', userPaymentAmount);
+	logger.debug('User payment transaction amount: ', userPaymentAmount);
 
 	const lockedBtcUtxos = await findLockedBtcUtxos(
 		context,
@@ -120,7 +120,7 @@ export async function createPegoutSpell(
 		fundingUtxo
 	);
 
-	logger.log('Peg-in spell created:', JSON.stringify(spell, bufferReplacer, 2));
+	logger.debug('Peg-in spell created: ', spell);
 
 	return { spell, signatureRequest };
 }

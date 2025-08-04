@@ -4,7 +4,6 @@ exports.createTransmitSpell = createTransmitSpell;
 const logger_1 = require("../core/logger");
 const bitcoin_1 = require("../core/bitcoin");
 const spells_1 = require("../core/spells");
-const json_1 = require("../core/json");
 async function createTransmitSpell(context, feerate, inputUtxos, outputAddress, changeAddress, amount, fundingUtxo) {
     const bitcoinClient = await bitcoin_1.BitcoinClient.initialize();
     if (!fundingUtxo) {
@@ -71,6 +70,6 @@ async function createTransmitSpell(context, feerate, inputUtxos, outputAddress, 
     };
     const previousTxids = inputUtxos.map(utxo => utxo.txid);
     const spell = await (0, spells_1.createSpell)(context, previousTxids, request);
-    logger_1.logger.log('Transmit spell created:', JSON.stringify(spell, json_1.bufferReplacer, 2));
+    logger_1.logger.debug('Transmit spell created:', spell);
     return spell;
 }

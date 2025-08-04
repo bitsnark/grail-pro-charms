@@ -1,3 +1,4 @@
+import { logger } from '../src/core/logger';
 import { exec } from 'node:child_process';
 
 export async function generateBlocks(count: number = 1) {
@@ -15,6 +16,6 @@ export async function generateBlocks(count: number = 1) {
       console.error(`Error output: ${stderr}`);
       return;
     }
-    console.log(`Blocks generated: ${stdout}`);
+    logger.log(`Blocks generated: ${stdout}`);
   });
 }

@@ -18,7 +18,7 @@ async function viewNft(context, nftTxid) {
         return;
     }
     const spell = await (0, charms_sdk_1.showSpell)(context, txhex);
-    logger_1.logger.log('spell: ' + JSON.stringify(spell, null, 2));
+    logger_1.logger.debug('spell: ', spell);
 }
 async function main() {
     dotenv_1.default.config({ path: ['.env.test', '.env.local', '.env'] });
@@ -41,11 +41,11 @@ async function main() {
         ticker: 'GRAIL-NFT',
     });
     await viewNft(context, nftTxid).catch(error => {
-        logger_1.logger.error('Error viewing NFT:', error);
+        logger_1.logger.error('Error viewing NFT: ', error);
     });
 }
 if (require.main === module) {
     main().catch(error => {
-        logger_1.logger.error('Error during NFT view:', error);
+        logger_1.logger.error('Error during NFT view: ', error);
     });
 }

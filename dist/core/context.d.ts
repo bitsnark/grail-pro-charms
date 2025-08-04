@@ -1,7 +1,7 @@
 import { IContext } from './i-context';
 import { Network } from './taproot/taproot-common';
-import { BitcoinClient } from './bitcoin';
 import { Utxo } from './types';
+import { BitcoinClient } from './bitcoin';
 export declare class Context implements IContext {
     charmsBin: string;
     zkAppBin: string;

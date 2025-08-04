@@ -187,7 +187,7 @@ export async function createGeneralizedSpell(
 	fundingUtxo = fundingUtxo || (await context.bitcoinClient.getFundingUtxo());
 
 	const previousSpellData = await showSpell(context, previousNftTxid);
-	logger.log('Previous NFT spell:', JSON.stringify(previousSpellData, null, 2));
+	logger.debug('Previous NFT spell: ', previousSpellData);
 
 	const previousPublicKeys = previousSpellData.outs[0].charms[
 		'$0000'
@@ -349,6 +349,6 @@ export async function createGeneralizedSpell(
 		})),
 	};
 
-	logger.log('Spell created:', JSON.stringify(spell, bufferReplacer, 2));
+	logger.debug('Spell created: ', spell);
 	return { spell, signatureRequest };
 }

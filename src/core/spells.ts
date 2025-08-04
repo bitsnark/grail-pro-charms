@@ -20,7 +20,7 @@ export async function getStateFromNft(
 	nftTxId: string
 ): Promise<GrailState | null> {
 	const previousSpellData = await showSpell(context, nftTxId);
-	logger.log('NFT Spell:', JSON.stringify(previousSpellData, null, 2));
+	logger.debug('NFT Spell: ', previousSpellData);
 	if (
 		!previousSpellData ||
 		!previousSpellData.outs ||
@@ -105,6 +105,47 @@ export function signTransactionInput(
 	return Buffer.from(schnorr.sign(sighash, keypair.privateKey));
 }
 
+export function verifySignatureForTransactionInput(
+	context: IContext,
+	txBytes: Buffer,
+	signature: Buffer,
+	inputIndex: number,
+	script: Buffer,
+	previousTxBytesMap: { [txid: string]: Buffer },
+	publicKey: Buffer
+): boolean {
+	// Load the transaction to sign
+	const tx = bitcoin.Transaction.fromBuffer(txBytes);
+
+	// Tapleaf version for tapscript is always 0xc0
+	// BitcoinJS v6+ exposes tapleafHash for this calculation
+	const tapleafHash = getHash(script);
+
+	const previous: { value: number; script: Buffer }[] = [];
+	for (const input of tx.ins) {
+		const inputTxid = hashToTxid(input.hash);
+		const ttxbytes = previousTxBytesMap[inputTxid];
+		if (!ttxbytes) throw new Error(`Input transaction ${inputTxid} not found`);
+		const ttx = bitcoin.Transaction.fromBuffer(ttxbytes);
+		const out = ttx.outs[input.index];
+		previous.push({
+			value: out.value,
+			script: out.script,
+		});
+	}
+
+	// Compute sighash for this tapleaf spend (see https://github.com/bitcoinjs/bitcoinjs-lib/blob/master/test/integration/taproot.spec.ts)
+	const sighash = tx.hashForWitnessV1(
+		inputIndex,
+		previous.map(p => p.script),
+		previous.map(p => p.value),
+		sighashType,
+		tapleafHash
+	);
+
+	return schnorr.verify(signature, sighash, publicKey);
+}
+
 export async function resignSpellWithTemporarySecret(
 	context: IContext,
 	spellTxBytes: Buffer,
@@ -164,7 +205,7 @@ export async function createSpell(
 	previousTxids: string[],
 	request: CharmerRequest
 ): Promise<Spell> {
-	logger.log('Creating spell...');
+	logger.debug('Creating spell...');
 
 	const previousTransactions = await Promise.all(
 		previousTxids.map(async txid =>
@@ -172,7 +213,7 @@ export async function createSpell(
 		)
 	);
 	const yamlStr = yaml.dump(request.toYamlObj());
-	logger.log('Executing spell creation with Yaml: ', yamlStr);
+	logger.debug('Executing spell creation with Yaml: ', yamlStr);
 	const output = await executeSpell(
 		context,
 		request.fundingUtxo,
@@ -182,10 +223,7 @@ export async function createSpell(
 		previousTransactions.map(tx => Buffer.from(tx, 'hex'))
 	);
 
-	logger.log(
-		'Spell created successfully:',
-		JSON.stringify(output, bufferReplacer, 2)
-	);
+	logger.debug('Spell created successfully: ', output);
 
 	return {
 		commitmentTxBytes: output.commitmentTxBytes,
@@ -228,7 +266,7 @@ export async function findCharmsUtxos(
 	}
 	const charmsUtxos = (
 		await mapAsync(utxos, async utxo => {
-			logger.debug('Checking UTXO:', utxo);
+			logger.debug('Checking UTXO: ', utxo);
 			if (total >= minTotal) return { ...utxo, amount: 0 };
 			const info = await getTokenInfoForUtxo(context, utxo).catch(_ => {});
 			if (!info?.amount) return { ...utxo, amount: 0 };

@@ -4,9 +4,10 @@ import { getVerificationKey } from './charms-sdk';
 import { IContext } from './i-context';
 import { Network } from './taproot/taproot-common';
 import { randomBytes } from 'node:crypto';
-import { BitcoinClient } from './bitcoin';
+import Client from 'bitcoin-core';
 import { Utxo } from './types';
 import { sha256 } from 'bitcoinjs-lib/src/crypto';
+import { BitcoinClient } from './bitcoin';
 
 function assertFileExists(desc: string, path?: string): void {
 	if (!fs.existsSync(path || '')) {
@@ -25,11 +26,11 @@ export class Context implements IContext {
 
 	network!: Network;
 	mockProof!: boolean;
-	temporarySecret: Buffer<ArrayBufferLike> = randomBytes(32);
+	temporarySecret!: Buffer<ArrayBufferLike>;
 
 	bitcoinClient!: BitcoinClient;
 
-	private constructor() {}
+	private constructor() { }
 
 	public static async create(obj: Partial<IContext>): Promise<Context> {
 		const thus = new Context();
@@ -42,10 +43,13 @@ export class Context implements IContext {
 
 		if (!obj.appId) throw new Error('App ID is required');
 		thus.appId = obj.appId;
-		logger.log('App ID:', thus.appId);
+		logger.info('App ID: ', thus.appId);
 
 		thus.network = obj.network || 'regtest';
 		thus.mockProof = obj.mockProof || false;
+
+		const charmsSecret = process.env.CHARMS_SECRET ? Buffer.from(process.env.CHARMS_SECRET, 'hex') : randomBytes(32);
+		thus.temporarySecret = charmsSecret;
 
 		if (!obj.appVk) {
 			logger.warn(
@@ -55,16 +59,12 @@ export class Context implements IContext {
 		} else {
 			thus.appVk = obj.appVk;
 		}
-		logger.log('App Verification Key:', thus.appVk);
+		logger.info('App Verification Key: ', thus.appVk);
 
 		if (!obj.ticker) throw new Error('Ticker is required');
 		thus.ticker = obj.ticker;
 
-		if (obj.bitcoinClient) {
-			thus.bitcoinClient = obj.bitcoinClient;
-		} else {
-			thus.bitcoinClient = await BitcoinClient.initialize();
-		}
+		thus.bitcoinClient = await BitcoinClient.initialize(obj.core);
 
 		return thus;
 	}

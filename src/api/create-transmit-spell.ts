@@ -89,9 +89,9 @@ export async function createTransmitSpell(
 
 	const previousTxids = inputUtxos.map(utxo => utxo.txid);
 	const spell = await createSpell(context, previousTxids, request);
-	logger.log(
+	logger.debug(
 		'Transmit spell created:',
-		JSON.stringify(spell, bufferReplacer, 2)
+		spell
 	);
 
 	return spell;

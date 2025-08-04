@@ -14,7 +14,6 @@ const taproot_1 = require("../core/taproot");
 const spells_1 = require("../core/spells");
 const spell_operations_1 = require("../api/spell-operations");
 const env_parser_1 = require("../core/env-parser");
-const json_1 = require("../core/json");
 const consts_1 = require("./consts");
 async function deployNft(context, deployerPublicKey, feerate, fundingUtxo, transmit = false) {
     const initialNftState = {
@@ -60,7 +59,7 @@ async function deployNft(context, deployerPublicKey, feerate, fundingUtxo, trans
         },
     };
     const spell = await (0, spells_1.createSpell)(context, [], request);
-    logger_1.logger.log('Spell created:', JSON.stringify(spell, json_1.bufferReplacer, 2));
+    logger_1.logger.debug('Spell created: ', spell);
     if (transmit) {
         return await (0, spell_operations_1.transmitSpell)(context, spell);
     }
@@ -99,9 +98,6 @@ async function deployNftCli(_argv) {
         ticker: consts_1.TICKER,
     }, fundingUtxo);
     const [_, spellTxid] = await deployNft(context, deployerPublicKey, feerate, fundingUtxo, transmit);
-    // if (network === 'regtest') {
-    // 	await context.bitcoinClient.generateBlocks([commitTxid, spellTxid]);
-    // }
     return {
         appId: context.appId,
         appVk: context.appVk,
@@ -111,15 +107,6 @@ async function deployNftCli(_argv) {
 if (require.main === module) {
     deployNftCli(process.argv.slice(2))
         .catch(error => {
-        logger_1.logger.error('Error during NFT deployment:', error);
-    })
-        .then(flag => {
-        if (flag) {
-            logger_1.logger.log('NFT deployment completed successfully.');
-        }
-        else {
-            logger_1.logger.error('NFT deployment failed.');
-        }
-        process.exit(flag ? 0 : 1);
+        logger_1.logger.error('Error during NFT deployment: ', error);
     });
 }

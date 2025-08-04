@@ -68,7 +68,7 @@ function executeCommand(context, command, pwd) {
             resolve(stdout);
         });
     }).catch((error) => {
-        logger_1.logger.error('Execution error:', error);
+        logger_1.logger.error('Execution error: ', error);
         throw error;
     });
 }

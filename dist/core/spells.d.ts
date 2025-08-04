@@ -6,6 +6,9 @@ export declare function getCharmsAmountFromUtxo(context: IContext, utxo: Utxo): 
 export declare function signTransactionInput(context: IContext, txBytes: Buffer, inputIndex: number, script: Buffer, previousTxBytesMap: {
     [txid: string]: Buffer;
 }, keypair: KeyPair): Buffer;
+export declare function verifySignatureForTransactionInput(context: IContext, txBytes: Buffer, signature: Buffer, inputIndex: number, script: Buffer, previousTxBytesMap: {
+    [txid: string]: Buffer;
+}, publicKey: Buffer): boolean;
 export declare function resignSpellWithTemporarySecret(context: IContext, spellTxBytes: Buffer, previousTxBytesMap: {
     [txid: string]: Buffer;
 }, temporarySecret: Buffer): Promise<Buffer>;

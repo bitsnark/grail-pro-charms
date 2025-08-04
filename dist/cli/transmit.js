@@ -11,7 +11,6 @@ const bitcoin_1 = require("../core/bitcoin");
 const context_1 = require("../core/context");
 const env_parser_1 = require("../core/env-parser");
 const spell_operations_1 = require("../api/spell-operations");
-const json_1 = require("../core/json");
 const consts_1 = require("./consts");
 const create_transmit_spell_1 = require("../api/create-transmit-spell");
 const spells_1 = require("../core/spells");
@@ -58,16 +57,16 @@ async function transmitCli(_argv) {
     if (inputUtxos.length === 0) {
         throw new Error('No Charms UTXOs found for the specified amount.');
     }
-    logger_1.logger.log('Found Charms UTXOs:', inputUtxos);
+    logger_1.logger.debug('Found Charms UTXOs: ', inputUtxos);
     const outputAddress = argv['output-address'] ?? (await bitcoinClient.getAddress());
-    logger_1.logger.log('Output address:', outputAddress);
+    logger_1.logger.debug('Output address: ', outputAddress);
     const changeAddress = argv['change-address'] ?? (await bitcoinClient.getAddress());
-    logger_1.logger.log('Change address:', changeAddress);
+    logger_1.logger.debug('Change address: ', changeAddress);
     const spell = await (0, create_transmit_spell_1.createTransmitSpell)(context, feerate, inputUtxos, outputAddress, changeAddress, amount, fundingUtxo);
-    logger_1.logger.log('Spell created:', JSON.stringify(spell, json_1.bufferReplacer, 2));
+    logger_1.logger.debug('Spell created: ', spell);
     const previousTransactionsMap = await (0, spell_operations_1.getPreviousTransactions)(context, spell.spellTxBytes, spell.commitmentTxBytes);
     spell.spellTxBytes = await bitcoinClient.signTransaction(spell.spellTxBytes, previousTransactionsMap, 'ALL|ANYONECANPAY');
-    logger_1.logger.log('Signed spell transaction bytes:', spell.spellTxBytes.toString('hex'));
+    logger_1.logger.debug('Signed spell transaction bytes: ', spell.spellTxBytes.toString('hex'));
     if (transmit) {
         const transmittedTxids = await (0, spell_operations_1.transmitSpell)(context, spell);
         // if (network === 'regtest') {
