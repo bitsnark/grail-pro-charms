@@ -68,8 +68,8 @@ async function main() {
         return;
     }
     const { spell, signatureRequest } = await (0, create_update_nft_spell_1.createUpdateNftSpell)(context, feerate, previousNftTxid, newGrailState, fundingUtxo);
-    logger_1.logger.debug('Spell created:', spell);
-    logger_1.logger.debug('Signature request:', signatureRequest);
+    logger_1.logger.debug('Spell created: ', spell);
+    logger_1.logger.debug('Signature request: ', signatureRequest);
     const fromCosigners = privateKeys
         .map(pk => Buffer.from(pk, 'hex'))
         .map(privateKey => {
@@ -78,13 +78,13 @@ async function main() {
         return { publicKey: keypair.publicKey.toString('hex'), signatures };
     });
     const signedSpell = await (0, spell_operations_1.injectSignaturesIntoSpell)(context, spell, signatureRequest, fromCosigners);
-    logger_1.logger.debug('Signed spell:', signedSpell);
+    logger_1.logger.debug('Signed spell: ', signedSpell);
     if (transmit) {
         await (0, spell_operations_1.transmitSpell)(context, signedSpell);
     }
 }
 if (require.main === module) {
     main().catch(error => {
-        logger_1.logger.error('Error during NFT update:', error);
+        logger_1.logger.error('Error during NFT update: ', error);
     });
 }

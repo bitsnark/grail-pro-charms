@@ -151,7 +151,7 @@ class BitcoinClient {
                 amount: output.value / 100000000, // Convert satoshis to BTC
             };
         }) : undefined;
-        logger_1.logger.debug('Signing transaction with inputs:', prevtxinfo);
+        logger_1.logger.debug('Signing transaction with inputs: ', prevtxinfo);
         const result = await this.client.signTransactionInputs(txBytes.toString('hex'), prevtxinfo, sighashType);
         if (!result.complete)
             throw new Error('Transaction signing failed');

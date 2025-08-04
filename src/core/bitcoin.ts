@@ -150,7 +150,7 @@ export class BitcoinClient {
 			};
 		}) : undefined;
 
-		logger.debug('Signing transaction with inputs:', prevtxinfo);
+		logger.debug('Signing transaction with inputs: ', prevtxinfo);
 
 		const result = await this.client!.signTransactionInputs(
 			txBytes.toString('hex'),

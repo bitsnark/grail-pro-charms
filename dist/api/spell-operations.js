@@ -40,6 +40,7 @@ exports.injectSignaturesIntoSpell = injectSignaturesIntoSpell;
 exports.transmitSpell = transmitSpell;
 exports.getPreviousTransactions = getPreviousTransactions;
 exports.signAsCosigner = signAsCosigner;
+exports.filterValidCosignerSignatures = filterValidCosignerSignatures;
 exports.findUserPaymentVout = findUserPaymentVout;
 exports.getUserWalletAddressFromUserPaymentUtxo = getUserWalletAddressFromUserPaymentUtxo;
 const logger_1 = require("../core/logger");
@@ -52,7 +53,9 @@ const bitcoin_1 = require("../core/bitcoin");
 const taproot_2 = require("../core/taproot");
 async function getPreviousGrailState(context, previousNftTxid) {
     const previousSpellData = await (0, charms_sdk_1.showSpell)(context, previousNftTxid);
-    if (!previousSpellData || !previousSpellData.outs || previousSpellData.outs.length === 0) {
+    if (!previousSpellData ||
+        !previousSpellData.outs ||
+        previousSpellData.outs.length === 0) {
         throw new Error('Invalid previous NFT spell data');
     }
     return {
@@ -155,7 +158,7 @@ async function transmitSpell(context, transactions) {
     logger_1.logger.debug('Sending spell transaction:', transactions.spellTxBytes.toString('hex'));
     const spellTxid = await context.bitcoinClient.transmitTransaction(transactions.spellTxBytes);
     const output = [commitmentTxid, spellTxid];
-    logger_1.logger.info('Spell transmitted successfully:', output);
+    logger_1.logger.info('Spell transmitted successfully: ', output);
     return output;
 }
 async function getPreviousTransactions(context, spellTxBytes, commitmentTxBytes) {
@@ -180,6 +183,21 @@ function signAsCosigner(context, request, keypair) {
         signature: (0, spells_1.signTransactionInput)(context, request.transactionBytes, input.index, input.script, request.previousTransactions, keypair),
     }));
     return sigs;
+}
+function filterValidCosignerSignatures(context, request, signatures, publicKey) {
+    return signatures
+        .map((tsig) => {
+        const index = tsig.index;
+        const input = request.inputs.find(input => input.index === index);
+        tsig.valid =
+            input &&
+                (0, spells_1.verifySignatureForTransactionInput)(context, request.transactionBytes, tsig.signature, input.index, input.script, request.previousTransactions, publicKey);
+        if (!tsig.valid) {
+            logger_1.logger.warn(`Signature for input ${index} is invalid for public key: `, publicKey);
+        }
+        return tsig;
+    })
+        .filter(tsig => tsig.valid);
 }
 async function findUserPaymentVout(context, grailState, userPaymentTxid, recoveryPublicKey, timelockBlocks) {
     const userPaymentTxHex = await context.bitcoinClient.getTransactionHex(userPaymentTxid);

@@ -12,7 +12,7 @@ async function createUpdateNftSpell(context, feerate, previousNftTxid, grailStat
         fundingUtxo = await bitcoinClient.getFundingUtxo();
     }
     const previousSpellData = await (0, charms_sdk_1.showSpell)(context, previousNftTxid);
-    logger_1.logger.debug('Previous NFT spell:', previousSpellData);
+    logger_1.logger.debug('Previous NFT spell: ', previousSpellData);
     if (!previousSpellData) {
         throw new Error('Invalid previous NFT spell data');
     }

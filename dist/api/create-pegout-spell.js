@@ -101,6 +101,6 @@ async function createPegoutSpell(context, feerate, previousNftTxid, nextGrailSta
             },
         ],
     }, fundingUtxo);
-    logger_1.logger.debug('Peg-in spell created:', spell);
+    logger_1.logger.debug('Peg-in spell created: ', spell);
     return { spell, signatureRequest };
 }

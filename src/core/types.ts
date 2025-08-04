@@ -110,11 +110,11 @@ export interface SignatureRequest {
 	inputs: { index: number; state: GrailState; script: Buffer }[];
 }
 
-export type CosignerSignatures = { index: number; signature: Buffer };
+export type CosignerSignatures = { index: number; signature: Buffer }[];
 
 export interface SignatureResponse {
 	publicKey: string;
-	signatures: CosignerSignatures[];
+	signatures: CosignerSignatures;
 }
 
 export interface TokenUtxo {

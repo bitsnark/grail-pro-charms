@@ -11,6 +11,7 @@ export declare function createUpdatingSpell(context: IContext, request: UpdateRe
 export declare function injectSignaturesIntoSpell(context: IContext, spell: Spell, signatureRequest: SignatureRequest, fromCosigners: SignatureResponse[]): Promise<Spell>;
 export declare function transmitSpell(context: IContext, transactions: Spell): Promise<[string, string]>;
 export declare function getPreviousTransactions(context: IContext, spellTxBytes: Buffer, commitmentTxBytes?: Buffer): Promise<PreviousTransactions>;
-export declare function signAsCosigner(context: IContext, request: SignatureRequest, keypair: KeyPair): CosignerSignatures[];
+export declare function signAsCosigner(context: IContext, request: SignatureRequest, keypair: KeyPair): CosignerSignatures;
+export declare function filterValidCosignerSignatures(context: IContext, request: SignatureRequest, signatures: CosignerSignatures, publicKey: Buffer): CosignerSignatures;
 export declare function findUserPaymentVout(context: IContext, grailState: GrailState, userPaymentTxid: string, recoveryPublicKey: string, timelockBlocks: number): Promise<number>;
 export declare function getUserWalletAddressFromUserPaymentUtxo(context: IContext, fundingUtxo: Utxo, network: Network): Promise<string>;

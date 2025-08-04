@@ -17,6 +17,7 @@ import {
 } from '../api/spell-operations';
 import { privateToKeypair } from './generate-random-keypairs';
 import { DEFAULT_FEERATE } from './consts';
+import { filterValidCosignerSignatures } from '../api/spell-operations';
 
 export const TIMELOCK_BLOCKS = 100; // Default timelock for user payments
 
@@ -142,7 +143,7 @@ export async function peginCli(_argv: string[]): Promise<[string, string]> {
 		userPaymentDetails,
 		fundingUtxo
 	);
-	logger.debug('Spell created:', spell);
+	logger.debug('Spell created: ', spell);
 
 	const fromCosigners: SignatureResponse[] = privateKeys
 		.map(pk => Buffer.from(pk, 'hex'))
@@ -151,14 +152,26 @@ export async function peginCli(_argv: string[]): Promise<[string, string]> {
 			const signatures = signAsCosigner(context, signatureRequest, keypair);
 			return { publicKey: keypair.publicKey.toString('hex'), signatures };
 		});
+	logger.debug('Signature responses from cosigners: ', fromCosigners);
+
+	const filteredSignatures = fromCosigners.map(response => ({
+		...response,
+		signatures: filterValidCosignerSignatures(
+			context,
+			signatureRequest,
+			response.signatures,
+			Buffer.from(response.publicKey, 'hex')
+		),
+	}));
+	logger.debug('Signature responses from cosigners after fiultering: ', filteredSignatures);
 
 	const signedSpell = await injectSignaturesIntoSpell(
 		context,
 		spell,
 		signatureRequest,
-		fromCosigners
+		filteredSignatures
 	);
-	logger.debug('Signed spell:', signedSpell);
+	logger.debug('Signed spell: ', signedSpell);
 
 	if (transmit) {
 		const transmittedTxids = await transmitSpell(context, signedSpell);

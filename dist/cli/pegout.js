@@ -99,8 +99,8 @@ async function pegoutCli(_argv) {
     };
     const feerate = Number.parseFloat(argv['feerate']);
     const { spell, signatureRequest } = await (0, create_pegout_spell_1.createPegoutSpell)(context, feerate, previousNftTxid, newGrailState, userPaymentDetails, fundingUtxo);
-    logger_1.logger.debug('Spell created:', spell);
-    logger_1.logger.debug('Signature request:', signatureRequest);
+    logger_1.logger.debug('Spell created: ', spell);
+    logger_1.logger.debug('Signature request: ', signatureRequest);
     const fromCosigners = privateKeys
         .map(pk => Buffer.from(pk, 'hex'))
         .map(privateKey => {
@@ -108,9 +108,14 @@ async function pegoutCli(_argv) {
         const signatures = (0, spell_operations_1.signAsCosigner)(context, signatureRequest, keypair);
         return { publicKey: keypair.publicKey.toString('hex'), signatures };
     });
-    logger_1.logger.debug('Signing spell with cosigners:', fromCosigners);
-    const signedSpell = await (0, spell_operations_1.injectSignaturesIntoSpell)(context, spell, signatureRequest, fromCosigners);
-    logger_1.logger.debug('Signed spell:', signedSpell);
+    logger_1.logger.debug('Signature responses from cosigners: ', fromCosigners);
+    const filteredSignatures = fromCosigners.map(response => ({
+        ...response,
+        signatures: (0, spell_operations_1.filterValidCosignerSignatures)(context, signatureRequest, response.signatures, Buffer.from(response.publicKey, 'hex')),
+    }));
+    logger_1.logger.debug('Signature responses from cosigners after fiultering: ', filteredSignatures);
+    const signedSpell = await (0, spell_operations_1.injectSignaturesIntoSpell)(context, spell, signatureRequest, filteredSignatures);
+    logger_1.logger.debug('Signed spell: ', signedSpell);
     if (transmit) {
         return await (0, spell_operations_1.transmitSpell)(context, signedSpell);
     }

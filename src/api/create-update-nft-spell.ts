@@ -26,7 +26,7 @@ export async function createUpdateNftSpell(
 	}
 
 	const previousSpellData = await showSpell(context, previousNftTxid);
-	logger.debug('Previous NFT spell:', previousSpellData);
+	logger.debug('Previous NFT spell: ', previousSpellData);
 	if (!previousSpellData) {
 		throw new Error('Invalid previous NFT spell data');
 	}

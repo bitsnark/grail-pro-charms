@@ -42,7 +42,7 @@ export class Context implements IContext {
 
 		if (!obj.appId) throw new Error('App ID is required');
 		thus.appId = obj.appId;
-		logger.info('App ID:', thus.appId);
+		logger.info('App ID: ', thus.appId);
 
 		thus.network = obj.network || 'regtest';
 		thus.mockProof = obj.mockProof || false;
@@ -55,7 +55,7 @@ export class Context implements IContext {
 		} else {
 			thus.appVk = obj.appVk;
 		}
-		logger.info('App Verification Key:', thus.appVk);
+		logger.info('App Verification Key: ', thus.appVk);
 
 		if (!obj.ticker) throw new Error('Ticker is required');
 		thus.ticker = obj.ticker;

@@ -54,7 +54,7 @@ async function createPeginSpell(context, feerate, previousNftTxid, nextGrailStat
     }
     const userPaymentTx = bitcoin.Transaction.fromBuffer(userPaymentTxBytes);
     const userPaymentAmount = userPaymentTx.outs[userPaymentDetails.vout].value;
-    logger_1.logger.debug('User payment transaction amount:', userPaymentAmount);
+    logger_1.logger.debug('User payment transaction amount: ', userPaymentAmount);
     const { spell, signatureRequest } = await (0, create_generalized_spell_1.createGeneralizedSpell)(context, feerate, previousNftTxid, nextGrailState, {
         incomingUserBtc: [userPaymentDetails],
         incomingUserCharms: [],
@@ -67,6 +67,6 @@ async function createPeginSpell(context, feerate, previousNftTxid, nextGrailStat
         ],
         outgoingUserBtc: [],
     }, fundingUtxo);
-    logger_1.logger.debug('Peg-in spell created:', spell);
+    logger_1.logger.debug('Peg-in spell created: ', spell);
     return { spell, signatureRequest };
 }

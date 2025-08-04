@@ -39,13 +39,13 @@ async function showWalletCharmsCli(_argv) {
         ticker: consts_1.TICKER,
     });
     const utxos = await (0, spells_1.findCharmsUtxos)(context, Number.MAX_VALUE);
-    logger_1.logger.debug('Found Charms UTXOs:', utxos);
+    logger_1.logger.debug('Found Charms UTXOs: ', utxos);
     return utxos;
 }
 if (require.main === module) {
     showWalletCharmsCli(process.argv.slice(2))
         .catch(error => {
-        logger_1.logger.error('Error during NFT update:', error);
+        logger_1.logger.error('Error during NFT update: ', error);
     })
         .then(result => process.exit(result ? 0 : 1));
 }

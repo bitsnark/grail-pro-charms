@@ -66,15 +66,15 @@ export async function transmitCli(_argv: string[]): Promise<[string, string]> {
 	if (inputUtxos.length === 0) {
 		throw new Error('No Charms UTXOs found for the specified amount.');
 	}
-	logger.debug('Found Charms UTXOs:', inputUtxos);
+	logger.debug('Found Charms UTXOs: ', inputUtxos);
 
 	const outputAddress =
 		(argv['output-address'] as string) ?? (await bitcoinClient.getAddress());
-	logger.debug('Output address:', outputAddress);
+	logger.debug('Output address: ', outputAddress);
 
 	const changeAddress =
 		(argv['change-address'] as string) ?? (await bitcoinClient.getAddress());
-	logger.debug('Change address:', changeAddress);
+	logger.debug('Change address: ', changeAddress);
 
 	const spell = await createTransmitSpell(
 		context,
@@ -85,7 +85,7 @@ export async function transmitCli(_argv: string[]): Promise<[string, string]> {
 		amount,
 		fundingUtxo
 	);
-	logger.debug('Spell created:', spell);
+	logger.debug('Spell created: ', spell);
 
 	const previousTransactionsMap = await getPreviousTransactions(
 		context,
@@ -99,7 +99,7 @@ export async function transmitCli(_argv: string[]): Promise<[string, string]> {
 		'ALL|ANYONECANPAY'
 	);
 	logger.debug(
-		'Signed spell transaction bytes:',
+		'Signed spell transaction bytes: ',
 		spell.spellTxBytes.toString('hex')
 	);
 

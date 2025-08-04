@@ -46,7 +46,7 @@ export async function createPeginSpell(
 	}
 	const userPaymentTx = bitcoin.Transaction.fromBuffer(userPaymentTxBytes);
 	const userPaymentAmount = userPaymentTx.outs[userPaymentDetails.vout].value;
-	logger.debug('User payment transaction amount:', userPaymentAmount);
+	logger.debug('User payment transaction amount: ', userPaymentAmount);
 
 	const { spell, signatureRequest } = await createGeneralizedSpell(
 		context,
@@ -68,7 +68,7 @@ export async function createPeginSpell(
 		fundingUtxo
 	);
 
-	logger.debug('Peg-in spell created:', spell);
+	logger.debug('Peg-in spell created: ', spell);
 
 	return { spell, signatureRequest };
 }

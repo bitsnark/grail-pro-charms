@@ -63,14 +63,14 @@ async function sendUserPaymentCharms(context, feerate, grailState, amount, chang
     if (charmsUtxos.length === 0) {
         throw new Error('No sufficient Charms UTXOs found for user payment.');
     }
-    logger_1.logger.debug('Found Charms UTXOs:', charmsUtxos);
-    logger_1.logger.debug('Sending charms to user payment address:', userPaymentAddress);
+    logger_1.logger.debug('Found Charms UTXOs: ', charmsUtxos);
+    logger_1.logger.debug('Sending charms to user payment address: ', userPaymentAddress);
     const spell = await (0, create_transmit_spell_1.createTransmitSpell)(context, feerate, charmsUtxos, userPaymentAddress, changeAddress, amount);
     const tx = bitcoin.Transaction.fromHex(spell.spellTxBytes.toString('hex'));
     const prevTxids = tx.ins.map(input => (0, bitcoin_1.hashToTxid)(input.hash));
-    console.log('Previous transaction IDs:', prevTxids);
+    console.log('Previous transaction IDs: ', prevTxids);
     const previousTransactions = await (0, spell_operations_1.getPreviousTransactions)(context, spell.spellTxBytes, spell.commitmentTxBytes);
-    console.log('Previous transactions:', previousTransactions);
+    console.log('Previous transactions: ', previousTransactions);
     spell.spellTxBytes = await context.bitcoinClient.signTransaction(spell.spellTxBytes, previousTransactions);
     const [_, spellTxid] = await (0, spell_operations_1.transmitSpell)(context, spell);
     return {
@@ -84,10 +84,10 @@ async function sendUserPaymentBtc(context, grailState, amount, network) {
         recoveryPublicKey: recoveryKeypair.publicKey.toString('hex'),
         timelockBlocks: pegin_1.TIMELOCK_BLOCKS,
     }, network);
-    logger_1.logger.debug('Sending funds to user payment address:', userPaymentAddress);
+    logger_1.logger.debug('Sending funds to user payment address: ', userPaymentAddress);
     const txid = await context.bitcoinClient.fundAddress(userPaymentAddress, amount);
     logger_1.logger.debug('Funds sent successfully, txid: ', txid);
-    logger_1.logger.debug('Recovery public key:', recoveryKeypair.publicKey.toString('hex'));
+    logger_1.logger.debug('Recovery public key: ', recoveryKeypair.publicKey.toString('hex'));
     return { txid, recoveryPublicKey: recoveryKeypair.publicKey.toString('hex') };
 }
 async function userPaymentCli(_argv) {
@@ -158,11 +158,11 @@ async function userPaymentCli(_argv) {
 if (require.main === module) {
     userPaymentCli(process.argv.slice(2))
         .catch(error => {
-        logger_1.logger.error('Error during NFT update:', error);
+        logger_1.logger.error('Error during NFT update: ', error);
     })
         .then(result => {
         if (result) {
-            logger_1.logger.log('User payment created successfully:', result);
+            logger_1.logger.log('User payment created successfully: ', result);
         }
         else {
             logger_1.logger.error('User payment creation failed.');

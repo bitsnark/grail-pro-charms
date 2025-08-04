@@ -87,8 +87,8 @@ async function main() {
 		newGrailState,
 		fundingUtxo
 	);
-	logger.debug('Spell created:', spell);
-	logger.debug('Signature request:', signatureRequest);
+	logger.debug('Spell created: ', spell);
+	logger.debug('Signature request: ', signatureRequest);
 
 	const fromCosigners: SignatureResponse[] = privateKeys
 		.map(pk => Buffer.from(pk, 'hex'))
@@ -104,7 +104,7 @@ async function main() {
 		signatureRequest,
 		fromCosigners
 	);
-	logger.debug('Signed spell:', signedSpell);
+	logger.debug('Signed spell: ', signedSpell);
 
 	if (transmit) {
 		await transmitSpell(context, signedSpell);
@@ -113,6 +113,6 @@ async function main() {
 
 if (require.main === module) {
 	main().catch(error => {
-		logger.error('Error during NFT update:', error);
+		logger.error('Error during NFT update: ', error);
 	});
 }

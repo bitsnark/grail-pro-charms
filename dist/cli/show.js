@@ -41,11 +41,11 @@ async function main() {
         ticker: 'GRAIL-NFT',
     });
     await viewNft(context, nftTxid).catch(error => {
-        logger_1.logger.error('Error viewing NFT:', error);
+        logger_1.logger.error('Error viewing NFT: ', error);
     });
 }
 if (require.main === module) {
     main().catch(error => {
-        logger_1.logger.error('Error during NFT view:', error);
+        logger_1.logger.error('Error during NFT view: ', error);
     });
 }

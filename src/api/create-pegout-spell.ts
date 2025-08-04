@@ -120,7 +120,7 @@ export async function createPegoutSpell(
 		fundingUtxo
 	);
 
-	logger.debug('Peg-in spell created:', spell);
+	logger.debug('Peg-in spell created: ', spell);
 
 	return { spell, signatureRequest };
 }

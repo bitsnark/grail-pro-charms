@@ -47,12 +47,12 @@ async function main() {
 	});
 
 	await viewNft(context, nftTxid).catch(error => {
-		logger.error('Error viewing NFT:', error);
+		logger.error('Error viewing NFT: ', error);
 	});
 }
 
 if (require.main === module) {
 	main().catch(error => {
-		logger.error('Error during NFT view:', error);
+		logger.error('Error during NFT view: ', error);
 	});
 }

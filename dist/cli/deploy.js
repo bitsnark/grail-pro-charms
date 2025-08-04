@@ -59,7 +59,7 @@ async function deployNft(context, deployerPublicKey, feerate, fundingUtxo, trans
         },
     };
     const spell = await (0, spells_1.createSpell)(context, [], request);
-    logger_1.logger.debug('Spell created:', spell);
+    logger_1.logger.debug('Spell created: ', spell);
     if (transmit) {
         return await (0, spell_operations_1.transmitSpell)(context, spell);
     }
@@ -110,6 +110,6 @@ async function deployNftCli(_argv) {
 if (require.main === module) {
     deployNftCli(process.argv.slice(2))
         .catch(error => {
-        logger_1.logger.error('Error during NFT deployment:', error);
+        logger_1.logger.error('Error during NFT deployment: ', error);
     });
 }

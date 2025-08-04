@@ -43,14 +43,14 @@ export async function showWalletCharmsCli(
 	});
 
 	const utxos = await findCharmsUtxos(context, Number.MAX_VALUE);
-	logger.debug('Found Charms UTXOs:', utxos);
+	logger.debug('Found Charms UTXOs: ', utxos);
 	return utxos;
 }
 
 if (require.main === module) {
 	showWalletCharmsCli(process.argv.slice(2))
 		.catch(error => {
-			logger.error('Error during NFT update:', error);
+			logger.error('Error during NFT update: ', error);
 		})
 		.then(result => process.exit(result ? 0 : 1));
 }

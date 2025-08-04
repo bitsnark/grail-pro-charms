@@ -20,6 +20,7 @@ import {
 	createSpell,
 	resignSpellWithTemporarySecret,
 	signTransactionInput,
+	verifySignatureForTransactionInput,
 } from '../core/spells';
 import { showSpell } from '../core/charms-sdk';
 import { bitcoinjslibNetworks, Network } from '../core/taproot/taproot-common';
@@ -31,7 +32,11 @@ export async function getPreviousGrailState(
 	previousNftTxid: string
 ): Promise<GrailState> {
 	const previousSpellData = await showSpell(context, previousNftTxid);
-	if (!previousSpellData || !previousSpellData.outs || previousSpellData.outs.length === 0) {
+	if (
+		!previousSpellData ||
+		!previousSpellData.outs ||
+		previousSpellData.outs.length === 0
+	) {
 		throw new Error('Invalid previous NFT spell data');
 	}
 	return {
@@ -221,7 +226,7 @@ export async function transmitSpell(
 	);
 
 	const output: [string, string] = [commitmentTxid, spellTxid];
-	logger.info('Spell transmitted successfully:', output);
+	logger.info('Spell transmitted successfully: ', output);
 
 	return output;
 }
@@ -251,8 +256,8 @@ export function signAsCosigner(
 	context: IContext,
 	request: SignatureRequest,
 	keypair: KeyPair
-): CosignerSignatures[] {
-	const sigs: CosignerSignatures[] = request.inputs.map(input => ({
+): CosignerSignatures {
+	const sigs: CosignerSignatures = request.inputs.map(input => ({
 		index: input.index,
 		signature: signTransactionInput(
 			context,
@@ -264,6 +269,38 @@ export function signAsCosigner(
 		),
 	}));
 	return sigs;
+}
+
+export function filterValidCosignerSignatures(
+	context: IContext,
+	request: SignatureRequest,
+	signatures: CosignerSignatures,
+	publicKey: Buffer
+): CosignerSignatures {
+	return signatures
+		.map((tsig: { index: number; signature: Buffer; valid?: boolean }) => {
+			const index = tsig.index;
+			const input = request.inputs.find(input => input.index === index);
+			tsig.valid =
+				input &&
+				verifySignatureForTransactionInput(
+					context,
+					request.transactionBytes,
+					tsig.signature,
+					input.index,
+					input.script,
+					request.previousTransactions,
+					publicKey
+				);
+			if (!tsig.valid) {
+				logger.warn(
+					`Signature for input ${index} is invalid for public key: `,
+					publicKey
+				);
+			}
+			return tsig;
+		})
+		.filter(tsig => tsig.valid) as CosignerSignatures;
 }
 
 export async function findUserPaymentVout(
