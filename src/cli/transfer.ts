@@ -9,12 +9,11 @@ import {
 	getPreviousTransactions,
 	transmitSpell,
 } from '../api/spell-operations';
-import { bufferReplacer } from '../core/json';
 import { DEFAULT_FEERATE, TICKER, ZKAPP_BIN } from './consts';
-import { createTransmitSpell } from '../api/create-transmit-spell';
+import { createTransferSpell } from '../api/create-transfer-spell';
 import { findCharmsUtxos } from '../core/spells';
 
-export async function transmitCli(_argv: string[]): Promise<[string, string]> {
+export async function transferCli(_argv: string[]): Promise<[string, string]> {
 	dotenv.config({ path: ['.env.test', '.env.local', '.env'] });
 
 	const argv = minimist(_argv, {
@@ -76,7 +75,7 @@ export async function transmitCli(_argv: string[]): Promise<[string, string]> {
 		(argv['change-address'] as string) ?? (await bitcoinClient.getAddress());
 	logger.debug('Change address: ', changeAddress);
 
-	const spell = await createTransmitSpell(
+	const spell = await createTransferSpell(
 		context,
 		feerate,
 		inputUtxos,
@@ -105,16 +104,13 @@ export async function transmitCli(_argv: string[]): Promise<[string, string]> {
 
 	if (transmit) {
 		const transmittedTxids = await transmitSpell(context, spell);
-		// if (network === 'regtest') {
-		// 	await context.bitcoinClient.generateBlocks(transmittedTxids);
-		// }
 		return transmittedTxids;
 	}
 	return ['', ''];
 }
 
 if (require.main === module) {
-	transmitCli(process.argv.slice(2)).catch(error => {
+	transferCli(process.argv.slice(2)).catch(error => {
 		logger.error(error);
 	});
 }

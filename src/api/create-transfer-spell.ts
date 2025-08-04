@@ -1,11 +1,10 @@
 import { logger } from '../core/logger';
 import { BitcoinClient } from '../core/bitcoin';
-import { Spell, TokenUtxo, TransmitRequest, Utxo } from '../core/types';
+import { Spell, TokenUtxo, TransferRequest, Utxo } from '../core/types';
 import { IContext } from '../core/i-context';
 import { createSpell } from '../core/spells';
-import { bufferReplacer } from '../core/json';
 
-export async function createTransmitSpell(
+export async function createTransferSpell(
 	context: IContext,
 	feerate: number,
 	inputUtxos: TokenUtxo[],
@@ -28,7 +27,7 @@ export async function createTransmitSpell(
 
 	const fundingChangeAddress = await context.bitcoinClient.getAddress();
 
-	const request: TransmitRequest = {
+	const request: TransferRequest = {
 		appId: context.appId,
 		appVk: context.appVk,
 		inputUtxos,
@@ -46,7 +45,7 @@ export async function createTransmitSpell(
 					$00: `t/${this.appId}/${this.appVk}`,
 				},
 				public_inputs: {
-					$00: { action: 'transmit' },
+					$00: { action: 'transfer' },
 				},
 				ins: [
 					...this.inputUtxos.map(utxo => ({

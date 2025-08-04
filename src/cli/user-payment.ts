@@ -11,7 +11,7 @@ import { IContext } from '../core/i-context';
 import { Context } from '../core/context';
 import { parse } from '../core/env-parser';
 import { DEFAULT_FEERATE, ZKAPP_BIN } from './consts';
-import { createTransmitSpell } from '../api/create-transmit-spell';
+import { createTransferSpell } from '../api/create-transfer-spell';
 import { getPreviousTransactions, transmitSpell } from '../api/spell-operations';
 import { GrailState } from '../core/types';
 import { hashToTxid } from '../core/bitcoin';
@@ -42,7 +42,7 @@ export async function sendUserPaymentCharms(
 	logger.debug('Found Charms UTXOs: ', charmsUtxos);
 
 	logger.debug('Sending charms to user payment address: ', userPaymentAddress);
-	const spell = await createTransmitSpell(
+	const spell = await createTransferSpell(
 		context,
 		feerate,
 		charmsUtxos,
