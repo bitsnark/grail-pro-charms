@@ -50,7 +50,7 @@ const spells_1 = require("../core/spells");
 const context_1 = require("../core/context");
 const env_parser_1 = require("../core/env-parser");
 const consts_1 = require("./consts");
-const create_transmit_spell_1 = require("../api/create-transmit-spell");
+const create_transfer_spell_1 = require("../api/create-transfer-spell");
 const spell_operations_1 = require("../api/spell-operations");
 const bitcoin_1 = require("../core/bitcoin");
 async function sendUserPaymentCharms(context, feerate, grailState, amount, changeAddress, network) {
@@ -65,7 +65,7 @@ async function sendUserPaymentCharms(context, feerate, grailState, amount, chang
     }
     logger_1.logger.debug('Found Charms UTXOs: ', charmsUtxos);
     logger_1.logger.debug('Sending charms to user payment address: ', userPaymentAddress);
-    const spell = await (0, create_transmit_spell_1.createTransmitSpell)(context, feerate, charmsUtxos, userPaymentAddress, changeAddress, amount);
+    const spell = await (0, create_transfer_spell_1.createTransferSpell)(context, feerate, charmsUtxos, userPaymentAddress, changeAddress, amount);
     const tx = bitcoin.Transaction.fromHex(spell.spellTxBytes.toString('hex'));
     const prevTxids = tx.ins.map(input => (0, bitcoin_1.hashToTxid)(input.hash));
     console.log('Previous transaction IDs: ', prevTxids);
@@ -94,10 +94,11 @@ async function userPaymentCli(_argv) {
     dotenv_1.default.config({ path: ['.env.test', '.env.local', '.env'] });
     const argv = (0, minimist_1.default)(_argv, {
         alias: {},
-        boolean: ['mock-proof'],
+        boolean: ['mock-proof', 'skip-proof'],
         default: {
             network: 'regtest',
             'mock-proof': false,
+            'skip-proof': false,
             feerate: consts_1.DEFAULT_FEERATE,
         },
         '--': true,
@@ -143,6 +144,7 @@ async function userPaymentCli(_argv) {
         zkAppBin: consts_1.ZKAPP_BIN,
         network,
         mockProof: !!argv['mock-proof'],
+        skipProof: !!argv['skip-proof'],
         ticker: 'GRAIL-NFT',
     });
     if (type == 'charms') {

@@ -14,6 +14,7 @@ export interface IContext {
 	network: Network;
 
 	mockProof?: boolean;
+	skipProof?: boolean;
 
 	temporarySecret: Buffer;
 

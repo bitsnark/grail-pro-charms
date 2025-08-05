@@ -22,12 +22,13 @@ async function peginCli(_argv) {
     const argv = (0, minimist_1.default)(_argv, {
         alias: {},
         string: ['new-public-keys', 'private-keys'],
-        boolean: ['transmit', 'mock-proof'],
+        boolean: ['transmit', 'mock-proof', 'skip-proof'],
         default: {
             network: 'regtest',
             feerate: consts_1.DEFAULT_FEERATE,
             transmit: true,
             'mock-proof': false,
+            'skip-proof': false,
             'user-payment-vout': 0,
         },
         '--': true,
@@ -47,6 +48,7 @@ async function peginCli(_argv) {
         zkAppBin: './zkapp/target/charms-app',
         network,
         mockProof: !!argv['mock-proof'],
+        skipProof: !!argv['skip-proof'],
         ticker: 'GRAIL-NFT',
     });
     if (!argv['new-public-keys']) {

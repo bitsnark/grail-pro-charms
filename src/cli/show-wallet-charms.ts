@@ -7,6 +7,7 @@ import { Context } from '../core/context';
 import { parse } from '../core/env-parser';
 import { TICKER, ZKAPP_BIN } from './consts';
 import { findCharmsUtxos } from '../core/spells';
+import { skip } from 'node:test';
 
 export async function showWalletCharmsCli(
 	_argv: string[]
@@ -15,11 +16,12 @@ export async function showWalletCharmsCli(
 
 	const argv = minimist(_argv, {
 		alias: {},
-		boolean: ['mock-proof'],
+		boolean: ['mock-proof', 'skip-proof'],
 		default: {
 			network: 'regtest',
 			amount: 666666,
 			'mock-proof': false,
+			'skip-proof': false,
 		},
 		'--': true,
 	});
@@ -39,6 +41,7 @@ export async function showWalletCharmsCli(
 		zkAppBin: ZKAPP_BIN,
 		network: network,
 		mockProof: !!argv['mock-proof'],
+		skipProof: !!argv['skip-proof'],
 		ticker: TICKER,
 	});
 

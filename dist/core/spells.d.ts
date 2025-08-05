@@ -13,7 +13,4 @@ export declare function resignSpellWithTemporarySecret(context: IContext, spellT
     [txid: string]: Buffer;
 }, temporarySecret: Buffer): Promise<Buffer>;
 export declare function createSpell(context: IContext, previousTxids: string[], request: CharmerRequest): Promise<Spell>;
-export declare function getTokenInfoForUtxo(context: IContext, utxo: Utxo): Promise<{
-    amount: number;
-}>;
 export declare function findCharmsUtxos(context: IContext, minTotal: number, utxos?: Utxo[]): Promise<TokenUtxo[]>;

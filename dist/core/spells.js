@@ -39,7 +39,6 @@ exports.signTransactionInput = signTransactionInput;
 exports.verifySignatureForTransactionInput = verifySignatureForTransactionInput;
 exports.resignSpellWithTemporarySecret = resignSpellWithTemporarySecret;
 exports.createSpell = createSpell;
-exports.getTokenInfoForUtxo = getTokenInfoForUtxo;
 exports.findCharmsUtxos = findCharmsUtxos;
 const logger_1 = require("./logger");
 const bitcoin = __importStar(require("bitcoinjs-lib"));
@@ -82,8 +81,7 @@ async function getCharmsAmountFromUtxo(context, utxo) {
     if (!appKey) {
         throw new Error(`No app key found for token ${tokenId}`);
     }
-    const amount = spellData.outs[utxo.vout]?.charms[appKey]?.amount ?? 0;
-    return amount;
+    return Number(spellData.outs[utxo.vout]?.charms[appKey] ?? 0);
 }
 function signTransactionInput(context, txBytes, inputIndex, script, previousTxBytesMap, keypair) {
     // Load the transaction to sign
@@ -180,21 +178,6 @@ async function createSpell(context, previousTxids, request) {
         spellTxBytes: output.spellTxBytes,
     };
 }
-async function getTokenInfoForUtxo(context, utxo) {
-    const spell = await (0, charms_sdk_2.showSpell)(context, utxo.txid);
-    if (!spell || !spell.apps) {
-        throw new Error(`No token info found for transaction ${utxo.txid}`);
-    }
-    const tokenId = `t/${context.appId}/${context.appVk}`;
-    const appKey = Object.keys(spell.apps).find(key => spell.apps[key] === tokenId);
-    if (!appKey) {
-        throw new Error(`No app key found for token ${tokenId}`);
-    }
-    const outs = spell.outs
-        .map((out, index) => ({ index, ...out.charms[appKey] }))
-        .filter(Boolean);
-    return (0, array_utils_1.arrayFromArrayWithIndex)(outs)[utxo.vout];
-}
 async function findCharmsUtxos(context, minTotal, utxos) {
     let total = 0;
     if (!utxos) {
@@ -207,12 +190,12 @@ async function findCharmsUtxos(context, minTotal, utxos) {
         logger_1.logger.debug('Checking UTXO: ', utxo);
         if (total >= minTotal)
             return { ...utxo, amount: 0 };
-        const info = await getTokenInfoForUtxo(context, utxo).catch(_ => { });
-        if (!info?.amount)
+        const amount = (await getCharmsAmountFromUtxo(context, utxo).catch(_ => { })) ?? 0;
+        if (amount <= 0)
             return { ...utxo, amount: 0 };
-        logger_1.logger.info('Charms UTXO found: ', utxo, info);
-        total += info.amount;
-        return { ...utxo, amount: info.amount };
+        logger_1.logger.info('Charms UTXO found: ', utxo, amount);
+        total += amount;
+        return { ...utxo, amount: amount };
     })).filter(t => t.amount > 0);
     return charmsUtxos;
 }

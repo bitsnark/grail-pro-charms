@@ -42,7 +42,8 @@ async function main() {
 		charmsBin: parse.string('CHARMS_BIN'),
 		zkAppBin: './zkapp/target/charms-app',
 		network: argv['network'] as Network,
-		mockProof: argv['mock-proof'],
+		mockProof: !!argv['mock-proof'],
+		skipProof: !!argv['skip-proof'],
 		ticker: 'GRAIL-NFT',
 	});
 

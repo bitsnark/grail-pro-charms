@@ -2,15 +2,15 @@ import { generateRandomKeypair } from '../src/cli/generate-random-keypairs';
 import { deployNftCli } from '../src/cli/deploy';
 import { peginCli } from '../src/cli/pegin';
 import { userPaymentCli } from '../src/cli/user-payment';
-import { transmitCli } from '../src/cli/transmit';
-import { generateBlocks } from './bitcoin-utils';
 import { DEBUG_LEVELS, logger } from '../src/core/logger';
+import { generateBlocks } from './bitcoin-utils';
+import { transferCli } from '../src/cli/transfer';
 
 jest.setTimeout(600000000);
 logger.setLoggerOptions(DEBUG_LEVELS.ALL, true, true); // Set debug level to ALL, print date and level
 
-describe('peg-in and transmit e2e test', () => {
-	it('should deploy, then peg-in, then transmit successfully', async () => {
+describe('peg-in and transfer e2e test', () => {
+	it('should deploy, then peg-in, then transfer successfully', async () => {
 		const deployerKaypair = generateRandomKeypair();
 		const deployerPublicKey = deployerKaypair.publicKey.toString('hex');
 		const deployerPrivateKey = deployerKaypair.privateKey.toString('hex');
@@ -33,6 +33,8 @@ describe('peg-in and transmit e2e test', () => {
 			'true',
 			'--ticker',
 			'TESTNFT',
+			'--skip-proof',
+			'true',
 		]);
 		expect(deployResult).toBeTruthy();
 		logger.log('Deployment Result:', deployResult);
@@ -94,6 +96,8 @@ describe('peg-in and transmit e2e test', () => {
 			'true',
 			'--ticker',
 			'TESTNFT',
+			'--skip-proof',
+			'true',
 		]);
 		expect(peginResult).toBeTruthy();
 		logger.log('Pegin Result:', peginResult);
@@ -102,11 +106,11 @@ describe('peg-in and transmit e2e test', () => {
 
 		await generateBlocks(1);
 
-		logger.log('*** Transmit ***');
+		logger.log('*** transfer ***');
 
 		const transmitAmount = 666666;
 
-		const transmitResult = await transmitCli([
+		const transferResult = await transferCli([
 			'--app-id',
 			deployResult.appId,
 			'--app-vk',
@@ -121,8 +125,10 @@ describe('peg-in and transmit e2e test', () => {
 			'true',
 			'--amount',
 			transmitAmount.toString(),
+			'--skip-proof',
+			'false'
 		]);
-		expect(transmitResult).toBeTruthy();
-		logger.log('Transmit Result:', transmitResult);
+		expect(transferResult).toBeTruthy();
+		logger.log('Transfer Result:', transferResult);
 	});
 });

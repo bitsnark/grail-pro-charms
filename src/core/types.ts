@@ -47,7 +47,7 @@ export interface UpdateRequest extends NftRequest {
 	previousGrailState: GrailState;
 }
 
-export interface TransmitRequest extends CharmerRequest {
+export interface TransferRequest extends CharmerRequest {
 	inputUtxos: TokenUtxo[];
 	outputAddress: string;
 	changeAddress: string;
