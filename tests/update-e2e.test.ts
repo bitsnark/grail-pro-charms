@@ -30,7 +30,6 @@ const COSIGNER_3 = {
 describe('update e2e test', () => {
   let deploymentResult: any;
 
-
   beforeEach(async () => {
     const deployerPublicKey = COSIGNER_0.publicKey;
 
@@ -52,9 +51,9 @@ describe('update e2e test', () => {
     console.log('Deployment Result:', deploymentResult);
   });
 
-  describe('update the deployment NFT 2 cosigners', () => {
+  describe('should allow cosigner rotation with 2 cosigners', () => {
 
-    it('should update the deployment NFT with cosigners: [1,2] - threshold: 1 - signing with deployer', async () => {
+    it('deployer signs: deployment → [1,2] t:1', async () => {
       const newCosigners = [COSIGNER_1, COSIGNER_2];
       const newThreshold = 1;
       const signers = [COSIGNER_0];
@@ -65,7 +64,7 @@ describe('update e2e test', () => {
       expect(updateResult.spellTxid).toBeDefined();
     });
 
-    it('should update the NFT co[1,2], t:1  with cosigners: [2,3] - threshold: 1 - signing with cosigner: [1]', async () => {
+    it('cosigner1 signs: [1,2] t:1 → [2,3] t:1', async () => {
 
       await mintBlock();
 
@@ -85,7 +84,9 @@ describe('update e2e test', () => {
       expect(result.spellTxid).toBeDefined();
     });
 
-    xit('should update the NFT co[1,2], t:1  with cosigners: [2,3] - threshold: 1 - signing with cosigner: [2]', async () => {
+    it('cosigner2 signs: [1,2] t:1 → [2,3] t:1', async () => {
+      await mintBlock();
+
       // update from deployment to [1,2]
       const fromCosigners = [COSIGNER_1, COSIGNER_2];
       const fromThreshold = 1;
@@ -103,7 +104,7 @@ describe('update e2e test', () => {
     });
 
 
-    xit('should update the NFT co[1,2], t:2  with cosigners: [2,3] - threshold: 1 - signing with cosigner: [1,2]', async () => {
+    it('cosigners [1,2] sign: [1,2] t:2 → [2,3] t:1', async () => {
       await mintBlock();
 
       // update from deployment to [1,2]
@@ -124,9 +125,9 @@ describe('update e2e test', () => {
 
   });
 
-  xdescribe(' update the deployment NFT 3 cosigners with threshold 1', () => {
+  describe('should allow cosigner rotation with 3 cosigners', () => {
 
-    it('should update the deployment NFT with cosigners: [1,2,3] - threshold: 3 - signing with deployer', async () => {
+    it('deployer signs: deployment → [1,2,3] t:3', async () => {
       await mintBlock();
 
       // update from deployment to [1,2,3]
@@ -139,7 +140,7 @@ describe('update e2e test', () => {
       expect(result.spellTxid).toBeDefined();
     });
 
-    it('should update the NFT co[1,2,3], t:3  with cosigners: [2,3] - threshold: 1 - signing with cosigner: [1,2,3]', async () => {
+    it('cosigner1 signs: [1,2,3] t:3 → [2,3] t:1', async () => {
       await mintBlock();
 
       // update from deployment to [1,2,3]
@@ -148,10 +149,10 @@ describe('update e2e test', () => {
       const deployer = [COSIGNER_0];
       const updateResult = await update(deploymentResult, deployer, fromCosigners, fromThreshold);
 
-      // update from [1,2,3] to [2,3] signing with cosigner: [1,2,3]
+      // update from [1,2,3] to [2,3] signing with cosigner: [1]
       const newCosigners = [COSIGNER_2, COSIGNER_3];
       const newThreshold = 1;
-      const signers = [COSIGNER_1, COSIGNER_2, COSIGNER_3];
+      const signers = [COSIGNER_1];
       const result = await update(updateResult, signers, newCosigners, newThreshold);
 
       expect(result).toBeTruthy();
@@ -159,6 +160,8 @@ describe('update e2e test', () => {
     });
 
   });
+
+  // HELPER FUNCTIONS
 
   async function update(prevResult: any, signers: any[], newCosigners: any[], newThreshold: number) {
     return await updateNftWithTempFile(
