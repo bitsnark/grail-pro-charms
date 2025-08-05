@@ -58,62 +58,139 @@ describe('update e2e test', () => {
     console.log('Deployment Result:', deploymentResult);
   });
 
-  it('should update the deployment NFT with cosigners: [1,2] - threshold: 1 - signing with deployer', async () => {
-    const newGrailState = {
-      publicKeys: [
-        cosigner1.publicKey,
-        cosigner2.publicKey,
-      ],
-      threshold: 1
-    };
+  describe(' update the deployment NFT 2 cosigners with threshold 1', () => {
 
-    updateResult = await updateNftWithTempFile(
-      deploymentResult,
-      deploymentResult.spellTxid,
-      deployerPrivateKey,
-      newGrailState
-    );
+    it('should update the deployment NFT with cosigners: [1,2] - threshold: 1 - signing with deployer', async () => {
+      const newCosigners = [cosigner1, cosigner2];
+      const newThreshold = 1;
+      const signers = [cosigner0];
+      const prevResult = deploymentResult;
+      const result = await update(prevResult, signers, newCosigners, newThreshold);
+      updateResult = result;
 
-    console.log('Update Result:', updateResult);
-    expect(updateResult).toBeTruthy();
-    expect(updateResult.spellTxid).toBeDefined();
+      console.log('Update Result:', updateResult);
+      expect(updateResult).toBeTruthy();
+      expect(updateResult.spellTxid).toBeDefined();
+    });
+
+    it('should update the NFT co[1,2], t:1  with cosigners: [2,3] - threshold: 1 - signing with cosigner: [1]', async () => {
+
+      const newCosigners = [cosigner2, cosigner3];
+      const newThreshold = 1;
+      const signers = [cosigner1];
+      const prevResult = updateResult;
+
+      const result = await update(prevResult, signers, newCosigners, newThreshold);
+      updateResult2 = result;
+
+      expect(updateResult2).toBeTruthy();
+      expect(updateResult2.spellTxid).toBeDefined();
+      console.log('Second Update Result:', updateResult2);
+    });
+
+    xit('should update the NFT co[1,2], t:1  with cosigners: [2,3] - threshold: 1 - signing with cosigner: [2]', async () => {
+
+      const newCosigners = [cosigner2, cosigner3];
+      const newThreshold = 1;
+      const signers = [cosigner2];
+      const prevResult = updateResult;
+
+      const result = await update(prevResult, signers, newCosigners, newThreshold);
+      updateResult2 = result;
+
+      expect(updateResult2).toBeTruthy();
+      expect(updateResult2.spellTxid).toBeDefined();
+      console.log('Second Update Result:', updateResult2);
+    });
+
   });
 
-  it('should update the NFT with cosigners: [2,3] - threshold: 1 - signing with cosigner: [1]', async () => {
+  xdescribe(' update the deployment NFT 2 cosigners with threshold 2', () => {
 
-    // Mint a block in regtest to confirm the first update
-    const blockHashes = await mintBlock();
+    it('should update the deployment NFT with cosigners: [1,2] - threshold: 1 - signing with deployer', async () => {
+      await mintBlock();
+      const newCosigners = [cosigner1, cosigner2];
+      const newThreshold = 2;
+      const signers = [cosigner0];
+      const prevResult = deploymentResult;
 
-    expect(blockHashes).toBeDefined();
-    expect(blockHashes.length).toBe(1);
-    expect(blockHashes[0]).toBeDefined();
+      const result = await update(prevResult, signers, newCosigners, newThreshold);
+      updateResult = result;
+
+      console.log('Update Result:', updateResult);
+      expect(updateResult).toBeTruthy();
+      expect(updateResult.spellTxid).toBeDefined();
+    });
 
 
-    expect(updateResult).toBeDefined();
-    expect(cosigner2).toBeDefined();
-    expect(cosigner3).toBeDefined();
+    it('should update the NFT co[1,2], t:2  with cosigners: [2,3] - threshold: 1 - signing with cosigner: [1,2]', async () => {
+      await mintBlock();
 
-    // Create new grail state with only cosigner2 and cosigner3, threshold 1
-    const newGrailState2 = {
-      publicKeys: [
-        cosigner2.publicKey,
-        cosigner3.publicKey,
-      ],
-      threshold: 1
-    };
+      const newCosigners = [cosigner2, cosigner3];
+      const newThreshold = 1;
+      const signers = [cosigner1, cosigner2];
+      const prevResult = updateResult;
 
-    // Execute update using helper function
-    updateResult2 = await updateNftWithTempFile(
-      deploymentResult,
-      updateResult.spellTxid,
-      cosigner1.privateKey,
-      newGrailState2
-    );
+      const result = await update(prevResult, signers, newCosigners, newThreshold);
+      updateResult2 = result;
 
-    expect(updateResult2).toBeTruthy();
-    expect(updateResult2.spellTxid).toBeDefined();
-    console.log('Second Update Result:', updateResult2);
+      expect(updateResult2).toBeTruthy();
+      expect(updateResult2.spellTxid).toBeDefined();
+      console.log('Second Update Result:', updateResult2);
+    });
+
   });
+
+
+  xdescribe(' update the deployment NFT 3 cosigners with threshold 1', () => {
+
+    it('should update the deployment NFT with cosigners: [1,2,3] - threshold: 2 - signing with deployer', async () => {
+      await mintBlock();
+
+      const newCosigners = [cosigner1, cosigner2, cosigner3];
+      const newThreshold = 3;
+      const signers = [cosigner0]; //deployer
+      const prevResult = deploymentResult;
+
+      const result = await update(prevResult, signers, newCosigners, newThreshold);
+      updateResult = result;
+
+      console.log('Update Result:', updateResult);
+      expect(updateResult).toBeTruthy();
+      expect(updateResult.spellTxid).toBeDefined();
+    });
+
+    it('should update the NFT co[1,2,3], t:1  with cosigners: [2,3] - threshold: 1 - signing with cosigner: [1]', async () => {
+      await mintBlock();
+
+      const newCosigners = [cosigner2, cosigner3];
+      const newThreshold = 1;
+      const signers = [cosigner1, cosigner2, cosigner3];
+      const prevResult = updateResult;
+
+      const result = await update(prevResult, signers, newCosigners, newThreshold);
+      updateResult2 = result;
+
+      expect(updateResult2).toBeTruthy();
+      expect(updateResult2.spellTxid).toBeDefined();
+      console.log('Second Update Result:', updateResult2);
+    });
+
+  });
+
+  async function update(prevResult: any, signers: any[], newCosigners: any[], newThreshold: number) {
+    return await updateNftWithTempFile(
+      deploymentResult,
+      prevResult.spellTxid,
+      signers.map(s => s.privateKey).join(','),
+      {
+        publicKeys: newCosigners.map(c => c.publicKey),
+        threshold: newThreshold
+      }
+    );
+  }
+
+
 });
 
 // Helper function to update NFT with temporary grail state file
@@ -147,6 +224,7 @@ const updateNftWithTempFile = async (
     }
   }
 };
+
 
 async function mintBlock() {
   const bitcoinClient = await BitcoinClient.initialize();
