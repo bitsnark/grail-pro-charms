@@ -222,9 +222,7 @@ async function createGeneralizedSpell(context, feerate, previousNftTxid, nextGra
                             $00: {
                                 type: 'user_charms',
                             },
-                            $01: {
-                                amount: outgoing.amount,
-                            },
+                            $01: outgoing.amount
                         },
                     })),
                     this.generalizedInfo.outgoingGrailBtc.amount > 0

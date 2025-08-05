@@ -27,12 +27,13 @@ export async function peginCli(_argv: string[]): Promise<[string, string]> {
 	const argv = minimist(_argv, {
 		alias: {},
 		string: ['new-public-keys', 'private-keys'],
-		boolean: ['transmit', 'mock-proof'],
+		boolean: ['transmit', 'mock-proof', 'skip-proof'],
 		default: {
 			network: 'regtest',
 			feerate: DEFAULT_FEERATE,
 			transmit: true,
 			'mock-proof': false,
+			'skip-proof': false,
 			'user-payment-vout': 0,
 		},
 		'--': true,
@@ -56,6 +57,7 @@ export async function peginCli(_argv: string[]): Promise<[string, string]> {
 		zkAppBin: './zkapp/target/charms-app',
 		network,
 		mockProof: !!argv['mock-proof'],
+		skipProof: !!argv['skip-proof'],
 		ticker: 'GRAIL-NFT',
 	});
 

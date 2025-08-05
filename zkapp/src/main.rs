@@ -5,7 +5,7 @@ use std::collections::HashMap;
 use charms_sdk::data::{check, App, Data, Transaction, NFT, TOKEN};
 
 use crate::nft::{nft_deploy_satisfied, nft_update_satisfied};
-use crate::token::{token_mint_satisfied, token_transmit_satisfied};
+use crate::token::{token_mint_satisfied, token_transfer_satisfied};
 
 pub mod common;
 pub mod nft;
@@ -38,7 +38,7 @@ pub fn app_contract(app: &App, tx: &Transaction, pub_in: &Data, priv_in: &Data) 
                 check!(crate::token_mint_satisfied(app, tx));
             }
             "transfer" => {
-                check!(crate::token_transmit_satisfied(app, tx));
+                check!(crate::token_transfer_satisfied(app, tx));
             }
             _ => {
                 unreachable!("Unsupported action: {}", action);

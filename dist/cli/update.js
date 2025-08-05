@@ -18,12 +18,13 @@ async function main() {
     dotenv_1.default.config({ path: ['.env.test', '.env.local', '.env'] });
     const argv = (0, minimist_1.default)(process.argv.slice(2), {
         alias: {},
-        boolean: ['transmit', 'mock-proof'],
+        boolean: ['transmit', 'mock-proof', 'skip-proof'],
         default: {
             network: 'regtest',
             feerate: consts_1.DEFAULT_FEERATE,
             transmit: true,
             'mock-proof': false,
+            'skip-proof': false,
         },
         '--': true,
     });
@@ -41,7 +42,8 @@ async function main() {
         charmsBin: env_parser_1.parse.string('CHARMS_BIN'),
         zkAppBin: './zkapp/target/charms-app',
         network: argv['network'],
-        mockProof: argv['mock-proof'],
+        mockProof: !!argv['mock-proof'],
+        skipProof: !!argv['skip-proof'],
         ticker: 'GRAIL-NFT',
     });
     const previousNftTxid = argv['previous-nft-txid'];

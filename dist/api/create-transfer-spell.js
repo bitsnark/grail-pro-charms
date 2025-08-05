@@ -10,6 +10,9 @@ async function createTransferSpell(context, feerate, inputUtxos, outputAddress, 
         fundingUtxo = await bitcoinClient.getFundingUtxo();
     }
     const inputTotal = inputUtxos.reduce((sum, utxo) => sum + utxo.amount, 0);
+    if (inputUtxos.length == 0 || inputTotal <= 0) {
+        throw new Error('No input UTXOs provided or all amounts are zero.');
+    }
     const changeAmount = inputTotal - amount;
     if (changeAmount < 0) {
         throw new Error('Insufficient input UTXOs for the specified amount.');
@@ -38,24 +41,18 @@ async function createTransferSpell(context, feerate, inputUtxos, outputAddress, 
                 ins: [
                     ...this.inputUtxos.map(utxo => ({
                         utxo_id: `${utxo.txid}:${utxo.vout}`,
-                        charms: {
-                            $00: utxo.amount,
-                        },
+                        charms: { $00: utxo.amount - 1 },
                     })),
                 ],
                 outs: [
                     {
                         address: this.outputAddress,
-                        charms: {
-                            $00: this.amount,
-                        },
+                        charms: { $00: this.amount },
                     },
                     this.changeAmount > 0
                         ? {
                             address: this.changeAddress,
-                            charms: {
-                                $00: this.changeAmount,
-                            },
+                            charms: { $00: this.changeAmount },
                         }
                         : null,
                 ].filter(Boolean),

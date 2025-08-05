@@ -282,9 +282,7 @@ export async function createGeneralizedSpell(
 							$00: {
 								type: 'user_charms',
 							},
-							$01: {
-								amount: outgoing.amount,
-							},
+							$01: outgoing.amount
 						},
 					})),
 					this.generalizedInfo.outgoingGrailBtc!.amount > 0

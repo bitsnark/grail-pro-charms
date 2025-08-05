@@ -230,27 +230,6 @@ export async function createSpell(
 	};
 }
 
-export async function getTokenInfoForUtxo(
-	context: IContext,
-	utxo: Utxo
-): Promise<{ amount: number }> {
-	const spell = await showSpell(context, utxo.txid);
-	if (!spell || !spell.apps) {
-		throw new Error(`No token info found for transaction ${utxo.txid}`);
-	}
-	const tokenId = `t/${context.appId}/${context.appVk}`;
-	const appKey = Object.keys(spell.apps).find(
-		key => spell.apps[key] === tokenId
-	);
-	if (!appKey) {
-		throw new Error(`No app key found for token ${tokenId}`);
-	}
-	const outs = (spell.outs as { amount: number }[])
-		.map((out: any, index: number) => ({ index, ...out.charms[appKey] }))
-		.filter(Boolean);
-	return arrayFromArrayWithIndex(outs)[utxo.vout];
-}
-
 export async function findCharmsUtxos(
 	context: IContext,
 	minTotal: number,
@@ -267,11 +246,12 @@ export async function findCharmsUtxos(
 		await mapAsync(utxos, async utxo => {
 			logger.debug('Checking UTXO: ', utxo);
 			if (total >= minTotal) return { ...utxo, amount: 0 };
-			const info = await getTokenInfoForUtxo(context, utxo).catch(_ => {});
-			if (!info?.amount) return { ...utxo, amount: 0 };
-			logger.info('Charms UTXO found: ', utxo, info);
-			total += info.amount;
-			return { ...utxo, amount: info.amount };
+			const amount =
+				(await getCharmsAmountFromUtxo(context, utxo).catch(_ => {})) ?? 0;
+			if (amount <= 0) return { ...utxo, amount: 0 };
+			logger.info('Charms UTXO found: ', utxo, amount);
+			total += amount;
+			return { ...utxo, amount: amount };
 		})
 	).filter(t => t.amount > 0);
 	return charmsUtxos;

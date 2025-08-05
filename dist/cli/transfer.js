@@ -18,12 +18,13 @@ async function transferCli(_argv) {
     dotenv_1.default.config({ path: ['.env.test', '.env.local', '.env'] });
     const argv = (0, minimist_1.default)(_argv, {
         alias: {},
-        boolean: ['transmit', 'mock-proof'],
+        boolean: ['transmit', 'mock-proof', 'skip-proof'],
         default: {
             network: 'regtest',
             feerate: consts_1.DEFAULT_FEERATE,
             transmit: true,
             'mock-proof': false,
+            'skip-proof': false,
         },
         '--': true,
     });
@@ -41,7 +42,8 @@ async function transferCli(_argv) {
         charmsBin: env_parser_1.parse.string('CHARMS_BIN'),
         zkAppBin: consts_1.ZKAPP_BIN,
         network: network,
-        mockProof: argv['mock-proof'],
+        mockProof: !!argv['mock-proof'],
+        skipProof: !!argv['skip-proof'],
         ticker: consts_1.TICKER,
     });
     const transmit = !!argv['transmit'];

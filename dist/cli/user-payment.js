@@ -94,10 +94,11 @@ async function userPaymentCli(_argv) {
     dotenv_1.default.config({ path: ['.env.test', '.env.local', '.env'] });
     const argv = (0, minimist_1.default)(_argv, {
         alias: {},
-        boolean: ['mock-proof'],
+        boolean: ['mock-proof', 'skip-proof'],
         default: {
             network: 'regtest',
             'mock-proof': false,
+            'skip-proof': false,
             feerate: consts_1.DEFAULT_FEERATE,
         },
         '--': true,
@@ -143,6 +144,7 @@ async function userPaymentCli(_argv) {
         zkAppBin: consts_1.ZKAPP_BIN,
         network,
         mockProof: !!argv['mock-proof'],
+        skipProof: !!argv['skip-proof'],
         ticker: 'GRAIL-NFT',
     });
     if (type == 'charms') {

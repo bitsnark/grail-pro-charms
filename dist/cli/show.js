@@ -37,7 +37,8 @@ async function main() {
         charmsBin: env_parser_1.parse.string('CHARMS_BIN'),
         zkAppBin: './zkapp/target/charms-app',
         network: argv['network'],
-        mockProof: argv['mock-proof'],
+        mockProof: !!argv['mock-proof'],
+        skipProof: !!argv['skip-proof'],
         ticker: 'GRAIL-NFT',
     });
     await viewNft(context, nftTxid).catch(error => {

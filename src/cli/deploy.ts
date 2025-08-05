@@ -85,12 +85,13 @@ export async function deployNftCli(
 
 	const argv = minimist(_argv, {
 		alias: {},
-		boolean: ['transmit', 'mock-proof'],
+		boolean: ['transmit', 'mock-proof', 'skip-proof'],
 		default: {
 			network: 'regtest',
 			feerate: DEFAULT_FEERATE,
 			transmit: true,
 			'mock-proof': false,
+			'skip-proof': false,
 		},
 		'--': true,
 	});
@@ -120,6 +121,7 @@ export async function deployNftCli(
 			zkAppBin: ZKAPP_BIN,
 			network: network,
 			mockProof: !!argv['mock-proof'],
+			skipProof: !!argv['skip-proof'],
 			ticker: TICKER,
 		},
 		fundingUtxo

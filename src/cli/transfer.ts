@@ -18,12 +18,13 @@ export async function transferCli(_argv: string[]): Promise<[string, string]> {
 
 	const argv = minimist(_argv, {
 		alias: {},
-		boolean: ['transmit', 'mock-proof'],
+		boolean: ['transmit', 'mock-proof', 'skip-proof'],
 		default: {
 			network: 'regtest',
 			feerate: DEFAULT_FEERATE,
 			transmit: true,
 			'mock-proof': false,
+			'skip-proof': false,
 		},
 		'--': true,
 	});
@@ -45,7 +46,8 @@ export async function transferCli(_argv: string[]): Promise<[string, string]> {
 		charmsBin: parse.string('CHARMS_BIN'),
 		zkAppBin: ZKAPP_BIN,
 		network: network,
-		mockProof: argv['mock-proof'],
+		mockProof: !!argv['mock-proof'],
+		skipProof: !!argv['skip-proof'],
 		ticker: TICKER,
 	});
 
