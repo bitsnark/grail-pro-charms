@@ -41,7 +41,7 @@ async function createTransferSpell(context, feerate, inputUtxos, outputAddress, 
                 ins: [
                     ...this.inputUtxos.map(utxo => ({
                         utxo_id: `${utxo.txid}:${utxo.vout}`,
-                        charms: { $00: utxo.amount - 1 },
+                        charms: { $00: utxo.amount },
                     })),
                 ],
                 outs: [
