@@ -147,7 +147,12 @@ async function injectSignaturesIntoSpell(context, spell, signatureRequest, fromC
         spell.spellTxBytes = injectGrailSignaturesIntoTxInput(spell.spellTxBytes, index, signatures);
     }
     const commitmentTxid = (0, bitcoin_1.txBytesToTxid)(spell.commitmentTxBytes);
-    spell.spellTxBytes = await (0, spells_1.resignSpellWithTemporarySecret)(context, spell.spellTxBytes, { [commitmentTxid]: spell.commitmentTxBytes }, context.temporarySecret);
+    // spell.spellTxBytes = await resignSpellWithTemporarySecret(
+    // 	context,
+    // 	spell.spellTxBytes,
+    // 	{ [commitmentTxid]: spell.commitmentTxBytes },
+    // 	context.temporarySecret
+    // );
     return spell;
 }
 async function transmitSpell(context, transactions) {
