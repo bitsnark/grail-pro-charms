@@ -170,7 +170,7 @@ export async function injectSignaturesIntoSpell(
 				Buffer.from([])
 		).reverse();
 
-		signaturesByIndex[input.index] = signaturesOrdered
+		signaturesByIndex[input.index] = signaturesOrdered;
 	}
 
 	for (let index = 0; index < signaturesByIndex.length; index++) {
