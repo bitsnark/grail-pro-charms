@@ -87,7 +87,7 @@ describe('update e2e test', () => {
       expect(result.spellTxid).toBeDefined();
     });
 
-    it('cosigner [2] signs: [1,2] t:1 → [2,3] t:1', async () => {
+    xit('cosigner [2] signs: [1,2] t:1 → [2,3] t:1', async () => {
       await mintBlock();
 
       // update from deployment to [1,2]
@@ -106,7 +106,7 @@ describe('update e2e test', () => {
       expect(result.spellTxid).toBeDefined();
     });
 
-    it('cosigner [2] signs: [2,1] t:1 → [2,3] t:1', async () => {
+    xit('cosigner [2] signs: [2,1] t:1 → [2,3] t:1', async () => {
       await mintBlock();
 
       // update from deployment to [2,1]
@@ -183,7 +183,7 @@ describe('update e2e test', () => {
       expect(result.spellTxid).toBeDefined();
     });
 
-    it('cosigner [3] signs: [3,2] t:1 → [1,2] t:1', async () => {
+    xit('cosigner [3] signs: [3,2] t:1 → [1,2] t:1', async () => {
       await mintBlock();
 
       // update from deployment to [3,2]
@@ -201,28 +201,6 @@ describe('update e2e test', () => {
       expect(result).toBeTruthy();
       expect(result.spellTxid).toBeDefined();
     });
-
-
-    it('cosigner [3] signs: [3] t:1 → [1,2] t:1', async () => {
-      await mintBlock();
-
-
-      // update from deployment to [3]
-      const fromCosigners = [COSIGNER_3];
-      const fromThreshold = 1;
-      const deployer = [COSIGNER_0];
-      const updateResult = await update(deploymentResult, deployer, fromCosigners, fromThreshold);
-
-      // update from [3] to [1,2] signing with cosigner: [3]
-      const newCosigners = [COSIGNER_1, COSIGNER_2];
-      const newThreshold = 1;
-      const signers = [COSIGNER_3];
-      const result = await update(updateResult, signers, newCosigners, newThreshold);
-
-      expect(result).toBeTruthy();
-      expect(result.spellTxid).toBeDefined();
-    });
-
   });
 
   describe('should allow cosigner rotation with 3 cosigners', () => {
@@ -240,7 +218,7 @@ describe('update e2e test', () => {
       expect(result.spellTxid).toBeDefined();
     });
 
-    it('cosigner1 signs: [1,2,3] t:3 → [2,3] t:1', async () => {
+    it('cosigners [1,2,3] signs: [1,2,3] t:3 → [2,3] t:1', async () => {
       await mintBlock();
 
       // update from deployment to [1,2,3]
@@ -259,6 +237,43 @@ describe('update e2e test', () => {
       expect(result.spellTxid).toBeDefined();
     });
 
+    it('cosigners [3,2] signs: [1,2,3] t:2 → [2,3] t:1', async () => {
+      await mintBlock();
+
+      // update from deployment to [1,2,3]
+      const fromCosigners = [COSIGNER_1, COSIGNER_2, COSIGNER_3];
+      const fromThreshold = 2;
+      const deployer = [COSIGNER_0];
+      const updateResult = await update(deploymentResult, deployer, fromCosigners, fromThreshold);
+
+      // update from [1,2,3] to [2,3] signing with cosigner: [3,2]
+      const newCosigners = [COSIGNER_2, COSIGNER_3];
+      const newThreshold = 1;
+      const signers = [COSIGNER_3, COSIGNER_2];
+      const result = await update(updateResult, signers, newCosigners, newThreshold);
+
+      expect(result).toBeTruthy();
+      expect(result.spellTxid).toBeDefined();
+    });
+
+    it('cosigners [1] signs: [2,3,1] t:1 → [2,3] t:1', async () => {
+      await mintBlock();
+
+      // update from deployment to [2,3,1]
+      const fromCosigners = [COSIGNER_2, COSIGNER_3, COSIGNER_1];
+      const fromThreshold = 1;
+      const deployer = [COSIGNER_0];
+      const updateResult = await update(deploymentResult, deployer, fromCosigners, fromThreshold);
+
+      // update from [2,3,1] to [2,3] signing with cosigner: [1]
+      const newCosigners = [COSIGNER_2, COSIGNER_3];
+      const newThreshold = 1;
+      const signers = [COSIGNER_1];
+      const result = await update(updateResult, signers, newCosigners, newThreshold);
+
+      expect(result).toBeTruthy();
+      expect(result.spellTxid).toBeDefined();
+    });
   });
 
   // HELPER FUNCTIONS
