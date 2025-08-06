@@ -187,12 +187,12 @@ export async function injectSignaturesIntoSpell(
 
 	const commitmentTxid = txBytesToTxid(spell.commitmentTxBytes);
 
-	spell.spellTxBytes = await resignSpellWithTemporarySecret(
-		context,
-		spell.spellTxBytes,
-		{ [commitmentTxid]: spell.commitmentTxBytes },
-		context.temporarySecret
-	);
+	// spell.spellTxBytes = await resignSpellWithTemporarySecret(
+	// 	context,
+	// 	spell.spellTxBytes,
+	// 	{ [commitmentTxid]: spell.commitmentTxBytes },
+	// 	context.temporarySecret
+	// );
 
 	return spell;
 }
@@ -405,7 +405,9 @@ export async function getUserWalletAddressFromUserPaymentUtxo(
 		})
 		.filter(Boolean)[0];
 	if (!address) {
-		throw new Error('No valid address found, script: ' + script.toString('hex'));
+		throw new Error(
+			'No valid address found, script: ' + script.toString('hex')
+		);
 	}
 	return address;
 }
