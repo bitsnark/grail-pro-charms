@@ -15,11 +15,12 @@ async function showWalletCharmsCli(_argv) {
     dotenv_1.default.config({ path: ['.env.test', '.env.local', '.env'] });
     const argv = (0, minimist_1.default)(_argv, {
         alias: {},
-        boolean: ['mock-proof'],
+        boolean: ['mock-proof', 'skip-proof'],
         default: {
             network: 'regtest',
             amount: 666666,
             'mock-proof': false,
+            'skip-proof': false,
         },
         '--': true,
     });
@@ -36,6 +37,7 @@ async function showWalletCharmsCli(_argv) {
         zkAppBin: consts_1.ZKAPP_BIN,
         network: network,
         mockProof: !!argv['mock-proof'],
+        skipProof: !!argv['skip-proof'],
         ticker: consts_1.TICKER,
     });
     const utxos = await (0, spells_1.findCharmsUtxos)(context, Number.MAX_VALUE);

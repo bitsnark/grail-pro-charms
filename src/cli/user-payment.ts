@@ -11,10 +11,11 @@ import { IContext } from '../core/i-context';
 import { Context } from '../core/context';
 import { parse } from '../core/env-parser';
 import { DEFAULT_FEERATE, ZKAPP_BIN } from './consts';
-import { createTransmitSpell } from '../api/create-transmit-spell';
+import { createTransferSpell } from '../api/create-transfer-spell';
 import { getPreviousTransactions, transmitSpell } from '../api/spell-operations';
 import { GrailState } from '../core/types';
 import { hashToTxid } from '../core/bitcoin';
+import { skip } from 'node:test';
 
 export async function sendUserPaymentCharms(
 	context: IContext,
@@ -42,7 +43,7 @@ export async function sendUserPaymentCharms(
 	logger.debug('Found Charms UTXOs: ', charmsUtxos);
 
 	logger.debug('Sending charms to user payment address: ', userPaymentAddress);
-	const spell = await createTransmitSpell(
+	const spell = await createTransferSpell(
 		context,
 		feerate,
 		charmsUtxos,
@@ -108,10 +109,11 @@ export async function userPaymentCli(
 
 	const argv = minimist(_argv, {
 		alias: {},
-		boolean: ['mock-proof'],
+		boolean: ['mock-proof', 'skip-proof'],
 		default: {
 			network: 'regtest',
 			'mock-proof': false,
+			'skip-proof': false,
 			feerate: DEFAULT_FEERATE,
 		},
 		'--': true,
@@ -168,6 +170,7 @@ export async function userPaymentCli(
 		zkAppBin: ZKAPP_BIN,
 		network,
 		mockProof: !!argv['mock-proof'],
+		skipProof: !!argv['skip-proof'],
 		ticker: 'GRAIL-NFT',
 	});
 

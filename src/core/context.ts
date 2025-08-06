@@ -26,6 +26,7 @@ export class Context implements IContext {
 
 	network!: Network;
 	mockProof!: boolean;
+	skipProof!: boolean;
 	temporarySecret!: Buffer<ArrayBufferLike>;
 
 	bitcoinClient!: BitcoinClient;
@@ -47,6 +48,7 @@ export class Context implements IContext {
 
 		thus.network = obj.network || 'regtest';
 		thus.mockProof = obj.mockProof || false;
+		thus.skipProof = obj.skipProof || false;
 
 		const charmsSecret = process.env.CHARMS_SECRET ? Buffer.from(process.env.CHARMS_SECRET, 'hex') : randomBytes(32);
 		thus.temporarySecret = charmsSecret;

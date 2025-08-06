@@ -9,6 +9,7 @@ export interface IContext {
     ticker: string;
     network: Network;
     mockProof?: boolean;
+    skipProof?: boolean;
     temporarySecret: Buffer;
     bitcoinClient: BitcoinClient;
     core?: Client;

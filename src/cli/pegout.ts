@@ -26,12 +26,13 @@ export async function pegoutCli(_argv: string[]): Promise<[string, string]> {
 	const argv = minimist(_argv, {
 		alias: {},
 		string: ['new-public-keys', 'private-keys'],
-		boolean: ['transmit', 'mock-proof'],
+		boolean: ['transmit', 'mock-proof', 'skip-proof'],
 		default: {
 			network: 'regtest',
 			feerate: DEFAULT_FEERATE,
 			transmit: true,
 			'mock-proof': false,
+			'skip-proof': false,
 		},
 		'--': true,
 	});
@@ -56,7 +57,8 @@ export async function pegoutCli(_argv: string[]): Promise<[string, string]> {
 		charmsBin: parse.string('CHARMS_BIN'),
 		zkAppBin: './zkapp/target/charms-app',
 		network: argv['network'] as Network,
-		mockProof: argv['mock-proof'],
+		mockProof: !!argv['mock-proof'],
+		skipProof: !!argv['skip-proof'],
 		ticker: 'GRAIL-NFT',
 	});
 

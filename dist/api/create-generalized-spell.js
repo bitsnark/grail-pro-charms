@@ -145,6 +145,7 @@ async function createGeneralizedSpell(context, feerate, previousNftTxid, nextGra
         publicKeys: previousPublicKeys,
         threshold: previousThreshold,
     };
+    const charmsAmounts = await (0, array_utils_1.mapAsync)(generalizedInfo.incomingUserCharms, async (utxo) => await (0, spells_1.getCharmsAmountFromUtxo)(context, utxo));
     const request = {
         appId: context.appId,
         appVk: context.appVk,
@@ -185,8 +186,11 @@ async function createGeneralizedSpell(context, feerate, previousNftTxid, nextGra
                     ...this.generalizedInfo.incomingUserBtc.map(payment => ({
                         utxo_id: `${payment.txid}:${payment.vout}`,
                     })),
-                    ...this.generalizedInfo.incomingUserCharms.map(utxo => ({
+                    ...this.generalizedInfo.incomingUserCharms.map((utxo, index) => ({
                         utxo_id: `${utxo.txid}:${utxo.vout}`,
+                        charms: {
+                            $01: charmsAmounts[index],
+                        },
                     })),
                     ...this.generalizedInfo.incomingGrailBtc.map(utxo => ({
                         utxo_id: `${utxo.txid}:${utxo.vout}`,
@@ -218,9 +222,7 @@ async function createGeneralizedSpell(context, feerate, previousNftTxid, nextGra
                             $00: {
                                 type: 'user_charms',
                             },
-                            $01: {
-                                amount: outgoing.amount,
-                            },
+                            $01: outgoing.amount
                         },
                     })),
                     this.generalizedInfo.outgoingGrailBtc.amount > 0

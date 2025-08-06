@@ -20,6 +20,7 @@ function executeCommand(
 				pwd ? `cd ${pwd}` : '',
 				'export RUST_BACKTRACE=full',
 				`export USE_MOCK_PROOF=${context.mockProof ? 'true' : 'false'}`,
+				`export SKIP_PROOF=${context.skipProof ? 'true' : 'false'}`,
 				command.filter(Boolean).join(' '),
 			]
 				.filter(Boolean)

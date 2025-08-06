@@ -29,6 +29,7 @@ class Context {
         logger_1.logger.info('App ID: ', thus.appId);
         thus.network = obj.network || 'regtest';
         thus.mockProof = obj.mockProof || false;
+        thus.skipProof = obj.skipProof || false;
         const charmsSecret = process.env.CHARMS_SECRET ? Buffer.from(process.env.CHARMS_SECRET, 'hex') : (0, node_crypto_1.randomBytes)(32);
         thus.temporarySecret = charmsSecret;
         if (!obj.appVk) {

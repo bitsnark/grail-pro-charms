@@ -10,6 +10,7 @@ export declare class Context implements IContext {
     ticker: string;
     network: Network;
     mockProof: boolean;
+    skipProof: boolean;
     temporarySecret: Buffer<ArrayBufferLike>;
     bitcoinClient: BitcoinClient;
     private constructor();

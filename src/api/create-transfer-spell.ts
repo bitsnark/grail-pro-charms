@@ -1,16 +1,10 @@
 import { logger } from '../core/logger';
 import { BitcoinClient } from '../core/bitcoin';
-import {
-	Spell,
-	TokenUtxo,
-	TransmitRequest,
-	Utxo,
-} from '../core/types';
+import { Spell, TokenUtxo, TransferRequest, Utxo } from '../core/types';
 import { IContext } from '../core/i-context';
 import { createSpell } from '../core/spells';
-import { bufferReplacer } from '../core/json';
 
-export async function createTransmitSpell(
+export async function createTransferSpell(
 	context: IContext,
 	feerate: number,
 	inputUtxos: TokenUtxo[],
@@ -26,14 +20,18 @@ export async function createTransmitSpell(
 	}
 
 	const inputTotal = inputUtxos.reduce((sum, utxo) => sum + utxo.amount, 0);
+	if (inputUtxos.length == 0 || inputTotal <= 0) {
+		throw new Error('No input UTXOs provided or all amounts are zero.');
+	}
+
 	const changeAmount = inputTotal - amount;
 	if (changeAmount < 0) {
 		throw new Error('Insufficient input UTXOs for the specified amount.');
 	}
 
-  const fundingChangeAddress = await context.bitcoinClient.getAddress();
+	const fundingChangeAddress = await context.bitcoinClient.getAddress();
 
-	const request: TransmitRequest = {
+	const request: TransferRequest = {
 		appId: context.appId,
 		appVk: context.appVk,
 		inputUtxos,
@@ -51,35 +49,23 @@ export async function createTransmitSpell(
 					$00: `t/${this.appId}/${this.appVk}`,
 				},
 				public_inputs: {
-					$00: { action: 'transmit' },
+					$00: { action: 'transfer' },
 				},
 				ins: [
 					...this.inputUtxos.map(utxo => ({
 						utxo_id: `${utxo.txid}:${utxo.vout}`,
-						charms: {
-							$00: {
-								amount: utxo.amount,
-							},
-						},
+						charms: { $00: utxo.amount },
 					})),
 				],
 				outs: [
 					{
 						address: this.outputAddress,
-						charms: {
-							$00: {
-								amount: this.amount,
-							},
-						},
+						charms: { $00: this.amount },
 					},
 					this.changeAmount > 0
 						? {
 								address: this.changeAddress,
-								charms: {
-									$00: {
-										amount: this.changeAmount,
-									},
-								},
+								charms: { $00: this.changeAmount },
 							}
 						: null,
 				].filter(Boolean),
@@ -89,10 +75,7 @@ export async function createTransmitSpell(
 
 	const previousTxids = inputUtxos.map(utxo => utxo.txid);
 	const spell = await createSpell(context, previousTxids, request);
-	logger.debug(
-		'Transmit spell created:',
-		spell
-	);
+	logger.debug('Transmit spell created:', spell);
 
 	return spell;
 }

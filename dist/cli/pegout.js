@@ -20,12 +20,13 @@ async function pegoutCli(_argv) {
     const argv = (0, minimist_1.default)(_argv, {
         alias: {},
         string: ['new-public-keys', 'private-keys'],
-        boolean: ['transmit', 'mock-proof'],
+        boolean: ['transmit', 'mock-proof', 'skip-proof'],
         default: {
             network: 'regtest',
             feerate: consts_1.DEFAULT_FEERATE,
             transmit: true,
             'mock-proof': false,
+            'skip-proof': false,
         },
         '--': true,
     });
@@ -46,7 +47,8 @@ async function pegoutCli(_argv) {
         charmsBin: env_parser_1.parse.string('CHARMS_BIN'),
         zkAppBin: './zkapp/target/charms-app',
         network: argv['network'],
-        mockProof: argv['mock-proof'],
+        mockProof: !!argv['mock-proof'],
+        skipProof: !!argv['skip-proof'],
         ticker: 'GRAIL-NFT',
     });
     if (!argv['new-public-keys']) {

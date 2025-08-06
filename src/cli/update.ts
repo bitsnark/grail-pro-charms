@@ -22,12 +22,13 @@ async function main() {
 
 	const argv = minimist(process.argv.slice(2), {
 		alias: {},
-		boolean: ['transmit', 'mock-proof'],
+		boolean: ['transmit', 'mock-proof', 'skip-proof'],
 		default: {
 			network: 'regtest',
 			feerate: DEFAULT_FEERATE,
 			transmit: true,
 			'mock-proof': false,
+			'skip-proof': false,
 		},
 		'--': true,
 	});
@@ -48,7 +49,8 @@ async function main() {
 		charmsBin: parse.string('CHARMS_BIN'),
 		zkAppBin: './zkapp/target/charms-app',
 		network: argv['network'] as Network,
-		mockProof: argv['mock-proof'],
+		mockProof: !!argv['mock-proof'],
+		skipProof: !!argv['skip-proof'],
 		ticker: 'GRAIL-NFT',
 	});
 
