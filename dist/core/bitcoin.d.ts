@@ -21,6 +21,7 @@ export declare class ExtendedClient {
     listUnspent(minconf: number, maxconf: number, addresses: string[]): Promise<any[]>;
     getNewAddress(): Promise<string>;
     loadWallet(name: string): Promise<any>;
+    unloadWallet(name: string): Promise<any>;
     sendToAddress(toAddress: string, amountBtc: number): Promise<string>;
     getTxOut(txid: string, vout: number, includeMempool?: boolean): Promise<any>;
     generateToAddress(blocks: number, address: string): Promise<string[]>;

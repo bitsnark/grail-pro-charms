@@ -8,9 +8,10 @@
         "build": "tsc --project . --outDir ./dist --declaration --pretty",
         "clean-js": "find ./src -type f -name \"*.js\" -delete",
         "test": "jest --detectOpenHandles --testPathIgnorePatterns=e2e",
-        "test:e2e": "jest --detectOpenHandles --runInBand tests/simple-e2e.test.ts",
-        "test:e2e:update": "jest --detectOpenHandles --runInBand tests/update-e2e.test.ts",
-        "test:e2e:deploy": "jest --detectOpenHandles --runInBand tests/deploy-e2e.test.ts"
+        "test:cli": "jest --detectOpenHandles --runInBand tests/cli/",
+        "test:cli:deploy": "jest --detectOpenHandles --runInBand tests/cli/deploy-e2e.test.ts",
+        "test:cli:update": "jest --detectOpenHandles --runInBand tests/cli/update-e2e.test.ts",
+        "test:cli:simple": "jest --detectOpenHandles --runInBand tests/cli/simple-e2e.test.ts"
     },
     "devDependencies": {
         "@jest/globals": "29.7.0",

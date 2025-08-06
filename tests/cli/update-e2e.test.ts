@@ -1,8 +1,8 @@
 import fs from 'fs';
 import path from 'path';
-import { deployNftCli } from "../src/cli/deploy";
-import { updateNftCli } from "../src/cli/update";
-import { BitcoinClient } from "../src/core/bitcoin";
+import { deployNftCli } from "../../src/cli/deploy";
+import { updateNftCli } from "../../src/cli/update";
+import { BitcoinClient } from "../../src/core/bitcoin";
 
 jest.setTimeout(1200000);
 

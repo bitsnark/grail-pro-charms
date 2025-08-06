@@ -1,6 +1,6 @@
-import { generateRandomKeypair } from "../src/cli/generate-random-keypairs";
-import { deployNftCli } from "../src/cli/deploy";
-import { BitcoinClient } from "../src/core/bitcoin";
+import { generateRandomKeypair } from "../../src/cli/generate-random-keypairs";
+import { deployNftCli } from "../../src/cli/deploy";
+import { BitcoinClient } from "../../src/core/bitcoin";
 
 jest.setTimeout(1200000);
 
