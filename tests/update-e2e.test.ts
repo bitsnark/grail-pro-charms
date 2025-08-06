@@ -52,12 +52,11 @@ describe('update e2e test', () => {
     expect(deploymentResult.appId).toBeDefined();
     expect(deploymentResult.appVk).toBeDefined();
     expect(deploymentResult.spellTxid).toBeDefined();
-    console.log('Deployment Result:', deploymentResult);
   });
 
   describe('should allow cosigner rotation with 2 cosigners', () => {
 
-    xit('deployer signs: deployment → [1,2] t:1', async () => {
+    it('deployer signs: deployment → [1,2] t:1', async () => {
       const newCosigners = [COSIGNER_1, COSIGNER_2];
       const newThreshold = 1;
       const signers = [COSIGNER_0];
@@ -68,7 +67,7 @@ describe('update e2e test', () => {
       expect(updateResult.spellTxid).toBeDefined();
     });
 
-    xit('cosigner1 signs: [1,2] t:1 → [2,3] t:1', async () => {
+    it('cosigner [1] signs: [1,2] t:1 → [2,3] t:1', async () => {
 
       await mintBlock();
 
@@ -88,7 +87,7 @@ describe('update e2e test', () => {
       expect(result.spellTxid).toBeDefined();
     });
 
-    xit('cosigner2 signs: [1,2] t:1 → [2,3] t:1', async () => {
+    it('cosigner [2] signs: [1,2] t:1 → [2,3] t:1', async () => {
       await mintBlock();
 
       // update from deployment to [1,2]
@@ -107,7 +106,7 @@ describe('update e2e test', () => {
       expect(result.spellTxid).toBeDefined();
     });
 
-    xit('cosigner [2] signs: [2,1] t:1 → [2,3] t:1', async () => {
+    it('cosigner [2] signs: [2,1] t:1 → [2,3] t:1', async () => {
       await mintBlock();
 
       // update from deployment to [2,1]
@@ -146,7 +145,7 @@ describe('update e2e test', () => {
     });
 
 
-    xit('cosigners [1,2] sign: [1,2] t:2 → [2,3] t:1', async () => {
+    it('cosigners [1,2] sign: [1,2] t:2 → [2,3] t:1', async () => {
       await mintBlock();
 
       // update from deployment to [1,2]
@@ -165,7 +164,7 @@ describe('update e2e test', () => {
       expect(result.spellTxid).toBeDefined();
     });
 
-    xit('cosigner [3] signs: [2,3] t:1 → [1,2] t:1', async () => {
+    it('cosigner [3] signs: [2,3] t:1 → [1,2] t:1', async () => {
       await mintBlock();
 
       // update from deployment to [2,3]
@@ -184,7 +183,7 @@ describe('update e2e test', () => {
       expect(result.spellTxid).toBeDefined();
     });
 
-    xit('cosigner [3] signs: [3,2] t:1 → [1,2] t:1', async () => {
+    it('cosigner [3] signs: [3,2] t:1 → [1,2] t:1', async () => {
       await mintBlock();
 
       // update from deployment to [3,2]
@@ -204,7 +203,7 @@ describe('update e2e test', () => {
     });
 
 
-    xit('cosigner [3] signs: [3] t:1 → [1,2] t:1', async () => {
+    it('cosigner [3] signs: [3] t:1 → [1,2] t:1', async () => {
       await mintBlock();
 
 
@@ -226,7 +225,7 @@ describe('update e2e test', () => {
 
   });
 
-  xdescribe('should allow cosigner rotation with 3 cosigners', () => {
+  describe('should allow cosigner rotation with 3 cosigners', () => {
 
     it('deployer signs: deployment → [1,2,3] t:3', async () => {
       await mintBlock();

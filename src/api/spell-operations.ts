@@ -164,13 +164,13 @@ export async function injectSignaturesIntoSpell(
 		labeledSignatures.length = input.state.threshold;
 
 		// Now we need to sort them and insert 0 where missing
-		const signaturesOrdered = input.state.publicKeys.map(
+		const signaturesOrdered = input.state.publicKeys.sort().map(
 			(pk: string) =>
 				labeledSignatures.find(lsig => lsig.publicKey === pk)?.signature ||
 				Buffer.from([])
-		);
+		).reverse();
 
-		signaturesByIndex[input.index] = signaturesOrdered;
+		signaturesByIndex[input.index] = signaturesOrdered
 	}
 
 	for (let index = 0; index < signaturesByIndex.length; index++) {
@@ -238,8 +238,8 @@ export async function getPreviousTransactions(
 ): Promise<PreviousTransactions> {
 	const result: PreviousTransactions = commitmentTxBytes
 		? {
-				[txBytesToTxid(commitmentTxBytes)]: commitmentTxBytes,
-			}
+			[txBytesToTxid(commitmentTxBytes)]: commitmentTxBytes,
+		}
 		: {};
 	const tx = bitcoin.Transaction.fromBuffer(spellTxBytes);
 	for (const input of tx.ins) {
