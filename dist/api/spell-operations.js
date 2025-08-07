@@ -135,8 +135,8 @@ async function injectSignaturesIntoSpell(context, spell, signatureRequest, fromC
         // We only need enough for the threshold
         labeledSignatures.length = input.state.threshold;
         // Now we need to sort them and insert 0 where missing
-        const signaturesOrdered = input.state.publicKeys.map((pk) => labeledSignatures.find(lsig => lsig.publicKey === pk)?.signature ||
-            Buffer.from([]));
+        const signaturesOrdered = input.state.publicKeys.sort().map((pk) => labeledSignatures.find(lsig => lsig.publicKey === pk)?.signature ||
+            Buffer.from([])).reverse();
         signaturesByIndex[input.index] = signaturesOrdered;
     }
     for (let index = 0; index < signaturesByIndex.length; index++) {

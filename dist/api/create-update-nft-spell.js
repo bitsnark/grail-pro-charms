@@ -3,7 +3,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.createUpdateNftSpell = createUpdateNftSpell;
 const logger_1 = require("../core/logger");
 const bitcoin_1 = require("../core/bitcoin");
-const types_1 = require("../core/types");
 const charms_sdk_1 = require("../core/charms-sdk");
 const create_generalized_spell_1 = require("./create-generalized-spell");
 async function createUpdateNftSpell(context, feerate, previousNftTxid, grailState, fundingUtxo) {
@@ -16,5 +15,13 @@ async function createUpdateNftSpell(context, feerate, previousNftTxid, grailStat
     if (!previousSpellData) {
         throw new Error('Invalid previous NFT spell data');
     }
-    return await (0, create_generalized_spell_1.createGeneralizedSpell)(context, feerate, previousNftTxid, grailState, types_1.generalizeInfoBlank, fundingUtxo);
+    // Create a fresh copy of generalizeInfoBlank to avoid mutation issues
+    const freshGeneralizedInfo = {
+        incomingUserBtc: [],
+        incomingGrailBtc: [],
+        incomingUserCharms: [],
+        outgoingUserBtc: [],
+        outgoingUserCharms: [],
+    };
+    return await (0, create_generalized_spell_1.createGeneralizedSpell)(context, feerate, previousNftTxid, grailState, freshGeneralizedInfo, fundingUtxo);
 }

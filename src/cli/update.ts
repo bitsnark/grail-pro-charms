@@ -17,10 +17,12 @@ import { getNewGrailStateFromArgv } from './utils';
 import { SignatureResponse } from '../core/types';
 import { DEFAULT_FEERATE } from './consts';
 
-async function main() {
+export async function updateNftCli(
+	_argv: string[]
+): Promise<{ spellTxid: string }> {
 	dotenv.config({ path: ['.env.test', '.env.local', '.env'] });
 
-	const argv = minimist(process.argv.slice(2), {
+	const argv = minimist(_argv, {
 		alias: {},
 		boolean: ['transmit', 'mock-proof', 'skip-proof'],
 		default: {
@@ -38,8 +40,7 @@ async function main() {
 
 	const appId = argv['app-id'] as string;
 	if (!appId) {
-		logger.error('--app-id is required');
-		return;
+		throw new Error('--app-id is required');
 	}
 	const appVk = argv['app-vk'] as string;
 
@@ -56,30 +57,26 @@ async function main() {
 
 	const previousNftTxid = argv['previous-nft-txid'] as string;
 	if (!previousNftTxid) {
-		logger.error('--previous-nft-txid is required');
-		return;
+		throw new Error('--previous-nft-txid is required');
 	}
 
 	const transmit = !!argv['transmit'];
 
 	if (!argv['private-keys']) {
-		logger.error('--private-keys is required');
-		return;
+		throw new Error('--private-keys is required');
 	}
 	const privateKeys = (argv['private-keys'] as string)
 		.split(',')
 		.map(s => s.trim().replace('0x', ''));
 
 	if (!argv['feerate']) {
-		logger.error('--feerate is required: ', argv);
-		return;
+		throw new Error('--feerate is required');
 	}
 	const feerate = Number.parseFloat(argv['feerate']);
 
 	const newGrailState = getNewGrailStateFromArgv(argv);
 	if (!newGrailState) {
-		logger.error('Invalid new grail state');
-		return;
+		throw new Error('Invalid new grail state');
 	}
 
 	const { spell, signatureRequest } = await createUpdateNftSpell(
@@ -109,7 +106,20 @@ async function main() {
 	logger.debug('Signed spell: ', signedSpell);
 
 	if (transmit) {
-		await transmitSpell(context, signedSpell);
+		const [_, spellTxid] = await transmitSpell(context, signedSpell);
+		return { spellTxid };
+	}
+	return { spellTxid: '' };
+}
+
+async function main() {
+	try {
+		const result = await updateNftCli(process.argv.slice(2));
+		console.log('NFT update completed successfully:', result);
+		process.exit(0);
+	} catch (error) {
+		console.error('Error during NFT update:', error);
+		process.exit(1);
 	}
 }
 
