@@ -1,10 +1,12 @@
 import Client from 'bitcoin-core';
 import { PreviousTransactions, Utxo } from './types';
+import { Network } from './taproot/taproot-common';
 export declare const DUST_LIMIT = 546;
 export declare function txidToHash(txid: string): Buffer;
 export declare function hashToTxid(hash: Buffer): string;
 export declare function txBytesToTxid(txBytes: Buffer): string;
 export declare function txHexToTxid(txHex: string): string;
+export declare function getAddressFromScript(script: Buffer, network: Network): string;
 export declare class ExtendedClient {
     client: Client;
     constructor(client: Client);

@@ -34,7 +34,7 @@ export interface CharmerRequest {
 
 export interface NftRequest extends CharmerRequest {
 	// NFT chain
-	ticker: String;
+	ticker: string;
 	previousUtxo?: Utxo;
 	nextNftAddress: string;
 	currentNftState: { publicKeysAsString: string; threshold: number };

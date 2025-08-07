@@ -2,6 +2,10 @@ import { logger } from './logger';
 import Client from 'bitcoin-core';
 import { PreviousTransactions, Utxo } from './types';
 import * as bitcoin from 'bitcoinjs-lib';
+import * as ecc from 'tiny-secp256k1';
+import { bitcoinjslibNetworks, Network } from './taproot/taproot-common';
+
+bitcoin.initEccLib(ecc);
 
 export const DUST_LIMIT = 546;
 
@@ -21,6 +25,33 @@ export function txBytesToTxid(txBytes: Buffer): string {
 export function txHexToTxid(txHex: string): string {
 	const txBytes = Buffer.from(txHex, 'hex');
 	return txBytesToTxid(txBytes);
+}
+
+export function getAddressFromScript(script: Buffer, network: Network): string {
+	const address = [
+		bitcoin.payments.p2ms,
+		bitcoin.payments.p2pk,
+		bitcoin.payments.p2pkh,
+		bitcoin.payments.p2sh,
+		bitcoin.payments.p2wpkh,
+		bitcoin.payments.p2wsh,
+		bitcoin.payments.p2tr,
+	]
+		.map(payment => {
+			try {
+				return payment({
+					output: script,
+					network: bitcoinjslibNetworks[network],
+				}).address;
+			} catch (e) {
+				return undefined;
+			}
+		})
+		.filter(Boolean)[0];
+	if (!address) {
+		return script.toString('hex'); // Fallback to hex representation if no address found
+	}
+	return address;
 }
 
 export class ExtendedClient {

@@ -33,7 +33,7 @@ function executeCommand(
 				if (stderr) {
 					logger.warn(`Stderr: ${stderr}`);
 				}
-				logger.debug(`Executed successfully: ${stdout}`);
+				if (stdout) logger.debug(stdout);
 				resolve(stdout);
 			}
 		);
@@ -101,16 +101,11 @@ export async function executeSpell(
 	});
 }
 
-export async function showSpell(
-	context: IContext,
-	txid: string
-): Promise<any> {
+export async function showSpell(context: IContext, txid: string): Promise<any> {
 	const txhex = await context.bitcoinClient.getTransactionHex(txid);
-	const command = [
-		context.charmsBin,
-		'tx show-spell',
-		`--tx ${txhex}`
-	].filter(Boolean) as string[];
+	const command = [context.charmsBin, 'tx show-spell', `--tx ${txhex}`].filter(
+		Boolean
+	) as string[];
 
 	const stdout = await executeCommand(context, command);
 	return yaml.load(stdout);

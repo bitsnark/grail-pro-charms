@@ -41,8 +41,12 @@ exports.txidToHash = txidToHash;
 exports.hashToTxid = hashToTxid;
 exports.txBytesToTxid = txBytesToTxid;
 exports.txHexToTxid = txHexToTxid;
+exports.getAddressFromScript = getAddressFromScript;
 const bitcoin_core_1 = __importDefault(require("bitcoin-core"));
 const bitcoin = __importStar(require("bitcoinjs-lib"));
+const ecc = __importStar(require("tiny-secp256k1"));
+const taproot_common_1 = require("./taproot/taproot-common");
+bitcoin.initEccLib(ecc);
 exports.DUST_LIMIT = 546;
 function txidToHash(txid) {
     return Buffer.from(txid, 'hex').reverse();
@@ -57,6 +61,33 @@ function txBytesToTxid(txBytes) {
 function txHexToTxid(txHex) {
     const txBytes = Buffer.from(txHex, 'hex');
     return txBytesToTxid(txBytes);
+}
+function getAddressFromScript(script, network) {
+    const address = [
+        bitcoin.payments.p2ms,
+        bitcoin.payments.p2pk,
+        bitcoin.payments.p2pkh,
+        bitcoin.payments.p2sh,
+        bitcoin.payments.p2wpkh,
+        bitcoin.payments.p2wsh,
+        bitcoin.payments.p2tr,
+    ]
+        .map(payment => {
+        try {
+            return payment({
+                output: script,
+                network: taproot_common_1.bitcoinjslibNetworks[network],
+            }).address;
+        }
+        catch (e) {
+            return undefined;
+        }
+    })
+        .filter(Boolean)[0];
+    if (!address) {
+        return script.toString('hex'); // Fallback to hex representation if no address found
+    }
+    return address;
 }
 class ExtendedClient {
     constructor(client) {

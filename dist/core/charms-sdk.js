@@ -65,7 +65,8 @@ function executeCommand(context, command, pwd) {
             if (stderr) {
                 logger_1.logger.warn(`Stderr: ${stderr}`);
             }
-            logger_1.logger.debug(`Executed successfully: ${stdout}`);
+            if (stdout)
+                logger_1.logger.debug(stdout);
             resolve(stdout);
         });
     }).catch((error) => {
@@ -120,11 +121,7 @@ async function executeSpell(context, fundingUtxo, feerate, changeAddress, yamlSt
 }
 async function showSpell(context, txid) {
     const txhex = await context.bitcoinClient.getTransactionHex(txid);
-    const command = [
-        context.charmsBin,
-        'tx show-spell',
-        `--tx ${txhex}`
-    ].filter(Boolean);
+    const command = [context.charmsBin, 'tx show-spell', `--tx ${txhex}`].filter(Boolean);
     const stdout = await executeCommand(context, command);
     return yaml.load(stdout);
 }

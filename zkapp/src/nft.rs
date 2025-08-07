@@ -9,7 +9,6 @@ pub(crate) fn hash(data: &str) -> B32 {
 }
 
 pub fn nft_deploy_satisfied(app: &App, tx: &Transaction, _pub_in: &Data, priv_in: &Data) -> bool {
-
     // Deploy has no inputs and one output.
     check!(tx.ins.len() == 0);
     check!(tx.outs.len() == 1);
@@ -32,9 +31,6 @@ pub fn nft_deploy_satisfied(app: &App, tx: &Transaction, _pub_in: &Data, priv_in
         return false;
     };
 
-    eprintln!("Ticker: {}", nft_data.ticker);
-    eprintln!("Threshold: {}", nft_data.current_threshold);
-
     check!(nft_data.current_threshold > 0);
 
     // Split cosigners into a vector
@@ -44,22 +40,19 @@ pub fn nft_deploy_satisfied(app: &App, tx: &Transaction, _pub_in: &Data, priv_in
         .map(|s| s.to_string())
         .collect();
 
-    eprintln!("Cosigners: {:?}", cosigners);
-
     check!(cosigners.len() >= nft_data.current_threshold as usize); // Ensure there are enough cosigners
 
     true
 }
 
 pub fn nft_update_satisfied(app: &App, tx: &Transaction) -> bool {
-
     // Update has at least one input and one output.
     check!(tx.ins.len() >= 1);
     check!(tx.outs.len() >= 1);
 
     // Check that at least one input is an NFT with the same APP_ID and APP_VK
     check_previous_nft(app, tx);
-    
+
     let nft_charms = app_datas(app, tx.outs.iter()).collect::<Vec<_>>();
 
     // the NFT has the correct structure.
@@ -71,9 +64,6 @@ pub fn nft_update_satisfied(app: &App, tx: &Transaction) -> bool {
         return false;
     };
 
-    eprintln!("Ticker: {}", nft_data.ticker);
-    eprintln!("Threshold: {}", nft_data.current_threshold);
-
     // Ensure the threshold is greater than zero
     check!(nft_data.current_threshold > 0);
 
@@ -83,8 +73,6 @@ pub fn nft_update_satisfied(app: &App, tx: &Transaction) -> bool {
         .split(',')
         .map(|s| s.to_string())
         .collect();
-
-    eprintln!("Cosigners: {:?}", cosigners);
 
     // There must be enough cosigners to meet the threshold
     check!(cosigners.len() >= nft_data.current_threshold as usize); // Ensure there are enough cosigners

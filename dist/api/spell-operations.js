@@ -146,7 +146,7 @@ async function injectSignaturesIntoSpell(context, spell, signatureRequest, fromC
         }
         spell.spellTxBytes = injectGrailSignaturesIntoTxInput(spell.spellTxBytes, index, signatures);
     }
-    const commitmentTxid = (0, bitcoin_1.txBytesToTxid)(spell.commitmentTxBytes);
+    // const commitmentTxid = txBytesToTxid(spell.commitmentTxBytes);
     // spell.spellTxBytes = await resignSpellWithTemporarySecret(
     // 	context,
     // 	spell.spellTxBytes,
@@ -250,29 +250,5 @@ async function getUserWalletAddressFromUserPaymentUtxo(context, fundingUtxo, net
         throw new Error(`No script found in transaction outpus: ${fundingUtxo.txid}`);
     }
     // Now try every address type possible
-    const address = [
-        bitcoin.payments.p2ms,
-        bitcoin.payments.p2pk,
-        bitcoin.payments.p2pkh,
-        bitcoin.payments.p2sh,
-        bitcoin.payments.p2wpkh,
-        bitcoin.payments.p2wsh,
-        bitcoin.payments.p2tr,
-    ]
-        .map(payment => {
-        try {
-            return payment({
-                output: script,
-                network: taproot_common_1.bitcoinjslibNetworks[network],
-            }).address;
-        }
-        catch (e) {
-            return undefined;
-        }
-    })
-        .filter(Boolean)[0];
-    if (!address) {
-        throw new Error('No valid address found, script: ' + script.toString('hex'));
-    }
-    return address;
+    return (0, bitcoin_1.getAddressFromScript)(script, network);
 }

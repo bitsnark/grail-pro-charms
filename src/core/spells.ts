@@ -4,13 +4,12 @@ import * as yaml from 'js-yaml';
 import { schnorr } from '@noble/curves/secp256k1';
 import { executeSpell } from './charms-sdk';
 import { CharmerRequest, GrailState, Spell, TokenUtxo, Utxo } from './types';
-import { bufferReplacer } from './json';
 import { KeyPair } from './taproot';
 import { getHash } from './taproot/taproot-common';
 import { showSpell } from './charms-sdk';
 import { IContext } from './i-context';
 import { hashToTxid } from './bitcoin';
-import { arrayFromArrayWithIndex, mapAsync } from './array-utils';
+import { mapAsync } from './array-utils';
 
 // SIGHASH type for Taproot (BIP-342)
 const sighashType = bitcoin.Transaction.SIGHASH_DEFAULT;
