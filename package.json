@@ -11,7 +11,8 @@
         "test:cli": "jest --detectOpenHandles --runInBand tests/cli/",
         "test:cli:deploy": "jest --detectOpenHandles --runInBand tests/cli/deploy.test.ts",
         "test:cli:update": "jest --detectOpenHandles --runInBand tests/cli/update.test.ts",
-        "test:cli:simple": "jest --detectOpenHandles --runInBand tests/cli/simple.test.ts"
+        "test:cli:simple": "jest --detectOpenHandles --runInBand tests/cli/simple.test.ts",
+        "test:cli:user-payment": "jest --detectOpenHandles --runInBand tests/cli/user-payment.test.ts"
     },
     "devDependencies": {
         "@jest/globals": "29.7.0",

@@ -33,10 +33,10 @@ const COSIGNER_3 = {
 describe('user-payment e2e test', () => {
   let deploymentResult: any;
 
-  beforeEach(async () => {
+  beforeAll(async () => {
     const deployerPublicKey = COSIGNER_0.publicKey;
 
-    // Deploy the NFT using the CLI
+    // Deploy the NFT using the CLI (only once for all tests)
     deploymentResult = await deployNftCli([
       '--deployer-public-key', deployerPublicKey,
       '--mock-proof', 'true',
@@ -77,127 +77,73 @@ describe('user-payment e2e test', () => {
     it('should create BTC user payment with single cosigner', async () => {
       await mintBlock();
 
-      const userPaymentResult = await userPaymentCli([
-        '--type', 'btc',
-        '--app-id', deploymentResult.appId,
-        '--app-vk', deploymentResult.appVk,
-        '--current-public-keys', COSIGNER_1.publicKey,
-        '--current-threshold', '1',
-        '--amount', '666666',
-      ]);
+      const userPaymentResult = await createBtcUserPayment({
+        currentPublicKeys: [COSIGNER_1.publicKey],
+        currentThreshold: 1,
+        amount: 666666
+      });
 
-      expect(userPaymentResult).toBeTruthy();
-      expect(userPaymentResult.txid).toBeDefined();
-      expect(userPaymentResult.recoveryPublicKey).toBeDefined();
-      expect(typeof userPaymentResult.txid).toBe('string');
-      expect(typeof userPaymentResult.recoveryPublicKey).toBe('string');
-      expect(userPaymentResult.txid.length).toBeGreaterThan(0);
-      expect(userPaymentResult.recoveryPublicKey.length).toBeGreaterThan(0);
+      validateUserPaymentResult(userPaymentResult);
     });
 
     it('should create BTC user payment with 2 cosigners threshold 1', async () => {
       await mintBlock();
 
-      const userPaymentResult = await userPaymentCli([
-        '--type', 'btc',
-        '--app-id', deploymentResult.appId,
-        '--app-vk', deploymentResult.appVk,
-        '--current-public-keys', `${COSIGNER_1.publicKey},${COSIGNER_2.publicKey}`,
-        '--current-threshold', '1',
-        '--amount', '666666',
-      ]);
+      const userPaymentResult = await createBtcUserPayment({
+        currentPublicKeys: [COSIGNER_1.publicKey, COSIGNER_2.publicKey],
+        currentThreshold: 1,
+        amount: 666666
+      });
 
-      expect(userPaymentResult).toBeTruthy();
-      expect(userPaymentResult.txid).toBeDefined();
-      expect(userPaymentResult.recoveryPublicKey).toBeDefined();
-      expect(typeof userPaymentResult.txid).toBe('string');
-      expect(typeof userPaymentResult.recoveryPublicKey).toBe('string');
-      expect(userPaymentResult.txid.length).toBeGreaterThan(0);
-      expect(userPaymentResult.recoveryPublicKey.length).toBeGreaterThan(0);
+      validateUserPaymentResult(userPaymentResult);
     });
 
     it('should create BTC user payment with 2 cosigners threshold 2', async () => {
       await mintBlock();
 
-      const userPaymentResult = await userPaymentCli([
-        '--type', 'btc',
-        '--app-id', deploymentResult.appId,
-        '--app-vk', deploymentResult.appVk,
-        '--current-public-keys', `${COSIGNER_1.publicKey},${COSIGNER_2.publicKey}`,
-        '--current-threshold', '2',
-        '--amount', '666666',
-      ]);
+      const userPaymentResult = await createBtcUserPayment({
+        currentPublicKeys: [COSIGNER_1.publicKey, COSIGNER_2.publicKey],
+        currentThreshold: 2,
+        amount: 666666
+      });
 
-      expect(userPaymentResult).toBeTruthy();
-      expect(userPaymentResult.txid).toBeDefined();
-      expect(userPaymentResult.recoveryPublicKey).toBeDefined();
-      expect(typeof userPaymentResult.txid).toBe('string');
-      expect(typeof userPaymentResult.recoveryPublicKey).toBe('string');
-      expect(userPaymentResult.txid.length).toBeGreaterThan(0);
-      expect(userPaymentResult.recoveryPublicKey.length).toBeGreaterThan(0);
+      validateUserPaymentResult(userPaymentResult);
     });
 
     it('should create BTC user payment with 3 cosigners threshold 1', async () => {
       await mintBlock();
 
-      const userPaymentResult = await userPaymentCli([
-        '--type', 'btc',
-        '--app-id', deploymentResult.appId,
-        '--app-vk', deploymentResult.appVk,
-        '--current-public-keys', `${COSIGNER_1.publicKey},${COSIGNER_2.publicKey},${COSIGNER_3.publicKey}`,
-        '--current-threshold', '1',
-        '--amount', '666666',
-      ]);
+      const userPaymentResult = await createBtcUserPayment({
+        currentPublicKeys: [COSIGNER_1.publicKey, COSIGNER_2.publicKey, COSIGNER_3.publicKey],
+        currentThreshold: 1,
+        amount: 666666
+      });
 
-      expect(userPaymentResult).toBeTruthy();
-      expect(userPaymentResult.txid).toBeDefined();
-      expect(userPaymentResult.recoveryPublicKey).toBeDefined();
-      expect(typeof userPaymentResult.txid).toBe('string');
-      expect(typeof userPaymentResult.recoveryPublicKey).toBe('string');
-      expect(userPaymentResult.txid.length).toBeGreaterThan(0);
-      expect(userPaymentResult.recoveryPublicKey.length).toBeGreaterThan(0);
+      validateUserPaymentResult(userPaymentResult);
     });
 
     it('should create BTC user payment with 3 cosigners threshold 2', async () => {
       await mintBlock();
 
-      const userPaymentResult = await userPaymentCli([
-        '--type', 'btc',
-        '--app-id', deploymentResult.appId,
-        '--app-vk', deploymentResult.appVk,
-        '--current-public-keys', `${COSIGNER_1.publicKey},${COSIGNER_2.publicKey},${COSIGNER_3.publicKey}`,
-        '--current-threshold', '2',
-        '--amount', '666666',
-      ]);
+      const userPaymentResult = await createBtcUserPayment({
+        currentPublicKeys: [COSIGNER_1.publicKey, COSIGNER_2.publicKey, COSIGNER_3.publicKey],
+        currentThreshold: 2,
+        amount: 666666
+      });
 
-      expect(userPaymentResult).toBeTruthy();
-      expect(userPaymentResult.txid).toBeDefined();
-      expect(userPaymentResult.recoveryPublicKey).toBeDefined();
-      expect(typeof userPaymentResult.txid).toBe('string');
-      expect(typeof userPaymentResult.recoveryPublicKey).toBe('string');
-      expect(userPaymentResult.txid.length).toBeGreaterThan(0);
-      expect(userPaymentResult.recoveryPublicKey.length).toBeGreaterThan(0);
+      validateUserPaymentResult(userPaymentResult);
     });
 
     it('should create BTC user payment with 3 cosigners threshold 3', async () => {
       await mintBlock();
 
-      const userPaymentResult = await userPaymentCli([
-        '--type', 'btc',
-        '--app-id', deploymentResult.appId,
-        '--app-vk', deploymentResult.appVk,
-        '--current-public-keys', `${COSIGNER_1.publicKey},${COSIGNER_2.publicKey},${COSIGNER_3.publicKey}`,
-        '--current-threshold', '3',
-        '--amount', '666666',
-      ]);
+      const userPaymentResult = await createBtcUserPayment({
+        currentPublicKeys: [COSIGNER_1.publicKey, COSIGNER_2.publicKey, COSIGNER_3.publicKey],
+        currentThreshold: 3,
+        amount: 666666
+      });
 
-      expect(userPaymentResult).toBeTruthy();
-      expect(userPaymentResult.txid).toBeDefined();
-      expect(userPaymentResult.recoveryPublicKey).toBeDefined();
-      expect(typeof userPaymentResult.txid).toBe('string');
-      expect(typeof userPaymentResult.recoveryPublicKey).toBe('string');
-      expect(userPaymentResult.txid.length).toBeGreaterThan(0);
-      expect(userPaymentResult.recoveryPublicKey.length).toBeGreaterThan(0);
+      validateUserPaymentResult(userPaymentResult);
     });
   });
 
@@ -206,133 +152,73 @@ describe('user-payment e2e test', () => {
     it('should create Charms user payment with single cosigner', async () => {
       await mintBlock();
 
-      const userPaymentResult = await userPaymentCli([
-        '--type', 'charms',
-        '--app-id', deploymentResult.appId,
-        '--app-vk', deploymentResult.appVk,
-        '--current-public-keys', COSIGNER_1.publicKey,
-        '--current-threshold', '1',
-        '--amount', '666666',
-        '--feerate', '0.00002'
-      ]);
+      const userPaymentResult = await createCharmsUserPayment({
+        currentPublicKeys: [COSIGNER_1.publicKey],
+        currentThreshold: 1,
+        amount: 666666
+      });
 
-      expect(userPaymentResult).toBeTruthy();
-      expect(userPaymentResult.txid).toBeDefined();
-      expect(userPaymentResult.recoveryPublicKey).toBeDefined();
-      expect(typeof userPaymentResult.txid).toBe('string');
-      expect(typeof userPaymentResult.recoveryPublicKey).toBe('string');
-      expect(userPaymentResult.txid.length).toBeGreaterThan(0);
-      expect(userPaymentResult.recoveryPublicKey.length).toBeGreaterThan(0);
+      validateUserPaymentResult(userPaymentResult);
     });
 
     it('should create Charms user payment with 2 cosigners threshold 1', async () => {
       await mintBlock();
 
-      const userPaymentResult = await userPaymentCli([
-        '--type', 'charms',
-        '--app-id', deploymentResult.appId,
-        '--app-vk', deploymentResult.appVk,
-        '--current-public-keys', `${COSIGNER_1.publicKey},${COSIGNER_2.publicKey}`,
-        '--current-threshold', '1',
-        '--amount', '666666',
-        '--feerate', '0.00002'
-      ]);
+      const userPaymentResult = await createCharmsUserPayment({
+        currentPublicKeys: [COSIGNER_1.publicKey, COSIGNER_2.publicKey],
+        currentThreshold: 1,
+        amount: 666666
+      });
 
-      expect(userPaymentResult).toBeTruthy();
-      expect(userPaymentResult.txid).toBeDefined();
-      expect(userPaymentResult.recoveryPublicKey).toBeDefined();
-      expect(typeof userPaymentResult.txid).toBe('string');
-      expect(typeof userPaymentResult.recoveryPublicKey).toBe('string');
-      expect(userPaymentResult.txid.length).toBeGreaterThan(0);
-      expect(userPaymentResult.recoveryPublicKey.length).toBeGreaterThan(0);
+      validateUserPaymentResult(userPaymentResult);
     });
 
     it('should create Charms user payment with 2 cosigners threshold 2', async () => {
       await mintBlock();
 
-      const userPaymentResult = await userPaymentCli([
-        '--type', 'charms',
-        '--app-id', deploymentResult.appId,
-        '--app-vk', deploymentResult.appVk,
-        '--current-public-keys', `${COSIGNER_1.publicKey},${COSIGNER_2.publicKey}`,
-        '--current-threshold', '2',
-        '--amount', '666666',
-        '--feerate', '0.00002'
-      ]);
+      const userPaymentResult = await createCharmsUserPayment({
+        currentPublicKeys: [COSIGNER_1.publicKey, COSIGNER_2.publicKey],
+        currentThreshold: 2,
+        amount: 666666
+      });
 
-      expect(userPaymentResult).toBeTruthy();
-      expect(userPaymentResult.txid).toBeDefined();
-      expect(userPaymentResult.recoveryPublicKey).toBeDefined();
-      expect(typeof userPaymentResult.txid).toBe('string');
-      expect(typeof userPaymentResult.recoveryPublicKey).toBe('string');
-      expect(userPaymentResult.txid.length).toBeGreaterThan(0);
-      expect(userPaymentResult.recoveryPublicKey.length).toBeGreaterThan(0);
+      validateUserPaymentResult(userPaymentResult);
     });
 
     it('should create Charms user payment with 3 cosigners threshold 1', async () => {
       await mintBlock();
 
-      const userPaymentResult = await userPaymentCli([
-        '--type', 'charms',
-        '--app-id', deploymentResult.appId,
-        '--app-vk', deploymentResult.appVk,
-        '--current-public-keys', `${COSIGNER_1.publicKey},${COSIGNER_2.publicKey},${COSIGNER_3.publicKey}`,
-        '--current-threshold', '1',
-        '--amount', '666666',
-        '--feerate', '0.00002'
-      ]);
+      const userPaymentResult = await createCharmsUserPayment({
+        currentPublicKeys: [COSIGNER_1.publicKey, COSIGNER_2.publicKey, COSIGNER_3.publicKey],
+        currentThreshold: 1,
+        amount: 666666
+      });
 
-      expect(userPaymentResult).toBeTruthy();
-      expect(userPaymentResult.txid).toBeDefined();
-      expect(userPaymentResult.recoveryPublicKey).toBeDefined();
-      expect(typeof userPaymentResult.txid).toBe('string');
-      expect(typeof userPaymentResult.recoveryPublicKey).toBe('string');
-      expect(userPaymentResult.txid.length).toBeGreaterThan(0);
-      expect(userPaymentResult.recoveryPublicKey.length).toBeGreaterThan(0);
+      validateUserPaymentResult(userPaymentResult);
     });
 
     it('should create Charms user payment with 3 cosigners threshold 2', async () => {
       await mintBlock();
 
-      const userPaymentResult = await userPaymentCli([
-        '--type', 'charms',
-        '--app-id', deploymentResult.appId,
-        '--app-vk', deploymentResult.appVk,
-        '--current-public-keys', `${COSIGNER_1.publicKey},${COSIGNER_2.publicKey},${COSIGNER_3.publicKey}`,
-        '--current-threshold', '2',
-        '--amount', '666666',
-        '--feerate', '0.00002'
-      ]);
+      const userPaymentResult = await createCharmsUserPayment({
+        currentPublicKeys: [COSIGNER_1.publicKey, COSIGNER_2.publicKey, COSIGNER_3.publicKey],
+        currentThreshold: 2,
+        amount: 666666
+      });
 
-      expect(userPaymentResult).toBeTruthy();
-      expect(userPaymentResult.txid).toBeDefined();
-      expect(userPaymentResult.recoveryPublicKey).toBeDefined();
-      expect(typeof userPaymentResult.txid).toBe('string');
-      expect(typeof userPaymentResult.recoveryPublicKey).toBe('string');
-      expect(userPaymentResult.txid.length).toBeGreaterThan(0);
-      expect(userPaymentResult.recoveryPublicKey.length).toBeGreaterThan(0);
+      validateUserPaymentResult(userPaymentResult);
     });
 
     it('should create Charms user payment with 3 cosigners threshold 3', async () => {
       await mintBlock();
 
-      const userPaymentResult = await userPaymentCli([
-        '--type', 'charms',
-        '--app-id', deploymentResult.appId,
-        '--app-vk', deploymentResult.appVk,
-        '--current-public-keys', `${COSIGNER_1.publicKey},${COSIGNER_2.publicKey},${COSIGNER_3.publicKey}`,
-        '--current-threshold', '3',
-        '--amount', '666666',
-        '--feerate', '0.00002'
-      ]);
+      const userPaymentResult = await createCharmsUserPayment({
+        currentPublicKeys: [COSIGNER_1.publicKey, COSIGNER_2.publicKey, COSIGNER_3.publicKey],
+        currentThreshold: 3,
+        amount: 666666
+      });
 
-      expect(userPaymentResult).toBeTruthy();
-      expect(userPaymentResult.txid).toBeDefined();
-      expect(userPaymentResult.recoveryPublicKey).toBeDefined();
-      expect(typeof userPaymentResult.txid).toBe('string');
-      expect(typeof userPaymentResult.recoveryPublicKey).toBe('string');
-      expect(userPaymentResult.txid.length).toBeGreaterThan(0);
-      expect(userPaymentResult.recoveryPublicKey.length).toBeGreaterThan(0);
+      validateUserPaymentResult(userPaymentResult);
     });
   });
 
@@ -341,71 +227,49 @@ describe('user-payment e2e test', () => {
     it('should create BTC user payment with small amount', async () => {
       await mintBlock();
 
-      const userPaymentResult = await userPaymentCli([
-        '--type', 'btc',
-        '--app-id', deploymentResult.appId,
-        '--app-vk', deploymentResult.appVk,
-        '--current-public-keys', COSIGNER_1.publicKey,
-        '--current-threshold', '1',
-        '--amount', '1000',
-      ]);
+      const userPaymentResult = await createBtcUserPayment({
+        currentPublicKeys: [COSIGNER_1.publicKey],
+        currentThreshold: 1,
+        amount: 1000
+      });
 
-      expect(userPaymentResult).toBeTruthy();
-      expect(userPaymentResult.txid).toBeDefined();
-      expect(userPaymentResult.recoveryPublicKey).toBeDefined();
+      validateUserPaymentResult(userPaymentResult);
     });
 
     it('should create BTC user payment with large amount', async () => {
       await mintBlock();
 
-      const userPaymentResult = await userPaymentCli([
-        '--type', 'btc',
-        '--app-id', deploymentResult.appId,
-        '--app-vk', deploymentResult.appVk,
-        '--current-public-keys', COSIGNER_1.publicKey,
-        '--current-threshold', '1',
-        '--amount', '1000000',
-      ]);
+      const userPaymentResult = await createBtcUserPayment({
+        currentPublicKeys: [COSIGNER_1.publicKey],
+        currentThreshold: 1,
+        amount: 1000000
+      });
 
-      expect(userPaymentResult).toBeTruthy();
-      expect(userPaymentResult.txid).toBeDefined();
-      expect(userPaymentResult.recoveryPublicKey).toBeDefined();
+      validateUserPaymentResult(userPaymentResult);
     });
 
     it('should create Charms user payment with small amount', async () => {
       await mintBlock();
 
-      const userPaymentResult = await userPaymentCli([
-        '--type', 'charms',
-        '--app-id', deploymentResult.appId,
-        '--app-vk', deploymentResult.appVk,
-        '--current-public-keys', COSIGNER_1.publicKey,
-        '--current-threshold', '1',
-        '--amount', '1000',
-        '--feerate', '0.00002'
-      ]);
+      const userPaymentResult = await createCharmsUserPayment({
+        currentPublicKeys: [COSIGNER_1.publicKey],
+        currentThreshold: 1,
+        amount: 1000
+      });
 
-      expect(userPaymentResult).toBeTruthy();
-      expect(userPaymentResult.txid).toBeDefined();
-      expect(userPaymentResult.recoveryPublicKey).toBeDefined();
+      validateUserPaymentResult(userPaymentResult);
     });
 
     it('should create Charms user payment with large amount', async () => {
       await mintBlock();
 
-      const userPaymentResult = await userPaymentCli([
-        '--type', 'charms',
-        '--app-id', deploymentResult.appId,
-        '--app-vk', deploymentResult.appVk,
-        '--current-public-keys', COSIGNER_1.publicKey,
-        '--current-threshold', '1',
-        '--amount', '1000000',
-        '--feerate', '0.00002'
-      ]);
+      const userPaymentResult = await createCharmsUserPayment({
+        currentPublicKeys: [COSIGNER_1.publicKey],
+        currentThreshold: 1,
+        amount: 1000000
+      });
 
-      expect(userPaymentResult).toBeTruthy();
-      expect(userPaymentResult.txid).toBeDefined();
-      expect(userPaymentResult.recoveryPublicKey).toBeDefined();
+      validateUserPaymentResult(userPaymentResult);
     });
   });
 
@@ -414,73 +278,53 @@ describe('user-payment e2e test', () => {
     it('should create BTC user payment with low feerate', async () => {
       await mintBlock();
 
-      const userPaymentResult = await userPaymentCli([
-        '--type', 'btc',
-        '--app-id', deploymentResult.appId,
-        '--app-vk', deploymentResult.appVk,
-        '--current-public-keys', COSIGNER_1.publicKey,
-        '--current-threshold', '1',
-        '--amount', '666666',
-        '--feerate', '0.00001',
-      ]);
+      const userPaymentResult = await createBtcUserPayment({
+        currentPublicKeys: [COSIGNER_1.publicKey],
+        currentThreshold: 1,
+        amount: 666666,
+        feerate: 0.00001
+      });
 
-      expect(userPaymentResult).toBeTruthy();
-      expect(userPaymentResult.txid).toBeDefined();
-      expect(userPaymentResult.recoveryPublicKey).toBeDefined();
+      validateUserPaymentResult(userPaymentResult);
     });
 
     it('should create BTC user payment with high feerate', async () => {
       await mintBlock();
 
-      const userPaymentResult = await userPaymentCli([
-        '--type', 'btc',
-        '--app-id', deploymentResult.appId,
-        '--app-vk', deploymentResult.appVk,
-        '--current-public-keys', COSIGNER_1.publicKey,
-        '--current-threshold', '1',
-        '--amount', '666666',
-        '--feerate', '0.00005',
-      ]);
+      const userPaymentResult = await createBtcUserPayment({
+        currentPublicKeys: [COSIGNER_1.publicKey],
+        currentThreshold: 1,
+        amount: 666666,
+        feerate: 0.00005
+      });
 
-      expect(userPaymentResult).toBeTruthy();
-      expect(userPaymentResult.txid).toBeDefined();
-      expect(userPaymentResult.recoveryPublicKey).toBeDefined();
+      validateUserPaymentResult(userPaymentResult);
     });
 
     it('should create Charms user payment with low feerate', async () => {
       await mintBlock();
 
-      const userPaymentResult = await userPaymentCli([
-        '--type', 'charms',
-        '--app-id', deploymentResult.appId,
-        '--app-vk', deploymentResult.appVk,
-        '--current-public-keys', COSIGNER_1.publicKey,
-        '--current-threshold', '1',
-        '--amount', '666666',
-        '--feerate', '0.00001',
-      ]);
+      const userPaymentResult = await createCharmsUserPayment({
+        currentPublicKeys: [COSIGNER_1.publicKey],
+        currentThreshold: 1,
+        amount: 666666,
+        feerate: 0.00001
+      });
 
-      expect(userPaymentResult).toBeTruthy();
-      expect(userPaymentResult.txid).toBeDefined();
-      expect(userPaymentResult.recoveryPublicKey).toBeDefined();
+      validateUserPaymentResult(userPaymentResult);
     });
 
     it('should create Charms user payment with high feerate', async () => {
       await mintBlock();
 
-      const userPaymentResult = await userPaymentCli([
-        '--type', 'charms',
-        '--app-id', deploymentResult.appId,
-        '--app-vk', deploymentResult.appVk,
-        '--current-public-keys', COSIGNER_1.publicKey,
-        '--current-threshold', '1',
-        '--amount', '666666',
-        '--feerate', '0.00005',
-      ]);
+      const userPaymentResult = await createCharmsUserPayment({
+        currentPublicKeys: [COSIGNER_1.publicKey],
+        currentThreshold: 1,
+        amount: 666666,
+        feerate: 0.00005
+      });
 
-      expect(userPaymentResult).toBeTruthy();
-      expect(userPaymentResult.txid).toBeDefined();
-      expect(userPaymentResult.recoveryPublicKey).toBeDefined();
+      validateUserPaymentResult(userPaymentResult);
     });
   });
 
@@ -489,38 +333,27 @@ describe('user-payment e2e test', () => {
     it('should create BTC user payment on regtest network', async () => {
       await mintBlock();
 
-      const userPaymentResult = await userPaymentCli([
-        '--type', 'btc',
-        '--app-id', deploymentResult.appId,
-        '--app-vk', deploymentResult.appVk,
-        '--current-public-keys', COSIGNER_1.publicKey,
-        '--current-threshold', '1',
-        '--amount', '666666',
-        '--network', 'regtest'
-      ]);
+      const userPaymentResult = await createBtcUserPayment({
+        currentPublicKeys: [COSIGNER_1.publicKey],
+        currentThreshold: 1,
+        amount: 666666,
+        network: 'regtest'
+      });
 
-      expect(userPaymentResult).toBeTruthy();
-      expect(userPaymentResult.txid).toBeDefined();
-      expect(userPaymentResult.recoveryPublicKey).toBeDefined();
+      validateUserPaymentResult(userPaymentResult);
     });
 
     it('should create Charms user payment on regtest network', async () => {
       await mintBlock();
 
-      const userPaymentResult = await userPaymentCli([
-        '--type', 'charms',
-        '--app-id', deploymentResult.appId,
-        '--app-vk', deploymentResult.appVk,
-        '--current-public-keys', COSIGNER_1.publicKey,
-        '--current-threshold', '1',
-        '--amount', '666666',
-        '--feerate', '0.00002',
-        '--network', 'regtest'
-      ]);
+      const userPaymentResult = await createCharmsUserPayment({
+        currentPublicKeys: [COSIGNER_1.publicKey],
+        currentThreshold: 1,
+        amount: 666666,
+        network: 'regtest'
+      });
 
-      expect(userPaymentResult).toBeTruthy();
-      expect(userPaymentResult.txid).toBeDefined();
-      expect(userPaymentResult.recoveryPublicKey).toBeDefined();
+      validateUserPaymentResult(userPaymentResult);
     });
   });
 
@@ -529,75 +362,53 @@ describe('user-payment e2e test', () => {
     it('should create BTC user payment with mock proof', async () => {
       await mintBlock();
 
-      const userPaymentResult = await userPaymentCli([
-        '--type', 'btc',
-        '--app-id', deploymentResult.appId,
-        '--app-vk', deploymentResult.appVk,
-        '--current-public-keys', COSIGNER_1.publicKey,
-        '--current-threshold', '1',
-        '--amount', '666666',
-        '--mock-proof', 'true'
-      ]);
+      const userPaymentResult = await createBtcUserPayment({
+        currentPublicKeys: [COSIGNER_1.publicKey],
+        currentThreshold: 1,
+        amount: 666666,
+        mockProof: true
+      });
 
-      expect(userPaymentResult).toBeTruthy();
-      expect(userPaymentResult.txid).toBeDefined();
-      expect(userPaymentResult.recoveryPublicKey).toBeDefined();
+      validateUserPaymentResult(userPaymentResult);
     });
 
     it('should create BTC user payment with skip proof', async () => {
       await mintBlock();
 
-      const userPaymentResult = await userPaymentCli([
-        '--type', 'btc',
-        '--app-id', deploymentResult.appId,
-        '--app-vk', deploymentResult.appVk,
-        '--current-public-keys', COSIGNER_1.publicKey,
-        '--current-threshold', '1',
-        '--amount', '666666',
-        '--skip-proof', 'true'
-      ]);
+      const userPaymentResult = await createBtcUserPayment({
+        currentPublicKeys: [COSIGNER_1.publicKey],
+        currentThreshold: 1,
+        amount: 666666,
+        skipProof: true
+      });
 
-      expect(userPaymentResult).toBeTruthy();
-      expect(userPaymentResult.txid).toBeDefined();
-      expect(userPaymentResult.recoveryPublicKey).toBeDefined();
+      validateUserPaymentResult(userPaymentResult);
     });
 
     it('should create Charms user payment with mock proof', async () => {
       await mintBlock();
 
-      const userPaymentResult = await userPaymentCli([
-        '--type', 'charms',
-        '--app-id', deploymentResult.appId,
-        '--app-vk', deploymentResult.appVk,
-        '--current-public-keys', COSIGNER_1.publicKey,
-        '--current-threshold', '1',
-        '--amount', '666666',
-        '--feerate', '0.00002',
-        '--mock-proof', 'true'
-      ]);
+      const userPaymentResult = await createCharmsUserPayment({
+        currentPublicKeys: [COSIGNER_1.publicKey],
+        currentThreshold: 1,
+        amount: 666666,
+        mockProof: true
+      });
 
-      expect(userPaymentResult).toBeTruthy();
-      expect(userPaymentResult.txid).toBeDefined();
-      expect(userPaymentResult.recoveryPublicKey).toBeDefined();
+      validateUserPaymentResult(userPaymentResult);
     });
 
     it('should create Charms user payment with skip proof', async () => {
       await mintBlock();
 
-      const userPaymentResult = await userPaymentCli([
-        '--type', 'charms',
-        '--app-id', deploymentResult.appId,
-        '--app-vk', deploymentResult.appVk,
-        '--current-public-keys', COSIGNER_1.publicKey,
-        '--current-threshold', '1',
-        '--amount', '666666',
-        '--feerate', '0.00002',
-        '--skip-proof', 'true'
-      ]);
+      const userPaymentResult = await createCharmsUserPayment({
+        currentPublicKeys: [COSIGNER_1.publicKey],
+        currentThreshold: 1,
+        amount: 666666,
+        skipProof: true
+      });
 
-      expect(userPaymentResult).toBeTruthy();
-      expect(userPaymentResult.txid).toBeDefined();
-      expect(userPaymentResult.recoveryPublicKey).toBeDefined();
+      validateUserPaymentResult(userPaymentResult);
     });
   });
 
@@ -607,34 +418,24 @@ describe('user-payment e2e test', () => {
       await mintBlock();
 
       // First payment
-      const userPaymentResult1 = await userPaymentCli([
-        '--type', 'btc',
-        '--app-id', deploymentResult.appId,
-        '--app-vk', deploymentResult.appVk,
-        '--current-public-keys', COSIGNER_1.publicKey,
-        '--current-threshold', '1',
-        '--amount', '666666',
-      ]);
+      const userPaymentResult1 = await createBtcUserPayment({
+        currentPublicKeys: [COSIGNER_1.publicKey],
+        currentThreshold: 1,
+        amount: 666666
+      });
 
-      expect(userPaymentResult1).toBeTruthy();
-      expect(userPaymentResult1.txid).toBeDefined();
-      expect(userPaymentResult1.recoveryPublicKey).toBeDefined();
+      validateUserPaymentResult(userPaymentResult1);
 
       await mintBlock();
 
       // Second payment
-      const userPaymentResult2 = await userPaymentCli([
-        '--type', 'btc',
-        '--app-id', deploymentResult.appId,
-        '--app-vk', deploymentResult.appVk,
-        '--current-public-keys', COSIGNER_1.publicKey,
-        '--current-threshold', '1',
-        '--amount', '666666',
-      ]);
+      const userPaymentResult2 = await createBtcUserPayment({
+        currentPublicKeys: [COSIGNER_1.publicKey],
+        currentThreshold: 1,
+        amount: 666666
+      });
 
-      expect(userPaymentResult2).toBeTruthy();
-      expect(userPaymentResult2.txid).toBeDefined();
-      expect(userPaymentResult2.recoveryPublicKey).toBeDefined();
+      validateUserPaymentResult(userPaymentResult2);
 
       // Should have different recovery public keys
       expect(userPaymentResult1.recoveryPublicKey).not.toBe(userPaymentResult2.recoveryPublicKey);
@@ -644,36 +445,24 @@ describe('user-payment e2e test', () => {
       await mintBlock();
 
       // First payment
-      const userPaymentResult1 = await userPaymentCli([
-        '--type', 'charms',
-        '--app-id', deploymentResult.appId,
-        '--app-vk', deploymentResult.appVk,
-        '--current-public-keys', COSIGNER_1.publicKey,
-        '--current-threshold', '1',
-        '--amount', '666666',
-        '--feerate', '0.00002'
-      ]);
+      const userPaymentResult1 = await createCharmsUserPayment({
+        currentPublicKeys: [COSIGNER_1.publicKey],
+        currentThreshold: 1,
+        amount: 666666
+      });
 
-      expect(userPaymentResult1).toBeTruthy();
-      expect(userPaymentResult1.txid).toBeDefined();
-      expect(userPaymentResult1.recoveryPublicKey).toBeDefined();
+      validateUserPaymentResult(userPaymentResult1);
 
       await mintBlock();
 
       // Second payment
-      const userPaymentResult2 = await userPaymentCli([
-        '--type', 'charms',
-        '--app-id', deploymentResult.appId,
-        '--app-vk', deploymentResult.appVk,
-        '--current-public-keys', COSIGNER_1.publicKey,
-        '--current-threshold', '1',
-        '--amount', '666666',
-        '--feerate', '0.00002'
-      ]);
+      const userPaymentResult2 = await createCharmsUserPayment({
+        currentPublicKeys: [COSIGNER_1.publicKey],
+        currentThreshold: 1,
+        amount: 666666
+      });
 
-      expect(userPaymentResult2).toBeTruthy();
-      expect(userPaymentResult2.txid).toBeDefined();
-      expect(userPaymentResult2.recoveryPublicKey).toBeDefined();
+      validateUserPaymentResult(userPaymentResult2);
 
       // Should have different recovery public keys
       expect(userPaymentResult1.recoveryPublicKey).not.toBe(userPaymentResult2.recoveryPublicKey);
@@ -683,34 +472,280 @@ describe('user-payment e2e test', () => {
       await mintBlock();
 
       // Payment with cosigners in order [1,2,3]
-      const userPaymentResult1 = await userPaymentCli([
-        '--type', 'btc',
-        '--app-id', deploymentResult.appId,
-        '--app-vk', deploymentResult.appVk,
-        '--current-public-keys', `${COSIGNER_1.publicKey},${COSIGNER_2.publicKey},${COSIGNER_3.publicKey}`,
-        '--current-threshold', '1',
-        '--amount', '666666',
-      ]);
+      const userPaymentResult1 = await createBtcUserPayment({
+        currentPublicKeys: [COSIGNER_1.publicKey, COSIGNER_2.publicKey, COSIGNER_3.publicKey],
+        currentThreshold: 1,
+        amount: 666666
+      });
 
-      expect(userPaymentResult1).toBeTruthy();
-      expect(userPaymentResult1.txid).toBeDefined();
-      expect(userPaymentResult1.recoveryPublicKey).toBeDefined();
+      validateUserPaymentResult(userPaymentResult1);
 
       await mintBlock();
 
       // Payment with cosigners in order [3,2,1]
-      const userPaymentResult2 = await userPaymentCli([
-        '--type', 'btc',
-        '--app-id', deploymentResult.appId,
-        '--app-vk', deploymentResult.appVk,
-        '--current-public-keys', `${COSIGNER_3.publicKey},${COSIGNER_2.publicKey},${COSIGNER_1.publicKey}`,
-        '--current-threshold', '1',
-        '--amount', '666666',
-      ]);
+      const userPaymentResult2 = await createBtcUserPayment({
+        currentPublicKeys: [COSIGNER_3.publicKey, COSIGNER_2.publicKey, COSIGNER_1.publicKey],
+        currentThreshold: 1,
+        amount: 666666
+      });
 
-      expect(userPaymentResult2).toBeTruthy();
-      expect(userPaymentResult2.txid).toBeDefined();
-      expect(userPaymentResult2.recoveryPublicKey).toBeDefined();
+      validateUserPaymentResult(userPaymentResult2);
+    });
+  });
+
+  // Helper function to create BTC user payment
+  async function createBtcUserPayment(options: {
+    currentPublicKeys: string[];
+    currentThreshold: number;
+    amount: number;
+    feerate?: number;
+    network?: string;
+    mockProof?: boolean;
+    skipProof?: boolean;
+  }) {
+    const args = [
+      '--type', 'btc',
+      '--app-id', deploymentResult.appId,
+      '--app-vk', deploymentResult.appVk,
+      '--current-public-keys', options.currentPublicKeys.join(','),
+      '--current-threshold', options.currentThreshold.toString(),
+      '--amount', options.amount.toString(),
+    ];
+
+    if (options.feerate !== undefined) {
+      args.push('--feerate', options.feerate.toString());
+    }
+    if (options.network !== undefined) {
+      args.push('--network', options.network);
+    }
+    if (options.mockProof !== undefined) {
+      args.push('--mock-proof', options.mockProof.toString());
+    }
+    if (options.skipProof !== undefined) {
+      args.push('--skip-proof', options.skipProof.toString());
+    }
+
+    return await userPaymentCli(args);
+  }
+
+  // Helper function to create Charms user payment
+  async function createCharmsUserPayment(options: {
+    currentPublicKeys: string[];
+    currentThreshold: number;
+    amount: number;
+    feerate?: number;
+    network?: string;
+    mockProof?: boolean;
+    skipProof?: boolean;
+  }) {
+    const args = [
+      '--type', 'charms',
+      '--app-id', deploymentResult.appId,
+      '--app-vk', deploymentResult.appVk,
+      '--current-public-keys', options.currentPublicKeys.join(','),
+      '--current-threshold', options.currentThreshold.toString(),
+      '--amount', options.amount.toString(),
+      '--feerate', (options.feerate || 0.00002).toString(),
+    ];
+
+    if (options.network !== undefined) {
+      args.push('--network', options.network);
+    }
+    if (options.mockProof !== undefined) {
+      args.push('--mock-proof', options.mockProof.toString());
+    }
+    if (options.skipProof !== undefined) {
+      args.push('--skip-proof', options.skipProof.toString());
+    }
+
+    return await userPaymentCli(args);
+  }
+
+  // Helper function to validate user payment result
+  function validateUserPaymentResult(userPaymentResult: any) {
+    expect(userPaymentResult).toBeTruthy();
+    expect(userPaymentResult.txid).toBeDefined();
+    expect(userPaymentResult.recoveryPublicKey).toBeDefined();
+    expect(typeof userPaymentResult.txid).toBe('string');
+    expect(typeof userPaymentResult.recoveryPublicKey).toBe('string');
+    expect(userPaymentResult.txid.length).toBeGreaterThan(0);
+    expect(userPaymentResult.recoveryPublicKey.length).toBeGreaterThan(0);
+  }
+});
+
+// Separate test suite for helper functions without deployment overhead
+describe('user-payment helper functions (fast tests)', () => {
+  // Mock deployment result for testing helper functions
+  const mockDeploymentResult = {
+    appId: 'mock-app-id',
+    appVk: 'mock-app-vk',
+    spellTxid: 'mock-spell-txid'
+  };
+
+  // Helper function to create BTC user payment (local version for testing)
+  async function createBtcUserPaymentLocal(options: {
+    currentPublicKeys: string[];
+    currentThreshold: number;
+    amount: number;
+    feerate?: number;
+    network?: string;
+    mockProof?: boolean;
+    skipProof?: boolean;
+  }) {
+    const args = [
+      '--type', 'btc',
+      '--app-id', mockDeploymentResult.appId,
+      '--app-vk', mockDeploymentResult.appVk,
+      '--current-public-keys', options.currentPublicKeys.join(','),
+      '--current-threshold', options.currentThreshold.toString(),
+      '--amount', options.amount.toString(),
+    ];
+
+    if (options.feerate !== undefined) {
+      args.push('--feerate', options.feerate.toString());
+    }
+    if (options.network !== undefined) {
+      args.push('--network', options.network);
+    }
+    if (options.mockProof !== undefined) {
+      args.push('--mock-proof', options.mockProof.toString());
+    }
+    if (options.skipProof !== undefined) {
+      args.push('--skip-proof', options.skipProof.toString());
+    }
+
+    return await userPaymentCli(args);
+  }
+
+  // Helper function to create Charms user payment (local version for testing)
+  async function createCharmsUserPaymentLocal(options: {
+    currentPublicKeys: string[];
+    currentThreshold: number;
+    amount: number;
+    feerate?: number;
+    network?: string;
+    mockProof?: boolean;
+    skipProof?: boolean;
+  }) {
+    const args = [
+      '--type', 'charms',
+      '--app-id', mockDeploymentResult.appId,
+      '--app-vk', mockDeploymentResult.appVk,
+      '--current-public-keys', options.currentPublicKeys.join(','),
+      '--current-threshold', options.currentThreshold.toString(),
+      '--amount', options.amount.toString(),
+      '--feerate', (options.feerate || 0.00002).toString(),
+    ];
+
+    if (options.network !== undefined) {
+      args.push('--network', options.network);
+    }
+    if (options.mockProof !== undefined) {
+      args.push('--mock-proof', options.mockProof.toString());
+    }
+    if (options.skipProof !== undefined) {
+      args.push('--skip-proof', options.skipProof.toString());
+    }
+
+    return await userPaymentCli(args);
+  }
+
+  // Helper function to validate user payment result
+  function validateUserPaymentResult(userPaymentResult: any) {
+    expect(userPaymentResult).toBeTruthy();
+    expect(userPaymentResult.txid).toBeDefined();
+    expect(userPaymentResult.recoveryPublicKey).toBeDefined();
+    expect(typeof userPaymentResult.txid).toBe('string');
+    expect(typeof userPaymentResult.recoveryPublicKey).toBe('string');
+    expect(userPaymentResult.txid.length).toBeGreaterThan(0);
+    expect(userPaymentResult.recoveryPublicKey.length).toBeGreaterThan(0);
+  }
+
+  describe('createBtcUserPayment helper function', () => {
+    it('should create BTC user payment with basic parameters', async () => {
+      const userPaymentResult = await createBtcUserPaymentLocal({
+        currentPublicKeys: [COSIGNER_1.publicKey],
+        currentThreshold: 1,
+        amount: 666666
+      });
+
+      validateUserPaymentResult(userPaymentResult);
+    });
+
+    it('should create BTC user payment with multiple cosigners', async () => {
+      const userPaymentResult = await createBtcUserPaymentLocal({
+        currentPublicKeys: [COSIGNER_1.publicKey, COSIGNER_2.publicKey],
+        currentThreshold: 2,
+        amount: 666666
+      });
+
+      validateUserPaymentResult(userPaymentResult);
+    });
+
+    it('should create BTC user payment with custom feerate', async () => {
+      const userPaymentResult = await createBtcUserPaymentLocal({
+        currentPublicKeys: [COSIGNER_1.publicKey],
+        currentThreshold: 1,
+        amount: 666666,
+        feerate: 0.00005
+      });
+
+      validateUserPaymentResult(userPaymentResult);
+    });
+
+    it('should create BTC user payment with mock proof', async () => {
+      const userPaymentResult = await createBtcUserPaymentLocal({
+        currentPublicKeys: [COSIGNER_1.publicKey],
+        currentThreshold: 1,
+        amount: 666666,
+        mockProof: true
+      });
+
+      validateUserPaymentResult(userPaymentResult);
+    });
+  });
+
+  describe('createCharmsUserPayment helper function', () => {
+    it('should create Charms user payment with basic parameters', async () => {
+      const userPaymentResult = await createCharmsUserPaymentLocal({
+        currentPublicKeys: [COSIGNER_1.publicKey],
+        currentThreshold: 1,
+        amount: 666666
+      });
+
+      validateUserPaymentResult(userPaymentResult);
+    });
+
+    it('should create Charms user payment with multiple cosigners', async () => {
+      const userPaymentResult = await createCharmsUserPaymentLocal({
+        currentPublicKeys: [COSIGNER_1.publicKey, COSIGNER_2.publicKey],
+        currentThreshold: 2,
+        amount: 666666
+      });
+
+      validateUserPaymentResult(userPaymentResult);
+    });
+
+    it('should create Charms user payment with custom feerate', async () => {
+      const userPaymentResult = await createCharmsUserPaymentLocal({
+        currentPublicKeys: [COSIGNER_1.publicKey],
+        currentThreshold: 1,
+        amount: 666666,
+        feerate: 0.00005
+      });
+
+      validateUserPaymentResult(userPaymentResult);
+    });
+
+    it('should create Charms user payment with mock proof', async () => {
+      const userPaymentResult = await createCharmsUserPaymentLocal({
+        currentPublicKeys: [COSIGNER_1.publicKey],
+        currentThreshold: 1,
+        amount: 666666,
+        mockProof: true
+      });
+
+      validateUserPaymentResult(userPaymentResult);
     });
   });
 });
