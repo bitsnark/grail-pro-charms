@@ -1,52 +1,58 @@
 {
-    "name": "grail-pro-charms",
-    "version": "1.0.1",
-    "description": "This is a [Charms](https://charms.dev) app.",
-    "main": "dist/index.js",
-    "scripts": {
-        "prettier-fix": "prettier --write \"**/*.ts\"",
-        "build": "tsc --project . --outDir ./dist --declaration --pretty",
-        "clean-js": "find ./src -type f -name \"*.js\" -delete",
-        "test": "jest --detectOpenHandles --testPathIgnorePatterns=e2e --testPathIgnorePatterns=cli",
-        "test:cli": "jest --detectOpenHandles --runInBand tests/cli/",
-        "test:cli:deploy": "jest --detectOpenHandles --runInBand tests/cli/deploy.test.ts",
-        "test:cli:update": "jest --detectOpenHandles --runInBand tests/cli/update.test.ts",
-        "test:cli:simple": "jest --detectOpenHandles --runInBand tests/cli/simple.test.ts"
-    },
-    "devDependencies": {
-        "@jest/globals": "29.7.0",
-        "@types/bitcoinjs-lib": "4.0.1",
-        "@types/jest": "29.5.14",
-        "@types/js-yaml": "4.0.9",
-        "@types/minimist": "1.2.5",
-        "@types/node": "20.16.10",
-        "jest": "29.7.0",
-        "ts-jest": "29.2.6",
-        "ts-node": "10.9.2",
-        "prettier": "3.6.2"
-    },
-    "dependencies": {
-        "@bitcoinerlab/secp256k1": "1.2.0",
-        "@noble/curves": "1.9.2",
-        "@scure/btc-signer": "1.8.1",
-        "@types/mustache": "4.2.6",
-        "bech32": "2.0.0",
-        "bitcoin-core": "5.0.0",
-        "bitcoinjs-lib": "6.1.7",
-        "dotenv": "16.4.7",
-        "js-yaml": "4.1.0",
-        "minimist": "1.2.8",
-        "mustache": "4.2.0",
-        "tiny-secp256k1": "2.2.3"
-    },
-    "repository": {
-        "type": "git",
-        "url": "git+https://github.com/bitsnark/grail-pro-charms.git"
-    },
-    "author": "",
-    "license": "ISC",
-    "bugs": {
-        "url": "https://github.com/bitsnark/grail-pro-charms/issues"
-    },
-    "homepage": "https://github.com/bitsnark/grail-pro-charms#readme"
+	"name": "grail-pro-charms",
+	"version": "1.0.1",
+	"description": "This is a [Charms](https://charms.dev) app.",
+	"main": "dist/index.js",
+	"scripts": {
+		"prettier-fix": "prettier --write \"**/*.ts\"",
+		"build": "tsc --project . --outDir ./dist --declaration --pretty",
+		"clean-js": "find ./src -type f -name \"*.js\" -delete",
+		"test": "jest --detectOpenHandles --testPathIgnorePatterns=e2e --testPathIgnorePatterns=cli",
+		"test:cli": "jest --detectOpenHandles --runInBand tests/cli/",
+		"test:cli:deploy": "jest --detectOpenHandles --runInBand tests/cli/deploy.test.ts",
+		"test:cli:update": "jest --detectOpenHandles --runInBand tests/cli/update.test.ts",
+		"test:cli:simple": "jest --detectOpenHandles --runInBand tests/cli/simple.test.ts",
+		"test:e2e": "jest --detectOpenHandles --runInBand tests/e2e/",
+		"lint": "eslint --ignore-pattern node_modules/ --ignore-pattern dist/ --ignore-pattern python/ .",
+		"lint-fix": "npm run lint -- --fix"
+	},
+	"devDependencies": {
+		"@jest/globals": "29.7.0",
+		"@types/bitcoinjs-lib": "4.0.1",
+		"@types/jest": "29.5.14",
+		"@types/js-yaml": "4.0.9",
+		"@types/minimist": "1.2.5",
+		"@types/node": "20.16.10",
+		"jest": "29.7.0",
+		"ts-jest": "29.2.6",
+		"ts-node": "10.9.2",
+		"prettier": "3.6.2"
+	},
+	"dependencies": {
+		"@bitcoinerlab/secp256k1": "1.2.0",
+		"@noble/curves": "1.9.2",
+		"@scure/btc-signer": "1.8.1",
+		"@types/mustache": "4.2.6",
+		"bech32": "2.0.0",
+		"bitcoin-core": "5.0.0",
+		"bitcoinjs-lib": "6.1.7",
+		"dotenv": "16.4.7",
+		"js-yaml": "4.1.0",
+		"minimist": "1.2.8",
+		"mustache": "4.2.0",
+		"tiny-secp256k1": "2.2.3",
+		"eslint": "9.32.0",
+		"eslint-plugin-unused-imports": "^4.1.4",
+		"typescript-eslint": "^8.39.0"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/bitsnark/grail-pro-charms.git"
+	},
+	"author": "",
+	"license": "ISC",
+	"bugs": {
+		"url": "https://github.com/bitsnark/grail-pro-charms/issues"
+	},
+	"homepage": "https://github.com/bitsnark/grail-pro-charms#readme"
 }

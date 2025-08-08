@@ -14,7 +14,6 @@ import {
 	Utxo,
 } from '../core/types';
 import { showSpell } from '../core/charms-sdk';
-import { bufferReplacer } from '../core/json';
 import { IContext } from '../core/i-context';
 import {
 	createUpdatingSpell,
@@ -187,13 +186,27 @@ export async function createGeneralizedSpell(
 	fundingUtxo = fundingUtxo || (await context.bitcoinClient.getFundingUtxo());
 
 	const previousSpellData = await showSpell(context, previousNftTxid);
-	logger.debug('Previous NFT spell: ', previousSpellData);
+	if (!previousSpellData) {
+		throw new Error(`Previous NFT spell ${previousNftTxid} not found`);
+	}
 
-	const previousPublicKeys = previousSpellData.outs[0].charms[
-		'$0000'
-	].current_cosigners.split(',') as string[];
-	const previousThreshold = previousSpellData.outs[0].charms['$0000']
-		.current_threshold as number;
+	logger.debug('Previous NFT spell: ', previousSpellData);
+	if (
+		!previousSpellData.outs[0].charms ||
+		!previousSpellData.outs[0].charms['$0000']
+	) {
+		throw new Error(
+			`Previous NFT spell ${previousNftTxid} does not have charms data`
+		);
+	}
+
+	const state = previousSpellData.outs[0].charms['$0000'] as {
+		current_cosigners: string;
+		current_threshold: number;
+	};
+
+	const previousPublicKeys = state.current_cosigners.split(',');
+	const previousThreshold = state.current_threshold;
 
 	const previousGrailState: GrailState = {
 		publicKeys: previousPublicKeys,
@@ -230,7 +243,12 @@ export async function createGeneralizedSpell(
 				},
 				public_inputs: {
 					$00: { action: 'update' },
-					$01: { action: 'mint' },
+					$01: {
+						action:
+							this.generalizedInfo.outgoingGrailBtc!.amount > 0
+								? 'mint'
+								: 'burn',
+					},
 				},
 				ins: [
 					{
@@ -282,7 +300,7 @@ export async function createGeneralizedSpell(
 							$00: {
 								type: 'user_charms',
 							},
-							$01: outgoing.amount
+							$01: outgoing.amount,
 						},
 					})),
 					this.generalizedInfo.outgoingGrailBtc!.amount > 0

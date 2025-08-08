@@ -1,4 +1,5 @@
-import { logger } from '../core/logger';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import fs from 'node:fs';
 import minimist from 'minimist';
 import { GrailState, UserPaymentDetails } from '../core/types';
