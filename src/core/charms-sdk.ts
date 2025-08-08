@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import * as yaml from 'js-yaml';
-import { Spell, Utxo } from './types';
+import { Spell, SpellMetadata, Utxo } from './types';
 import { exec } from 'child_process';
 import { IContext } from './i-context';
 import { parse } from './env-parser';
@@ -54,7 +54,7 @@ export async function executeSpell(
 	fundingUtxo: Utxo,
 	feerate: number,
 	changeAddress: string,
-	yamlStr: any,
+	yamlStr: string,
 	previousTransactions: Buffer[] = []
 ): Promise<Spell> {
 	const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'charms-'));
@@ -101,12 +101,15 @@ export async function executeSpell(
 	});
 }
 
-export async function showSpell(context: IContext, txid: string): Promise<any> {
+export async function showSpell(
+	context: IContext,
+	txid: string
+): Promise<SpellMetadata> {
 	const txhex = await context.bitcoinClient.getTransactionHex(txid);
 	const command = [context.charmsBin, 'tx show-spell', `--tx ${txhex}`].filter(
 		Boolean
 	) as string[];
 
 	const stdout = await executeCommand(context, command);
-	return yaml.load(stdout);
+	return yaml.load(stdout) as SpellMetadata;
 }

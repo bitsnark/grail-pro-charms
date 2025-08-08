@@ -55,7 +55,7 @@ async function visualizeCli(_argv) {
         logger_1.logger.error('--txid is required');
         return;
     }
-    let outfile = argv['outfile'];
+    const outfile = argv['outfile'];
     if (!outfile) {
         logger_1.logger.error('--outfile is required');
         return;

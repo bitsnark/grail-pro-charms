@@ -46,6 +46,7 @@ const bitcoin_core_1 = __importDefault(require("bitcoin-core"));
 const bitcoin = __importStar(require("bitcoinjs-lib"));
 const ecc = __importStar(require("tiny-secp256k1"));
 const taproot_common_1 = require("./taproot/taproot-common");
+const logger_1 = require("./logger");
 bitcoin.initEccLib(ecc);
 exports.DUST_LIMIT = 546;
 function txidToHash(txid) {
@@ -79,7 +80,8 @@ function getAddressFromScript(script, network) {
                 network: taproot_common_1.bitcoinjslibNetworks[network],
             }).address;
         }
-        catch (e) {
+        catch (error) {
+            logger_1.logger.devnull(error);
             return undefined;
         }
     })
@@ -146,8 +148,8 @@ class BitcoinClient {
                 await thus.client.loadWallet(walletName);
             }
             catch (error) {
-                if (!error.message.includes('is already loaded')) {
-                    throw new Error(`Failed to load wallet: ${error.message}`);
+                if (!JSON.stringify(error).includes('is already loaded')) {
+                    throw new Error(`Failed to load wallet: ${error}`);
                 }
             }
         }
@@ -171,7 +173,7 @@ class BitcoinClient {
     async signTransaction(txBytes, prevtxsBytesMap, sighashType) {
         const tx = bitcoin.Transaction.fromBuffer(txBytes);
         const prevtxinfo = prevtxsBytesMap
-            ? tx.ins.map((input, index) => {
+            ? tx.ins.map(input => {
                 const prevtxid = hashToTxid(input.hash);
                 const prevtxbytes = prevtxsBytesMap[prevtxid];
                 if (!prevtxbytes) {
@@ -198,11 +200,11 @@ class BitcoinClient {
         return this.client.sendRawTransaction(txBytes.toString('hex'));
     }
     async listUnspent(address) {
-        return this.client.listUnspent(0, 9999999, address ? [address] : []).then(utxos => utxos.map(utxo => ({
-            spendable: utxo.spendable,
-            value: Math.floor(utxo.amount * 1e8), // Convert BTC to satoshis
-            txid: utxo.txid,
-            vout: utxo.vout,
+        return this.client.listUnspent(0, 9999999, address ? [address] : []).then(unspent => unspent.map(us => ({
+            spendable: us.spendable,
+            value: Math.floor(us.amount * 1e8), // Convert BTC to satoshis
+            txid: us.txid,
+            vout: us.vout,
         })));
     }
     async getAddress() {

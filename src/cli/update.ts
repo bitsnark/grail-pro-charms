@@ -12,7 +12,6 @@ import {
 	signAsCosigner,
 	transmitSpell,
 } from '../api/spell-operations';
-import { bufferReplacer } from '../core/json';
 import { getNewGrailStateFromArgv } from './utils';
 import { SignatureResponse } from '../core/types';
 import { DEFAULT_FEERATE } from './consts';

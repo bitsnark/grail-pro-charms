@@ -1,20 +1,11 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Context = void 0;
 const logger_1 = require("./logger");
-const node_fs_1 = __importDefault(require("node:fs"));
 const charms_sdk_1 = require("./charms-sdk");
 const node_crypto_1 = require("node:crypto");
 const crypto_1 = require("bitcoinjs-lib/src/crypto");
 const bitcoin_1 = require("./bitcoin");
-function assertFileExists(desc, path) {
-    if (!node_fs_1.default.existsSync(path || '')) {
-        throw new Error(`File not found, desc: ${desc}, path: ${path}`);
-    }
-}
 class Context {
     constructor() { }
     static async create(obj) {
@@ -30,7 +21,9 @@ class Context {
         thus.network = obj.network || 'regtest';
         thus.mockProof = obj.mockProof || false;
         thus.skipProof = obj.skipProof || false;
-        const charmsSecret = process.env.CHARMS_SECRET ? Buffer.from(process.env.CHARMS_SECRET, 'hex') : (0, node_crypto_1.randomBytes)(32);
+        const charmsSecret = process.env.CHARMS_SECRET
+            ? Buffer.from(process.env.CHARMS_SECRET, 'hex')
+            : (0, node_crypto_1.randomBytes)(32);
         thus.temporarySecret = charmsSecret;
         if (!obj.appVk) {
             logger_1.logger.warn('App VK is not provided, using charms app vk command to retrieve it');

@@ -3,7 +3,6 @@ import minimist from 'minimist';
 import dotenv from 'dotenv';
 import { BitcoinClient } from '../core/bitcoin';
 import { Network } from '../core/taproot/taproot-common';
-import { bufferReplacer } from '../core/json';
 import { Context } from '../core/context';
 import { parse } from '../core/env-parser';
 import { createPeginSpell } from '../api/create-pegin-spell';
@@ -165,7 +164,10 @@ export async function peginCli(_argv: string[]): Promise<[string, string]> {
 			Buffer.from(response.publicKey, 'hex')
 		),
 	}));
-	logger.debug('Signature responses from cosigners after fiultering: ', filteredSignatures);
+	logger.debug(
+		'Signature responses from cosigners after fiultering: ',
+		filteredSignatures
+	);
 
 	const signedSpell = await injectSignaturesIntoSpell(
 		context,

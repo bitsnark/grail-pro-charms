@@ -46,8 +46,9 @@ async function showWalletCharmsCli(_argv) {
 }
 if (require.main === module) {
     showWalletCharmsCli(process.argv.slice(2))
+        .then(result => process.exit(result ? 0 : 2))
         .catch(error => {
-        logger_1.logger.error('Error during NFT update: ', error);
-    })
-        .then(result => process.exit(result ? 0 : 1));
+        logger_1.logger.error(error);
+        process.exit(1);
+    });
 }

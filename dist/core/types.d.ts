@@ -17,7 +17,7 @@ export interface CharmerRequest {
     toYamlObj(): any;
 }
 export interface NftRequest extends CharmerRequest {
-    ticker: String;
+    ticker: string;
     previousUtxo?: Utxo;
     nextNftAddress: string;
     currentNftState: {
@@ -95,5 +95,32 @@ export interface TokenUtxo {
     txid: string;
     vout: number;
     amount: number;
+}
+type CharmsDesc = number | {
+    current_cosigners?: string;
+    current_threshold?: number;
+};
+export interface SpellMetadata {
+    apps: {
+        [appId: string]: string;
+    };
+    public_args: {
+        [appKey: string]: {
+            action: string;
+        };
+    };
+    ins: {
+        utxo_id: string;
+        charms?: {
+            [key: string]: CharmsDesc;
+        };
+    }[];
+    outs: {
+        amount?: number;
+        address?: string;
+        charms?: {
+            [key: string]: CharmsDesc;
+        };
+    }[];
 }
 export {};

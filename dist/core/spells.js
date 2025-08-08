@@ -61,11 +61,14 @@ async function getStateFromNft(context, nftTxId) {
     }
     const nftId = `n/${context.appId}/${context.appVk}`;
     const appKey = Object.keys(previousSpellData.apps).find(key => previousSpellData.apps[key] === nftId);
-    if (!appKey || !previousSpellData.outs[0].charms[appKey]) {
+    if (!appKey ||
+        !previousSpellData.outs[0].charms ||
+        !previousSpellData.outs[0].charms[appKey]) {
         return null;
     }
-    const previousPublicKeys = previousSpellData.outs[0].charms[appKey].current_cosigners?.split(',');
-    const previousThreshold = previousSpellData.outs[0].charms[appKey].current_threshold;
+    const state = previousSpellData.outs[0].charms[appKey];
+    const previousPublicKeys = state.current_cosigners?.split(',');
+    const previousThreshold = state.current_threshold;
     return {
         publicKeys: previousPublicKeys,
         threshold: previousThreshold,
@@ -81,7 +84,11 @@ async function getCharmsAmountFromUtxo(context, utxo) {
     if (!appKey) {
         throw new Error(`No app key found for token ${tokenId}`);
     }
-    return Number(spellData.outs[utxo.vout]?.charms[appKey] ?? 0);
+    if (spellData.outs[utxo.vout].charms &&
+        spellData.outs[utxo.vout].charms[appKey]) {
+        return Number(spellData.outs[utxo.vout].charms[appKey]);
+    }
+    return 0;
 }
 function signTransactionInput(context, txBytes, inputIndex, script, previousTxBytesMap, keypair) {
     // Load the transaction to sign

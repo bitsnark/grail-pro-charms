@@ -137,10 +137,17 @@ async function createGeneralizedSpell(context, feerate, previousNftTxid, nextGra
     const fundingChangeAddress = await context.bitcoinClient.getAddress();
     fundingUtxo = fundingUtxo || (await context.bitcoinClient.getFundingUtxo());
     const previousSpellData = await (0, charms_sdk_1.showSpell)(context, previousNftTxid);
+    if (!previousSpellData) {
+        throw new Error(`Previous NFT spell ${previousNftTxid} not found`);
+    }
     logger_1.logger.debug('Previous NFT spell: ', previousSpellData);
-    const previousPublicKeys = previousSpellData.outs[0].charms['$0000'].current_cosigners.split(',');
-    const previousThreshold = previousSpellData.outs[0].charms['$0000']
-        .current_threshold;
+    if (!previousSpellData.outs[0].charms ||
+        !previousSpellData.outs[0].charms['$0000']) {
+        throw new Error(`Previous NFT spell ${previousNftTxid} does not have charms data`);
+    }
+    const state = previousSpellData.outs[0].charms['$0000'];
+    const previousPublicKeys = state.current_cosigners.split(',');
+    const previousThreshold = state.current_threshold;
     const previousGrailState = {
         publicKeys: previousPublicKeys,
         threshold: previousThreshold,

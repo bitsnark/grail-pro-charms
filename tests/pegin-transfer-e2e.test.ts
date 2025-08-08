@@ -1,3 +1,4 @@
+ 
 import { generateRandomKeypair } from '../src/cli/generate-random-keypairs';
 import { deployNftCli } from '../src/cli/deploy';
 import { peginCli } from '../src/cli/pegin';
@@ -126,7 +127,7 @@ describe('peg-in and transfer e2e test', () => {
 			'--amount',
 			transmitAmount.toString(),
 			'--skip-proof',
-			'false'
+			'false',
 		]);
 		expect(transferResult).toBeTruthy();
 		logger.log('Transfer Result:', transferResult);

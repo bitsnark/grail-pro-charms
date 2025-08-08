@@ -1,4 +1,5 @@
 "use strict";
+/* eslint-disable @typescript-eslint/no-explicit-any */
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SOME_STRING = exports.ANY = void 0;
 exports.deepEqual = deepEqual;

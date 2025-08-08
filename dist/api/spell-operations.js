@@ -58,9 +58,14 @@ async function getPreviousGrailState(context, previousNftTxid) {
         previousSpellData.outs.length === 0) {
         throw new Error('Invalid previous NFT spell data');
     }
+    if (!previousSpellData.outs[0].charms ||
+        !previousSpellData.outs[0].charms['$0000']) {
+        throw new Error('No charms found in previous NFT spell data');
+    }
+    const state = previousSpellData.outs[0].charms['$0000'];
     return {
-        publicKeys: previousSpellData.outs[0].charms['$0000'].current_cosigners.split(','),
-        threshold: previousSpellData.outs[0].charms['$0000'].current_threshold,
+        publicKeys: state.current_cosigners?.split(','),
+        threshold: state.current_threshold,
     };
 }
 async function getPreviousGrailStateMap(context, txids) {

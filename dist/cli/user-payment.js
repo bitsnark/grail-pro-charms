@@ -159,9 +159,6 @@ async function userPaymentCli(_argv) {
 }
 if (require.main === module) {
     userPaymentCli(process.argv.slice(2))
-        .catch(error => {
-        logger_1.logger.error('Error during NFT update: ', error);
-    })
         .then(result => {
         if (result) {
             logger_1.logger.log('User payment created successfully: ', result);
@@ -170,5 +167,9 @@ if (require.main === module) {
             logger_1.logger.error('User payment creation failed.');
         }
         process.exit(result ? 0 : 1);
+    })
+        .catch(error => {
+        logger_1.logger.error(error);
+        process.exit(2);
     });
 }

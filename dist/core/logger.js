@@ -8,6 +8,8 @@ exports.log = log;
 exports.warn = warn;
 exports.info = info;
 exports.debug = debug;
+exports.devnull = devnull;
+/* eslint-disable  @typescript-eslint/no-explicit-any */
 const json_1 = require("./json");
 let debugLevel = parseInt(process.env.DEBUG || '0');
 let printDate = false;
@@ -51,22 +53,31 @@ function log(...args) {
     print(...args);
 }
 function warn(...args) {
+    if (debugLevel < exports.DEBUG_LEVELS.WARN)
+        return;
     inject(args, exports.DEBUG_LEVELS.WARN);
     print(...args);
 }
 function info(...args) {
+    if (debugLevel < exports.DEBUG_LEVELS.INFO)
+        return;
     inject(args, exports.DEBUG_LEVELS.INFO);
     print(...args);
 }
 function debug(...args) {
+    if (debugLevel < exports.DEBUG_LEVELS.DEBUG)
+        return;
     inject(args, exports.DEBUG_LEVELS.DEBUG);
     print(...args);
 }
+/* eslint-disable @typescript-eslint/no-unused-vars */
+function devnull(...args) { }
 exports.logger = {
     log,
     error,
     warn,
     info,
     debug,
+    devnull,
     setLoggerOptions,
 };

@@ -1,3 +1,4 @@
+/* eslint-disable  @typescript-eslint/no-explicit-any */
 import { DEBUG_LEVELS, logger } from '../src/core/logger';
 import { generateRandomKeypair } from '../src/cli/generate-random-keypairs';
 import { deployNftCli } from '../src/cli/deploy';

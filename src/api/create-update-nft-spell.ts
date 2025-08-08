@@ -10,7 +10,6 @@ import {
 import { showSpell } from '../core/charms-sdk';
 import { IContext } from '../core/i-context';
 import { createGeneralizedSpell } from './create-generalized-spell';
-import { bufferReplacer } from '../core/json';
 
 export async function createUpdateNftSpell(
 	context: IContext,

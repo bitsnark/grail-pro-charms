@@ -1,9 +1,9 @@
-import { logger } from './logger';
 import Client from 'bitcoin-core';
 import { PreviousTransactions, Utxo } from './types';
 import * as bitcoin from 'bitcoinjs-lib';
 import * as ecc from 'tiny-secp256k1';
 import { bitcoinjslibNetworks, Network } from './taproot/taproot-common';
+import { logger } from './logger';
 
 bitcoin.initEccLib(ecc);
 
@@ -43,7 +43,8 @@ export function getAddressFromScript(script: Buffer, network: Network): string {
 					output: script,
 					network: bitcoinjslibNetworks[network],
 				}).address;
-			} catch (e) {
+			} catch (error) {
+				logger.devnull(error);
 				return undefined;
 			}
 		})
@@ -60,7 +61,7 @@ export class ExtendedClient {
 		this.client = client;
 	}
 
-	getRawTransaction(txid: string): Promise<any> {
+	getRawTransaction(txid: string): Promise<{ hex: string } | undefined> {
 		return this.client.command('getrawtransaction', txid, true);
 	}
 	sendRawTransaction(txHex: string): Promise<string> {
@@ -77,7 +78,7 @@ export class ExtendedClient {
 			amount: number;
 		}[],
 		sighashType?: string
-	): Promise<any> {
+	): Promise<{ complete: boolean; hex: string }> {
 		return this.client.command(
 			'signrawtransactionwithwallet',
 			txHex,
@@ -89,13 +90,15 @@ export class ExtendedClient {
 		minconf: number,
 		maxconf: number,
 		addresses: string[]
-	): Promise<any[]> {
+	): Promise<
+		{ spendable: boolean; amount: number; txid: string; vout: number }[]
+	> {
 		return this.client.command('listunspent', minconf, maxconf, addresses);
 	}
 	getNewAddress(): Promise<string> {
 		return this.client.command('getnewaddress');
 	}
-	loadWallet(name: string): Promise<any> {
+	loadWallet(name: string): Promise<boolean> {
 		return this.client.command('loadwallet', name);
 	}
 	sendToAddress(toAddress: string, amountBtc: number): Promise<string> {
@@ -105,7 +108,7 @@ export class ExtendedClient {
 		txid: string,
 		vout: number,
 		includeMempool: boolean = true
-	): Promise<any> {
+	): Promise<Utxo | undefined> {
 		return this.client.command('gettxout', txid, vout, includeMempool);
 	}
 	generateToAddress(blocks: number, address: string): Promise<string[]> {
@@ -138,9 +141,9 @@ export class BitcoinClient {
 			const walletName = process.env.BTC_WALLET_NAME || 'default';
 			try {
 				await thus.client.loadWallet(walletName);
-			} catch (error: any) {
-				if (!error.message.includes('is already loaded')) {
-					throw new Error(`Failed to load wallet: ${error.message}`);
+			} catch (error) {
+				if (!JSON.stringify(error).includes('is already loaded')) {
+					throw new Error(`Failed to load wallet: ${error}`);
 				}
 			}
 		}
@@ -171,7 +174,7 @@ export class BitcoinClient {
 	): Promise<Buffer> {
 		const tx = bitcoin.Transaction.fromBuffer(txBytes);
 		const prevtxinfo = prevtxsBytesMap
-			? tx.ins.map((input, index) => {
+			? tx.ins.map(input => {
 					const prevtxid = hashToTxid(input.hash);
 					const prevtxbytes = prevtxsBytesMap[prevtxid];
 					if (!prevtxbytes) {
@@ -209,12 +212,12 @@ export class BitcoinClient {
 		{ spendable: boolean; value: number; txid: string; vout: number }[]
 	> {
 		return this.client!.listUnspent(0, 9999999, address ? [address] : []).then(
-			utxos =>
-				utxos.map(utxo => ({
-					spendable: utxo.spendable,
-					value: Math.floor(utxo.amount * 1e8), // Convert BTC to satoshis
-					txid: utxo.txid,
-					vout: utxo.vout,
+			unspent =>
+				unspent.map(us => ({
+					spendable: us.spendable,
+					value: Math.floor(us.amount * 1e8), // Convert BTC to satoshis
+					txid: us.txid,
+					vout: us.vout,
 				}))
 		);
 	}

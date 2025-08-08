@@ -1,6 +1,7 @@
 import { getAddressFromScript, hashToTxid } from '../core/bitcoin';
 import { TransactionInfoMap } from './types';
 import { IContext } from '../core/i-context';
+import { SpellMetadata } from '../core/types';
 
 function shortTxid(txid: string): string {
 	return txid.slice(0, 4) + '...' + txid.slice(-4);
@@ -14,30 +15,36 @@ function formatValue(value: number, units: string): string {
 	return Math.round((100000 * value) / 100000000) / 100000 + ' ' + units;
 }
 
-function getTokenValue(context: IContext, spell: any, index: number): string {
+function getTokenValue(
+	context: IContext,
+	spell: SpellMetadata,
+	index: number
+): string {
 	if (!spell || !spell.apps || !spell.outs || !spell.outs[index]) {
 		return '';
 	}
 	const values: string[] = [];
-	Object.keys(spell.outs[index].charms).forEach(key => {
-		if (
-			spell.apps[key].startsWith('t/') &&
-			typeof spell.outs[index].charms[key] == 'number'
-		) {
-			const appId = spell.apps[key].slice(0, 6) + '...';
-			values.push(formatValue(spell.outs[index].charms[key], appId));
-		} else if (spell.apps[key].startsWith('n/')) {
-			values.push('NFT ' + spell.apps[key].slice(2, 6) + '...');
+	Object.keys(spell.outs[index].charms as { [key: string]: unknown }).forEach(
+		key => {
+			if (
+				spell.apps[key].startsWith('t/') &&
+				typeof spell.outs[index].charms![key] == 'number'
+			) {
+				const appId = spell.apps[key].slice(0, 6) + '...';
+				values.push(formatValue(spell.outs[index].charms![key], appId));
+			} else if (spell.apps[key].startsWith('n/')) {
+				values.push('NFT ' + spell.apps[key].slice(2, 6) + '...');
+			}
 		}
-	});
+	);
 	return values.join('<br/>');
 }
 
-function getSpellActions(spell: any): string[] {
+function getSpellActions(spell: SpellMetadata): string[] {
 	const sa: string[] = [];
 	Object.keys(spell.public_args).forEach(key => {
 		if (spell.public_args[key].action) {
-			sa.push(spell.public_args[key].action);
+			sa.push(spell.public_args[key].action as string);
 		}
 	});
 	return sa;

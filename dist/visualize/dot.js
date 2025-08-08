@@ -15,7 +15,7 @@ function getTokenValue(context, spell, index) {
     if (!spell || !spell.apps || !spell.outs || !spell.outs[index]) {
         return '';
     }
-    let values = [];
+    const values = [];
     Object.keys(spell.outs[index].charms).forEach(key => {
         if (spell.apps[key].startsWith('t/') &&
             typeof spell.outs[index].charms[key] == 'number') {

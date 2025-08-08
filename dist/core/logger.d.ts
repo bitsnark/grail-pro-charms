@@ -13,11 +13,13 @@ export declare function log(...args: any): void;
 export declare function warn(...args: any): void;
 export declare function info(...args: any): void;
 export declare function debug(...args: any): void;
+export declare function devnull(...args: any): void;
 export declare const logger: {
     log: typeof log;
     error: typeof error;
     warn: typeof warn;
     info: typeof info;
     debug: typeof debug;
+    devnull: typeof devnull;
     setLoggerOptions: typeof setLoggerOptions;
 };

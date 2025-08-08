@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-empty-object-type */
+
 export interface Utxo {
 	txid: string;
 	vout: number;
@@ -29,6 +31,7 @@ export interface CharmerRequest {
 	fundingChangeAddress: string;
 	feerate: number;
 
+	/* eslint-disable @typescript-eslint/no-explicit-any */
 	toYamlObj(): any;
 }
 
@@ -121,4 +124,26 @@ export interface TokenUtxo {
 	txid: string;
 	vout: number;
 	amount: number; // Amount in satoshis
+}
+
+type CharmsDesc =
+	| number
+	| { current_cosigners?: string; current_threshold?: number };
+
+export interface SpellMetadata {
+	apps: { [appId: string]: string };
+	public_args: { [appKey: string]: { action: string } };
+	ins: {
+		utxo_id: string;
+		charms?: {
+			[key: string]: CharmsDesc;
+		};
+	}[];
+	outs: {
+		amount?: number;
+		address?: string;
+		charms?: {
+			[key: string]: CharmsDesc;
+		};
+	}[];
 }

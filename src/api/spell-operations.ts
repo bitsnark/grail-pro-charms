@@ -18,7 +18,6 @@ import { GrailState, GeneralizedInfo } from '../core/types';
 import { IContext } from '../core/i-context';
 import {
 	createSpell,
-	resignSpellWithTemporarySecret,
 	signTransactionInput,
 	verifySignatureForTransactionInput,
 } from '../core/spells';
@@ -43,10 +42,19 @@ export async function getPreviousGrailState(
 	) {
 		throw new Error('Invalid previous NFT spell data');
 	}
+	if (
+		!previousSpellData.outs[0].charms ||
+		!previousSpellData.outs[0].charms['$0000']
+	) {
+		throw new Error('No charms found in previous NFT spell data');
+	}
+	const state = previousSpellData.outs[0].charms['$0000'] as {
+		current_cosigners: string;
+		current_threshold: number;
+	};
 	return {
-		publicKeys:
-			previousSpellData.outs[0].charms['$0000'].current_cosigners.split(','),
-		threshold: previousSpellData.outs[0].charms['$0000'].current_threshold,
+		publicKeys: state.current_cosigners?.split(','),
+		threshold: state.current_threshold,
 	};
 }
 

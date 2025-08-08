@@ -10,7 +10,9 @@ export declare function getAddressFromScript(script: Buffer, network: Network): 
 export declare class ExtendedClient {
     client: Client;
     constructor(client: Client);
-    getRawTransaction(txid: string): Promise<any>;
+    getRawTransaction(txid: string): Promise<{
+        hex: string;
+    } | undefined>;
     sendRawTransaction(txHex: string): Promise<string>;
     signTransactionInputs(txHex: string, prevtxs?: {
         txid: string;
@@ -19,12 +21,20 @@ export declare class ExtendedClient {
         redeemScript: string;
         witnessScript: string;
         amount: number;
-    }[], sighashType?: string): Promise<any>;
-    listUnspent(minconf: number, maxconf: number, addresses: string[]): Promise<any[]>;
+    }[], sighashType?: string): Promise<{
+        complete: boolean;
+        hex: string;
+    }>;
+    listUnspent(minconf: number, maxconf: number, addresses: string[]): Promise<{
+        spendable: boolean;
+        amount: number;
+        txid: string;
+        vout: number;
+    }[]>;
     getNewAddress(): Promise<string>;
-    loadWallet(name: string): Promise<any>;
+    loadWallet(name: string): Promise<boolean>;
     sendToAddress(toAddress: string, amountBtc: number): Promise<string>;
-    getTxOut(txid: string, vout: number, includeMempool?: boolean): Promise<any>;
+    getTxOut(txid: string, vout: number, includeMempool?: boolean): Promise<Utxo | undefined>;
     generateToAddress(blocks: number, address: string): Promise<string[]>;
     generateBlocks(address: string, txids: string[]): Promise<void>;
 }

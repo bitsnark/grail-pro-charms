@@ -103,12 +103,11 @@ async function deployNftCli(_argv) {
     return {
         appId: context.appId,
         appVk: context.appVk,
-        spellTxid
+        spellTxid,
     };
 }
 if (require.main === module) {
-    deployNftCli(process.argv.slice(2))
-        .catch(error => {
+    deployNftCli(process.argv.slice(2)).catch(error => {
         logger_1.logger.error('Error during NFT deployment: ', error);
     });
 }
