@@ -9,6 +9,12 @@ import { BitcoinClient } from '../../src/core/bitcoin';
 
 jest.setTimeout(1200000);
 
+// Common CLI arguments for testing
+const TEST_CLI_ARGS = [
+    '--mock-proof', 'true',
+    '--skip-proof', 'true',
+];
+
 // Cosigner constants
 const DEPLOYER = {
     publicKey: 'daa3808e8962acad07bedbbcb94ef7d0f7551cc5188e5dd35eae2dd60d0b8c4f',
@@ -26,23 +32,20 @@ const COSIGNER_2 = {
 };
 
 describe('pegin e2e test', () => {
-    let updateResult: any;
-    let paymentResult: any;
+    let update: any;
+    let payment: any;
     let app: any;
 
     beforeEach(async () => {
 
         // Deploy the NFT using the CLI
-        const deploymentResult = await deployNftCli([
+        const deployment = await deployNftCli([
             '--deployer-public-key', DEPLOYER.publicKey,
-            '--mock-proof', 'true',
-            '--network', 'regtest',
-            '--feerate', '0.00002',
-            '--transmit', 'true',
             '--ticker', 'TESTNFT',
+            ...TEST_CLI_ARGS,
         ]);
 
-        app = { appId: deploymentResult.appId, appVk: deploymentResult.appVk };
+        app = { appId: deployment.appId, appVk: deployment.appVk };
 
         // Update the NFT to [1,2] t:1 
         const tempGrailStateFile = path.join(
@@ -55,15 +58,13 @@ describe('pegin e2e test', () => {
         }, null, 2));
 
         try {
-            updateResult = await updateNftCli([
+            update = await updateNftCli([
                 '--app-id', app.appId,
                 '--app-vk', app.appVk,
-                '--previous-nft-txid', deploymentResult.spellTxid,
-                '--private-keys', [DEPLOYER].map(s => s.privateKey).join(','),
+                '--previous-nft-txid', deployment.spellTxid,
+                '--private-keys', DEPLOYER.privateKey,
                 '--new-grail-state-file', tempGrailStateFile,
-                '--feerate', '0.00002',
-                '--mock-proof', 'true',
-                '--transmit', 'true',
+                ...TEST_CLI_ARGS,
             ]);
         } finally {
             // Clean up temporary file
@@ -76,13 +77,14 @@ describe('pegin e2e test', () => {
         await mintBlock();
 
         // Step 3: Create user payment
-        paymentResult = await userPaymentCli([
-            '--type', 'btc',
+        payment = await userPaymentCli([
             '--app-id', app.appId,
             '--app-vk', app.appVk,
+            '--type', 'btc',
             '--current-public-keys', `${COSIGNER_1.publicKey},${COSIGNER_2.publicKey}`,
             '--current-threshold', '1',
             '--amount', '500000',
+            ...TEST_CLI_ARGS,
         ]);
 
     });
@@ -95,14 +97,13 @@ describe('pegin e2e test', () => {
         const peginResult = await peginCli([
             '--app-id', app.appId,
             '--app-vk', app.appVk,
+            '--previous-nft-txid', update.spellTxid,
             '--new-public-keys', `${COSIGNER_1.publicKey},${COSIGNER_2.publicKey}`,
             '--new-threshold', '1',
-            '--previous-nft-txid', updateResult.spellTxid,
-            '--recovery-public-key', paymentResult.recoveryPublicKey,
             '--private-keys', `${COSIGNER_1.privateKey},${COSIGNER_2.privateKey}`,
-            '--user-payment-txid', paymentResult.txid,
-            '--mock-proof', 'true',
-            '--transmit', 'true',
+            '--recovery-public-key', payment.recoveryPublicKey,
+            '--user-payment-txid', payment.txid,
+            ...TEST_CLI_ARGS,
         ]);
 
         expect(peginResult).toBeTruthy();
