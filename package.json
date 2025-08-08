@@ -13,6 +13,7 @@
 		"test:cli:update": "jest --detectOpenHandles --runInBand tests/cli/update.test.ts",
 		"test:cli:simple": "jest --detectOpenHandles --runInBand tests/cli/simple.test.ts",
 		"test:cli:btc-user-payment": "jest --detectOpenHandles --runInBand tests/cli/btc-user-payment.test.ts",
+		"test:cli:pegin": "jest --detectOpenHandles --runInBand tests/cli/pegin.test.ts",
 		"test:e2e": "jest --detectOpenHandles --runInBand tests/e2e/",
 		"lint": "eslint --ignore-pattern node_modules/ --ignore-pattern dist/ --ignore-pattern python/ .",
 		"lint-fix": "npm run lint -- --fix"
