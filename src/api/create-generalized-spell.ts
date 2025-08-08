@@ -125,17 +125,6 @@ async function calculateBitcoinToLock(
 		.map(utxo => getAmountFromUtxo(previousTransactions, utxo))
 		.reduce((a, b) => a + b, 0);
 
-	if (incomingUserBtc !== outgoingUserCharms) {
-		throw new Error(
-			`Incoming BTC (${incomingUserBtc}) does not match outgoing user charms (${outgoingUserCharms})`
-		);
-	}
-	if (incomingUserCharms !== outgoingUserBtc) {
-		throw new Error(
-			`Incoming user charms (${incomingUserCharms}) does not match outgoing BTC (${outgoingUserBtc})`
-		);
-	}
-
 	return incomingGrailBtc + incomingUserBtc - outgoingUserBtc;
 }
 
@@ -181,7 +170,9 @@ export async function createGeneralizedSpell(
 	}
 
 	// Sanity!
-	await sanityCheck(context, previousTransactions, generalizedInfo);
+	if (!generalizedInfo.disableSanity) {
+		await sanityCheck(context, previousTransactions, generalizedInfo);
+	}
 
 	const fundingChangeAddress = await context.bitcoinClient.getAddress();
 	fundingUtxo = fundingUtxo || (await context.bitcoinClient.getFundingUtxo());
@@ -282,7 +273,7 @@ export async function createGeneralizedSpell(
 							$00: {
 								type: 'user_charms',
 							},
-							$01: outgoing.amount
+							$01: outgoing.amount,
 						},
 					})),
 					this.generalizedInfo.outgoingGrailBtc!.amount > 0

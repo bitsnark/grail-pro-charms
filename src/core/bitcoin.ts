@@ -111,10 +111,13 @@ export class BitcoinClient {
 			try {
 				await thus.client.loadWallet(walletName);
 			} catch (error: any) {
+				logger.error(error);
 				// Check for various wallet already loaded error messages
-				if (!error.message.includes('is already loaded') && 
+				if (
+					!error.message.includes('is already loaded') &&
 					!error.message.includes('Database is already opened') &&
-					!error.message.includes('Unable to obtain an exclusive lock')) {
+					!error.message.includes('Unable to obtain an exclusive lock')
+				) {
 					throw new Error(`Failed to load wallet: ${error.message}`);
 				}
 				// If it's a lock error, try to unload and reload
@@ -124,7 +127,9 @@ export class BitcoinClient {
 						await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
 						await thus.client.loadWallet(walletName);
 					} catch (reloadError: any) {
-						throw new Error(`Failed to reload wallet after lock error: ${reloadError.message}`);
+						throw new Error(
+							`Failed to reload wallet after lock error: ${reloadError.message}`
+						);
 					}
 				}
 			}

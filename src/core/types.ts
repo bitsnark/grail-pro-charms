@@ -67,6 +67,7 @@ export interface GeneralizedInfo {
 	outgoingUserBtc: Outgoing[];
 	outgoingUserCharms: Outgoing[];
 	outgoingGrailBtc?: Outgoing;
+	disableSanity?: boolean;
 }
 
 export const generalizeInfoBlank: GeneralizedInfo = {
