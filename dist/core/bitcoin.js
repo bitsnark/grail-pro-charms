@@ -41,8 +41,13 @@ exports.txidToHash = txidToHash;
 exports.hashToTxid = hashToTxid;
 exports.txBytesToTxid = txBytesToTxid;
 exports.txHexToTxid = txHexToTxid;
+exports.getAddressFromScript = getAddressFromScript;
 const bitcoin_core_1 = __importDefault(require("bitcoin-core"));
 const bitcoin = __importStar(require("bitcoinjs-lib"));
+const ecc = __importStar(require("tiny-secp256k1"));
+const taproot_common_1 = require("./taproot/taproot-common");
+const logger_1 = require("./logger");
+bitcoin.initEccLib(ecc);
 exports.DUST_LIMIT = 546;
 function txidToHash(txid) {
     return Buffer.from(txid, 'hex').reverse();
@@ -57,6 +62,34 @@ function txBytesToTxid(txBytes) {
 function txHexToTxid(txHex) {
     const txBytes = Buffer.from(txHex, 'hex');
     return txBytesToTxid(txBytes);
+}
+function getAddressFromScript(script, network) {
+    const address = [
+        bitcoin.payments.p2ms,
+        bitcoin.payments.p2pk,
+        bitcoin.payments.p2pkh,
+        bitcoin.payments.p2sh,
+        bitcoin.payments.p2wpkh,
+        bitcoin.payments.p2wsh,
+        bitcoin.payments.p2tr,
+    ]
+        .map(payment => {
+        try {
+            return payment({
+                output: script,
+                network: taproot_common_1.bitcoinjslibNetworks[network],
+            }).address;
+        }
+        catch (error) {
+            logger_1.logger.devnull(error);
+            return undefined;
+        }
+    })
+        .filter(Boolean)[0];
+    if (!address) {
+        return script.toString('hex'); // Fallback to hex representation if no address found
+    }
+    return address;
 }
 class ExtendedClient {
     constructor(client) {
@@ -118,14 +151,15 @@ class BitcoinClient {
                 await thus.client.loadWallet(walletName);
             }
             catch (error) {
+                const errorStr = JSON.stringify(error);
                 // Check for various wallet already loaded error messages
-                if (!error.message.includes('is already loaded') &&
-                    !error.message.includes('Database is already opened') &&
-                    !error.message.includes('Unable to obtain an exclusive lock')) {
-                    throw new Error(`Failed to load wallet: ${error.message}`);
+                if (!errorStr.includes('is already loaded') &&
+                    !errorStr.includes('Database is already opened') &&
+                    !errorStr.includes('Unable to obtain an exclusive lock')) {
+                    throw new Error('Failed to load wallet: ' + error);
                 }
                 // If it's a lock error, try to unload and reload
-                if (error.message.includes('Unable to obtain an exclusive lock')) {
+                if (errorStr.includes('Unable to obtain an exclusive lock')) {
                     try {
                         await thus.client.unloadWallet(walletName);
                         await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
@@ -157,7 +191,7 @@ class BitcoinClient {
     async signTransaction(txBytes, prevtxsBytesMap, sighashType) {
         const tx = bitcoin.Transaction.fromBuffer(txBytes);
         const prevtxinfo = prevtxsBytesMap
-            ? tx.ins.map((input, index) => {
+            ? tx.ins.map(input => {
                 const prevtxid = hashToTxid(input.hash);
                 const prevtxbytes = prevtxsBytesMap[prevtxid];
                 if (!prevtxbytes) {
@@ -184,11 +218,11 @@ class BitcoinClient {
         return this.client.sendRawTransaction(txBytes.toString('hex'));
     }
     async listUnspent(address) {
-        return this.client.listUnspent(0, 9999999, address ? [address] : []).then(utxos => utxos.map(utxo => ({
-            spendable: utxo.spendable,
-            value: Math.floor(utxo.amount * 1e8), // Convert BTC to satoshis
-            txid: utxo.txid,
-            vout: utxo.vout,
+        return this.client.listUnspent(0, 9999999, address ? [address] : []).then(unspent => unspent.map(us => ({
+            spendable: us.spendable,
+            value: Math.floor(us.amount * 1e8), // Convert BTC to satoshis
+            txid: us.txid,
+            vout: us.vout,
         })));
     }
     async getAddress() {

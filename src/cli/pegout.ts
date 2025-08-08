@@ -3,7 +3,6 @@ import minimist from 'minimist';
 import dotenv from 'dotenv';
 import { BitcoinClient } from '../core/bitcoin';
 import { Network } from '../core/taproot/taproot-common';
-import { bufferReplacer } from '../core/json';
 import { Context } from '../core/context';
 import { parse } from '../core/env-parser';
 import { SignatureResponse, UserPaymentDetails } from '../core/types';

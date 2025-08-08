@@ -1,10 +1,10 @@
-import { generateRandomKeypair } from '../src/cli/generate-random-keypairs';
-import { deployNftCli } from '../src/cli/deploy';
-import { peginCli } from '../src/cli/pegin';
-import { userPaymentCli } from '../src/cli/user-payment';
-import { DEBUG_LEVELS, logger } from '../src/core/logger';
+import { generateRandomKeypair } from '../../src/cli/generate-random-keypairs';
+import { deployNftCli } from '../../src/cli/deploy';
+import { peginCli } from '../../src/cli/pegin';
+import { userPaymentCli } from '../../src/cli/user-payment';
+import { DEBUG_LEVELS, logger } from '../../src/core/logger';
 import { generateBlocks } from './bitcoin-utils';
-import { transferCli } from '../src/cli/transfer';
+import { transferCli } from '../../src/cli/transfer';
 
 jest.setTimeout(600000000);
 logger.setLoggerOptions(DEBUG_LEVELS.ALL, true, true); // Set debug level to ALL, print date and level
@@ -126,7 +126,7 @@ describe('peg-in and transfer e2e test', () => {
 			'--amount',
 			transmitAmount.toString(),
 			'--skip-proof',
-			'false'
+			'false',
 		]);
 		expect(transferResult).toBeTruthy();
 		logger.log('Transfer Result:', transferResult);

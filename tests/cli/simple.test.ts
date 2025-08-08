@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { DEBUG_LEVELS, logger } from '../../src/core/logger';
 import { generateRandomKeypair } from '../../src/cli/generate-random-keypairs';
 import { deployNftCli } from '../../src/cli/deploy';
@@ -27,21 +28,27 @@ describe('simple e2e test', () => {
 	it('should deploy the NFT', async () => {
 		expect(deployerPublicKey).toBeDefined();
 
-    // Deploy the NFT using the CLI
-    deploymentResult = await deployNftCli([
-      '--deployer-public-key', deployerPublicKey,
-      '--mock-proof', 'true',
-      '--network', 'regtest',
-      '--feerate', '0.00002',
-      '--transmit', 'true',
-      '--ticker', 'TESTNFT'
-    ]);
-    expect(deploymentResult).toBeTruthy();
-    expect(deploymentResult.appId).toBeDefined();
-    expect(deploymentResult.appVk).toBeDefined(); 
-    expect(deploymentResult.spellTxid).toBeDefined();
-    console.log('Deployment Result:', deploymentResult);
-  });
+		// Deploy the NFT using the CLI
+		deploymentResult = await deployNftCli([
+			'--deployer-public-key',
+			deployerPublicKey,
+			'--mock-proof',
+			'true',
+			'--network',
+			'regtest',
+			'--feerate',
+			'0.00002',
+			'--transmit',
+			'true',
+			'--ticker',
+			'TESTNFT',
+		]);
+		expect(deploymentResult).toBeTruthy();
+		expect(deploymentResult.appId).toBeDefined();
+		expect(deploymentResult.appVk).toBeDefined();
+		expect(deploymentResult.spellTxid).toBeDefined();
+		console.log('Deployment Result:', deploymentResult);
+	});
 
 	it('should execute user payment', async () => {
 		expect(deployerPublicKey).toBeDefined();

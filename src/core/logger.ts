@@ -1,3 +1,4 @@
+/* eslint-disable  @typescript-eslint/no-explicit-any */
 import { bufferReplacer } from './json';
 
 let debugLevel = parseInt(process.env.DEBUG || '0');
@@ -51,19 +52,25 @@ export function log(...args: any): void {
 }
 
 export function warn(...args: any): void {
+	if (debugLevel < DEBUG_LEVELS.WARN) return;
 	inject(args, DEBUG_LEVELS.WARN);
 	print(...args);
 }
 
 export function info(...args: any): void {
+	if (debugLevel < DEBUG_LEVELS.INFO) return;
 	inject(args, DEBUG_LEVELS.INFO);
 	print(...args);
 }
 
 export function debug(...args: any): void {
+	if (debugLevel < DEBUG_LEVELS.DEBUG) return;
 	inject(args, DEBUG_LEVELS.DEBUG);
 	print(...args);
 }
+
+/* eslint-disable @typescript-eslint/no-unused-vars */
+export function devnull(...args: any): void {}
 
 export const logger = {
 	log,
@@ -71,5 +78,6 @@ export const logger = {
 	warn,
 	info,
 	debug,
+	devnull,
 	setLoggerOptions,
 };

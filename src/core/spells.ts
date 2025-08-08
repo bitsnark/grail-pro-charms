@@ -4,13 +4,12 @@ import * as yaml from 'js-yaml';
 import { schnorr } from '@noble/curves/secp256k1';
 import { executeSpell } from './charms-sdk';
 import { CharmerRequest, GrailState, Spell, TokenUtxo, Utxo } from './types';
-import { bufferReplacer } from './json';
 import { KeyPair } from './taproot';
 import { getHash } from './taproot/taproot-common';
 import { showSpell } from './charms-sdk';
 import { IContext } from './i-context';
 import { hashToTxid } from './bitcoin';
-import { arrayFromArrayWithIndex, mapAsync } from './array-utils';
+import { mapAsync } from './array-utils';
 
 // SIGHASH type for Taproot (BIP-342)
 const sighashType = bitcoin.Transaction.SIGHASH_DEFAULT;
@@ -32,13 +31,19 @@ export async function getStateFromNft(
 	const appKey = Object.keys(previousSpellData.apps).find(
 		key => previousSpellData.apps[key] === nftId
 	);
-	if (!appKey || !previousSpellData.outs[0].charms[appKey]) {
+	if (
+		!appKey ||
+		!previousSpellData.outs[0].charms ||
+		!previousSpellData.outs[0].charms[appKey]
+	) {
 		return null;
 	}
-	const previousPublicKeys =
-		previousSpellData.outs[0].charms[appKey].current_cosigners?.split(',');
-	const previousThreshold =
-		previousSpellData.outs[0].charms[appKey].current_threshold;
+	const state = previousSpellData.outs[0].charms[appKey] as {
+		current_cosigners: string;
+		current_threshold: number;
+	};
+	const previousPublicKeys = state.current_cosigners?.split(',');
+	const previousThreshold = state.current_threshold;
 
 	return {
 		publicKeys: previousPublicKeys,
@@ -61,7 +66,13 @@ export async function getCharmsAmountFromUtxo(
 	if (!appKey) {
 		throw new Error(`No app key found for token ${tokenId}`);
 	}
-	return Number(spellData.outs[utxo.vout]?.charms[appKey] ?? 0);
+	if (
+		spellData.outs[utxo.vout].charms &&
+		spellData.outs[utxo.vout]!.charms![appKey]
+	) {
+		return Number(spellData.outs[utxo.vout]!.charms![appKey]);
+	}
+	return 0;
 }
 
 export function signTransactionInput(

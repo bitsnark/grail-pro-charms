@@ -18,13 +18,16 @@ import { GrailState, GeneralizedInfo } from '../core/types';
 import { IContext } from '../core/i-context';
 import {
 	createSpell,
-	resignSpellWithTemporarySecret,
 	signTransactionInput,
 	verifySignatureForTransactionInput,
 } from '../core/spells';
 import { showSpell } from '../core/charms-sdk';
 import { bitcoinjslibNetworks, Network } from '../core/taproot/taproot-common';
-import { hashToTxid, txBytesToTxid } from '../core/bitcoin';
+import {
+	getAddressFromScript,
+	hashToTxid,
+	txBytesToTxid,
+} from '../core/bitcoin';
 import { generateSpendingScriptForGrail } from '../core/taproot';
 
 export async function getPreviousGrailState(
@@ -39,10 +42,19 @@ export async function getPreviousGrailState(
 	) {
 		throw new Error('Invalid previous NFT spell data');
 	}
+	if (
+		!previousSpellData.outs[0].charms ||
+		!previousSpellData.outs[0].charms['$0000']
+	) {
+		throw new Error('No charms found in previous NFT spell data');
+	}
+	const state = previousSpellData.outs[0].charms['$0000'] as {
+		current_cosigners: string;
+		current_threshold: number;
+	};
 	return {
-		publicKeys:
-			previousSpellData.outs[0].charms['$0000'].current_cosigners.split(','),
-		threshold: previousSpellData.outs[0].charms['$0000'].current_threshold,
+		publicKeys: state.current_cosigners?.split(','),
+		threshold: state.current_threshold,
 	};
 }
 
@@ -185,8 +197,7 @@ export async function injectSignaturesIntoSpell(
 		);
 	}
 
-	const commitmentTxid = txBytesToTxid(spell.commitmentTxBytes);
-
+	// const commitmentTxid = txBytesToTxid(spell.commitmentTxBytes);
 	// spell.spellTxBytes = await resignSpellWithTemporarySecret(
 	// 	context,
 	// 	spell.spellTxBytes,
@@ -383,31 +394,5 @@ export async function getUserWalletAddressFromUserPaymentUtxo(
 	}
 
 	// Now try every address type possible
-
-	const address = [
-		bitcoin.payments.p2ms,
-		bitcoin.payments.p2pk,
-		bitcoin.payments.p2pkh,
-		bitcoin.payments.p2sh,
-		bitcoin.payments.p2wpkh,
-		bitcoin.payments.p2wsh,
-		bitcoin.payments.p2tr,
-	]
-		.map(payment => {
-			try {
-				return payment({
-					output: script,
-					network: bitcoinjslibNetworks[network],
-				}).address;
-			} catch (e) {
-				return undefined;
-			}
-		})
-		.filter(Boolean)[0];
-	if (!address) {
-		throw new Error(
-			'No valid address found, script: ' + script.toString('hex')
-		);
-	}
-	return address;
+	return getAddressFromScript(script, network);
 }
