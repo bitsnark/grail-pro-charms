@@ -23,5 +23,5 @@ async function createUpdateNftSpell(context, feerate, previousNftTxid, grailStat
         outgoingUserBtc: [],
         outgoingUserCharms: [],
     };
-    return await (0, create_generalized_spell_1.createGeneralizedSpell)(context, feerate, previousNftTxid, grailState, freshGeneralizedInfo, fundingUtxo);
+    return await (0, create_generalized_spell_1.createGeneralizedSpell)(context, feerate, previousNftTxid, grailState, freshGeneralizedInfo, {}, fundingUtxo);
 }

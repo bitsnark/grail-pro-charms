@@ -94,25 +94,15 @@ async function calculateBitcoinToLock(context, previousTransactions, generalized
     const incomingUserBtc = generalizedInfo.incomingUserBtc
         .map(payment => getAmountFromUtxo(previousTransactions, payment))
         .reduce((a, b) => a + b, 0);
-    const incomingUserCharms = (await (0, array_utils_1.mapAsync)(generalizedInfo.incomingUserCharms, utxo => (0, spells_1.getCharmsAmountFromUtxo)(context, utxo))).reduce((a, b) => a + b, 0);
-    const outgoingUserCharms = generalizedInfo.outgoingUserCharms
-        .map(outgoing => outgoing.amount)
-        .reduce((a, b) => a + b, 0);
     const outgoingUserBtc = generalizedInfo.outgoingUserBtc
         .map(outgoing => outgoing.amount)
         .reduce((a, b) => a + b, 0);
     const incomingGrailBtc = generalizedInfo.incomingGrailBtc
         .map(utxo => getAmountFromUtxo(previousTransactions, utxo))
         .reduce((a, b) => a + b, 0);
-    if (incomingUserBtc !== outgoingUserCharms) {
-        throw new Error(`Incoming BTC (${incomingUserBtc}) does not match outgoing user charms (${outgoingUserCharms})`);
-    }
-    if (incomingUserCharms !== outgoingUserBtc) {
-        throw new Error(`Incoming user charms (${incomingUserCharms}) does not match outgoing BTC (${outgoingUserBtc})`);
-    }
     return incomingGrailBtc + incomingUserBtc - outgoingUserBtc;
 }
-async function createGeneralizedSpell(context, feerate, previousNftTxid, nextGrailState, generalizedInfo, fundingUtxo) {
+async function createGeneralizedSpell(context, feerate, previousNftTxid, nextGrailState, generalizedInfo, tokenDetails = {}, fundingUtxo) {
     const allPreviousTxids = [
         previousNftTxid,
         ...generalizedInfo.incomingGrailBtc.map(utxo => utxo.txid),
@@ -133,7 +123,9 @@ async function createGeneralizedSpell(context, feerate, previousNftTxid, nextGra
         generalizedInfo.outgoingGrailBtc.amount = 0;
     }
     // Sanity!
-    await sanityCheck(context, previousTransactions, generalizedInfo);
+    if (!generalizedInfo.disableSanity) {
+        await sanityCheck(context, previousTransactions, generalizedInfo);
+    }
     const fundingChangeAddress = await context.bitcoinClient.getAddress();
     fundingUtxo = fundingUtxo || (await context.bitcoinClient.getFundingUtxo());
     const previousSpellData = await (0, charms_sdk_1.showSpell)(context, previousNftTxid);
@@ -156,7 +148,6 @@ async function createGeneralizedSpell(context, feerate, previousNftTxid, nextGra
     const request = {
         appId: context.appId,
         appVk: context.appVk,
-        ticker: context.ticker,
         fundingUtxo,
         fundingChangeAddress,
         feerate,
@@ -167,6 +158,7 @@ async function createGeneralizedSpell(context, feerate, previousNftTxid, nextGra
             publicKeysAsString: nextGrailState.publicKeys.join(','),
             threshold: nextGrailState.threshold,
         },
+        tokenDetails,
         generalizedInfo,
         toYamlObj: function () {
             return {
@@ -188,7 +180,6 @@ async function createGeneralizedSpell(context, feerate, previousNftTxid, nextGra
                         utxo_id: `${previousNftTxid}:0`,
                         charms: {
                             $00: {
-                                ticker: this.ticker,
                                 current_cosigners: this.previousGrailState.publicKeys.join(','),
                                 current_threshold: this.previousGrailState.threshold,
                             },
@@ -212,7 +203,10 @@ async function createGeneralizedSpell(context, feerate, previousNftTxid, nextGra
                         address: this.nextNftAddress,
                         charms: {
                             $00: {
-                                ticker: context.ticker,
+                                ticker: this.tokenDetails.ticker,
+                                name: this.tokenDetails.name,
+                                image: this.tokenDetails.image,
+                                url: this.tokenDetails.url,
                                 current_cosigners: this.currentNftState.publicKeysAsString,
                                 current_threshold: this.currentNftState.threshold,
                             },

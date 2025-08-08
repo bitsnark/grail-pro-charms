@@ -11,6 +11,7 @@ import {
 	GrailState,
 	SignatureRequest,
 	Spell,
+	TokenDetails,
 	Utxo,
 } from '../core/types';
 import { showSpell } from '../core/charms-sdk';
@@ -109,31 +110,12 @@ async function calculateBitcoinToLock(
 	const incomingUserBtc = generalizedInfo.incomingUserBtc
 		.map(payment => getAmountFromUtxo(previousTransactions, payment))
 		.reduce((a, b) => a + b, 0);
-	const incomingUserCharms = (
-		await mapAsync(generalizedInfo.incomingUserCharms, utxo =>
-			getCharmsAmountFromUtxo(context, utxo)
-		)
-	).reduce((a, b) => a + b, 0);
-	const outgoingUserCharms = generalizedInfo.outgoingUserCharms
-		.map(outgoing => outgoing.amount)
-		.reduce((a, b) => a + b, 0);
 	const outgoingUserBtc = generalizedInfo.outgoingUserBtc
 		.map(outgoing => outgoing.amount)
 		.reduce((a, b) => a + b, 0);
 	const incomingGrailBtc = generalizedInfo.incomingGrailBtc
 		.map(utxo => getAmountFromUtxo(previousTransactions, utxo))
 		.reduce((a, b) => a + b, 0);
-
-	if (incomingUserBtc !== outgoingUserCharms) {
-		throw new Error(
-			`Incoming BTC (${incomingUserBtc}) does not match outgoing user charms (${outgoingUserCharms})`
-		);
-	}
-	if (incomingUserCharms !== outgoingUserBtc) {
-		throw new Error(
-			`Incoming user charms (${incomingUserCharms}) does not match outgoing BTC (${outgoingUserBtc})`
-		);
-	}
 
 	return incomingGrailBtc + incomingUserBtc - outgoingUserBtc;
 }
@@ -144,6 +126,7 @@ export async function createGeneralizedSpell(
 	previousNftTxid: string,
 	nextGrailState: GrailState,
 	generalizedInfo: GeneralizedInfo,
+	tokenDetails: TokenDetails = {},
 	fundingUtxo?: Utxo
 ): Promise<{ spell: Spell; signatureRequest: SignatureRequest }> {
 	const allPreviousTxids = [
@@ -180,7 +163,9 @@ export async function createGeneralizedSpell(
 	}
 
 	// Sanity!
-	await sanityCheck(context, previousTransactions, generalizedInfo);
+	if (!generalizedInfo.disableSanity) {
+		await sanityCheck(context, previousTransactions, generalizedInfo);
+	}
 
 	const fundingChangeAddress = await context.bitcoinClient.getAddress();
 	fundingUtxo = fundingUtxo || (await context.bitcoinClient.getFundingUtxo());
@@ -221,7 +206,6 @@ export async function createGeneralizedSpell(
 	const request: GeneralizedRequest = {
 		appId: context.appId,
 		appVk: context.appVk,
-		ticker: context.ticker,
 		fundingUtxo,
 		fundingChangeAddress,
 		feerate,
@@ -232,6 +216,7 @@ export async function createGeneralizedSpell(
 			publicKeysAsString: nextGrailState.publicKeys.join(','),
 			threshold: nextGrailState.threshold,
 		},
+		tokenDetails,
 		generalizedInfo,
 
 		toYamlObj: function () {
@@ -255,7 +240,6 @@ export async function createGeneralizedSpell(
 						utxo_id: `${previousNftTxid}:0`,
 						charms: {
 							$00: {
-								ticker: this.ticker,
 								current_cosigners: this.previousGrailState.publicKeys.join(','),
 								current_threshold: this.previousGrailState.threshold,
 							},
@@ -279,7 +263,10 @@ export async function createGeneralizedSpell(
 						address: this.nextNftAddress,
 						charms: {
 							$00: {
-								ticker: context.ticker,
+								ticker: this.tokenDetails.ticker,
+								name: this.tokenDetails.name,
+								image: this.tokenDetails.image,
+								url: this.tokenDetails.url,
 								current_cosigners: this.currentNftState.publicKeysAsString,
 								current_threshold: this.currentNftState.threshold,
 							},

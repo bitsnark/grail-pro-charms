@@ -45,6 +45,7 @@ export async function createUpdateNftSpell(
 		previousNftTxid,
 		grailState,
 		freshGeneralizedInfo,
+		{},
 		fundingUtxo
 	);
 }

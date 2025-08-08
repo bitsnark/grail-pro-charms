@@ -100,7 +100,7 @@ async function createPegoutSpell(context, feerate, previousNftTxid, nextGrailSta
                 address: userPaymentDetails.userWalletAddress,
             },
         ],
-    }, fundingUtxo);
+    }, {}, fundingUtxo);
     logger_1.logger.debug('Peg-in spell created: ', spell);
     return { spell, signatureRequest };
 }

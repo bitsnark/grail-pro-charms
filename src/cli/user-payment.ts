@@ -176,7 +176,6 @@ export async function userPaymentCli(
 		network,
 		mockProof: !!argv['mock-proof'],
 		skipProof: !!argv['skip-proof'],
-		ticker: 'GRAIL-NFT',
 	});
 
 	if (type == 'charms') {

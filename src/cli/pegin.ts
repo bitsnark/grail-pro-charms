@@ -57,7 +57,6 @@ export async function peginCli(_argv: string[]): Promise<[string, string]> {
 		network,
 		mockProof: !!argv['mock-proof'],
 		skipProof: !!argv['skip-proof'],
-		ticker: 'GRAIL-NFT',
 	});
 
 	if (!argv['new-public-keys']) {

@@ -1,22 +1,16 @@
 import { logger } from '../core/logger';
-import * as bitcoin from 'bitcoinjs-lib';
-import {
-	GrailState,
-	SignatureRequest,
-	Spell,
-	UserPaymentDetails,
-	Utxo,
-} from '../core/types';
+import { SignatureRequest, Spell, TokenDetails, Utxo } from '../core/types';
 import { IContext } from '../core/i-context';
 import { createGeneralizedSpell } from './create-generalized-spell';
 import { getPreviousGrailState } from './spell-operations';
 
-export async function createPeginSpell(
+export async function createMintSpell(
 	context: IContext,
+	tokenDetails: TokenDetails,
 	feerate: number,
 	previousNftTxid: string,
-	nextGrailState: GrailState,
-	userPaymentDetails: UserPaymentDetails,
+	amount: number,
+	userWalletAddress: string,
 	fundingUtxo?: Utxo
 ): Promise<{ spell: Spell; signatureRequest: SignatureRequest }> {
 	const previousNftTxhex =
@@ -35,40 +29,29 @@ export async function createPeginSpell(
 
 	fundingUtxo = fundingUtxo || (await context.bitcoinClient.getFundingUtxo());
 
-	const userPaymentTxBytes = await context.bitcoinClient.getTransactionBytes(
-		userPaymentDetails.txid
-	);
-	if (!userPaymentTxBytes) {
-		throw new Error(
-			`User payment transaction ${userPaymentDetails.txid} not found`
-		);
-	}
-	const userPaymentTx = bitcoin.Transaction.fromBuffer(userPaymentTxBytes);
-	const userPaymentAmount = userPaymentTx.outs[userPaymentDetails.vout].value;
-	logger.debug('User payment transaction amount: ', userPaymentAmount);
-
 	const { spell, signatureRequest } = await createGeneralizedSpell(
 		context,
 		feerate,
 		previousNftTxid,
-		nextGrailState,
+		previousGrailState,
 		{
-			incomingUserBtc: [userPaymentDetails],
+			disableSanity: true, // Disable sanity check for minting
+			incomingUserBtc: [],
 			incomingUserCharms: [],
 			incomingGrailBtc: [],
 			outgoingUserCharms: [
 				{
-					amount: userPaymentAmount,
-					address: userPaymentDetails.userWalletAddress,
+					amount: amount,
+					address: userWalletAddress,
 				},
 			],
 			outgoingUserBtc: [],
 		},
-		{},
+		tokenDetails, // Empty token details for minting
 		fundingUtxo
 	);
 
-	logger.debug('Peg-in spell created: ', spell);
+	logger.debug('Mint spell created: ', spell);
 
 	return { spell, signatureRequest };
 }

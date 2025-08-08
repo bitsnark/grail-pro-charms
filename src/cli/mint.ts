@@ -5,26 +5,25 @@ import { BitcoinClient } from '../core/bitcoin';
 import { Network } from '../core/taproot/taproot-common';
 import { Context } from '../core/context';
 import { parse } from '../core/env-parser';
-import { SignatureResponse, UserPaymentDetails } from '../core/types';
+import { SignatureResponse, TokenDetails } from '../core/types';
 import {
-	filterValidCosignerSignatures,
-	findUserPaymentVout,
-	getUserWalletAddressFromUserPaymentUtxo,
 	injectSignaturesIntoSpell,
 	signAsCosigner,
 	transmitSpell,
 } from '../api/spell-operations';
 import { privateToKeypair } from './generate-random-keypairs';
-import { createPegoutSpell } from '../api/create-pegout-spell';
-import { TIMELOCK_BLOCKS } from './pegin';
 import { DEFAULT_FEERATE } from './consts';
+import { filterValidCosignerSignatures } from '../api/spell-operations';
+import { createMintSpell } from '../api/create-mint-spell';
 
-export async function pegoutCli(_argv: string[]): Promise<[string, string]> {
+export const TIMELOCK_BLOCKS = 100; // Default timelock for user payments
+
+export async function mintCli(_argv: string[]): Promise<[string, string]> {
 	dotenv.config({ path: ['.env.test', '.env.local', '.env'] });
 
 	const argv = minimist(_argv, {
 		alias: {},
-		string: ['new-public-keys', 'private-keys'],
+		string: ['private-keys', 'user-wallet-address'],
 		boolean: ['transmit', 'mock-proof', 'skip-proof'],
 		default: {
 			network: 'regtest',
@@ -32,6 +31,7 @@ export async function pegoutCli(_argv: string[]): Promise<[string, string]> {
 			transmit: true,
 			'mock-proof': false,
 			'skip-proof': false,
+			'user-payment-vout': 0,
 		},
 		'--': true,
 	});
@@ -44,9 +44,6 @@ export async function pegoutCli(_argv: string[]): Promise<[string, string]> {
 		throw new Error('--app-id is required');
 	}
 	const appVk = argv['app-vk'] as string;
-	if (appVk === undefined) {
-		throw new Error('--app-vk is required');
-	}
 
 	const network = argv['network'] as Network;
 
@@ -55,27 +52,10 @@ export async function pegoutCli(_argv: string[]): Promise<[string, string]> {
 		appVk,
 		charmsBin: parse.string('CHARMS_BIN'),
 		zkAppBin: './zkapp/target/charms-app',
-		network: argv['network'] as Network,
+		network,
 		mockProof: !!argv['mock-proof'],
 		skipProof: !!argv['skip-proof'],
 	});
-
-	if (!argv['new-public-keys']) {
-		throw new Error('--new-public-keys is required');
-	}
-	const newPublicKeys = (argv['new-public-keys'] as string)
-		.split(',')
-		.map(pk => pk.trim().replace('0x', ''));
-	const newThreshold = Number.parseInt(argv['new-threshold']);
-	if (
-		isNaN(newThreshold) ||
-		newThreshold < 1 ||
-		newThreshold > newPublicKeys.length
-	) {
-		throw new Error(
-			'Invalid new threshold. It must be a number between 1 and the number of public keys.'
-		);
-	}
 
 	const previousNftTxid = argv['previous-nft-txid'] as string;
 	if (!previousNftTxid) {
@@ -91,61 +71,37 @@ export async function pegoutCli(_argv: string[]): Promise<[string, string]> {
 		.split(',')
 		.map(s => s.trim().replace('0x', ''));
 
-	if (!argv['user-payment-txid']) {
-		throw new Error('--user-payment-txid is required');
+	const userWalletAddress =
+		(argv['user-wallet-address'] as string) ||
+		(await context.bitcoinClient.getAddress());
+
+	if (!argv['feerate']) {
+		throw new Error('--feerate is required');
 	}
-	if (!argv['recovery-public-key']) {
-		throw new Error('--recovery-public-key is required');
-	}
-	const recoveryPublicKey = (argv['recovery-public-key'] as string).replace(
-		'0x',
-		''
-	);
-
-	const newGrailState = {
-		publicKeys: newPublicKeys,
-		threshold: newThreshold,
-	};
-
-	const userPaymentTxid = argv['user-payment-txid'] as string;
-	if (!userPaymentTxid) {
-		throw new Error('--user-payment-txid is required');
-	}
-	const userPaymentVout = await findUserPaymentVout(
-		context,
-		newGrailState,
-		userPaymentTxid,
-		recoveryPublicKey,
-		TIMELOCK_BLOCKS
-	);
-
-	const userWalletAddress = await getUserWalletAddressFromUserPaymentUtxo(
-		context,
-		{ txid: userPaymentTxid, vout: userPaymentVout },
-		network
-	);
-
-	const userPaymentDetails: UserPaymentDetails = {
-		txid: userPaymentTxid,
-		vout: userPaymentVout,
-		recoveryPublicKey,
-		timelockBlocks: TIMELOCK_BLOCKS,
-		grailState: newGrailState,
-		userWalletAddress,
-	};
-
 	const feerate = Number.parseFloat(argv['feerate']);
 
-	const { spell, signatureRequest } = await createPegoutSpell(
+	const amount = Number.parseInt(argv['amount'] as string, 10);
+	if (!amount || isNaN(amount) || amount <= 0) {
+		throw new Error('--amount is required and must be a valid number');
+	}
+
+	const tokenDetails: TokenDetails = {
+		ticker: argv['ticker'] as string,
+		name: argv['token-name'] as string,
+		image: argv['token-image'] as string,
+		url: argv['token-url'] as string,
+	};
+
+	const { spell, signatureRequest } = await createMintSpell(
 		context,
+		tokenDetails,
 		feerate,
 		previousNftTxid,
-		newGrailState,
-		userPaymentDetails,
+		amount,
+		userWalletAddress,
 		fundingUtxo
 	);
 	logger.debug('Spell created: ', spell);
-	logger.debug('Signature request: ', signatureRequest);
 
 	const fromCosigners: SignatureResponse[] = privateKeys
 		.map(pk => Buffer.from(pk, 'hex'))
@@ -179,13 +135,15 @@ export async function pegoutCli(_argv: string[]): Promise<[string, string]> {
 	logger.debug('Signed spell: ', signedSpell);
 
 	if (transmit) {
-		return await transmitSpell(context, signedSpell);
+		const transmittedTxids = await transmitSpell(context, signedSpell);
+		return transmittedTxids;
 	}
+
 	return ['', ''];
 }
 
 if (require.main === module) {
-	pegoutCli(process.argv.slice(2)).catch(err => {
+	mintCli(process.argv.slice(2)).catch(err => {
 		logger.error(err);
 	});
 }
