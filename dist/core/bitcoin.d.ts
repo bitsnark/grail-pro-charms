@@ -1,14 +1,18 @@
 import Client from 'bitcoin-core';
 import { PreviousTransactions, Utxo } from './types';
+import { Network } from './taproot/taproot-common';
 export declare const DUST_LIMIT = 546;
 export declare function txidToHash(txid: string): Buffer;
 export declare function hashToTxid(hash: Buffer): string;
 export declare function txBytesToTxid(txBytes: Buffer): string;
 export declare function txHexToTxid(txHex: string): string;
+export declare function getAddressFromScript(script: Buffer, network: Network): string;
 export declare class ExtendedClient {
     client: Client;
     constructor(client: Client);
-    getRawTransaction(txid: string): Promise<any>;
+    getRawTransaction(txid: string): Promise<{
+        hex: string;
+    } | undefined>;
     sendRawTransaction(txHex: string): Promise<string>;
     signTransactionInputs(txHex: string, prevtxs?: {
         txid: string;
@@ -17,13 +21,21 @@ export declare class ExtendedClient {
         redeemScript: string;
         witnessScript: string;
         amount: number;
-    }[], sighashType?: string): Promise<any>;
-    listUnspent(minconf: number, maxconf: number, addresses: string[]): Promise<any[]>;
+    }[], sighashType?: string): Promise<{
+        complete: boolean;
+        hex: string;
+    }>;
+    listUnspent(minconf: number, maxconf: number, addresses: string[]): Promise<{
+        spendable: boolean;
+        amount: number;
+        txid: string;
+        vout: number;
+    }[]>;
     getNewAddress(): Promise<string>;
-    loadWallet(name: string): Promise<any>;
+    loadWallet(name: string): Promise<boolean>;
     unloadWallet(name: string): Promise<any>;
     sendToAddress(toAddress: string, amountBtc: number): Promise<string>;
-    getTxOut(txid: string, vout: number, includeMempool?: boolean): Promise<any>;
+    getTxOut(txid: string, vout: number, includeMempool?: boolean): Promise<Utxo | undefined>;
     generateToAddress(blocks: number, address: string): Promise<string[]>;
     generateBlocks(address: string, txids: string[]): Promise<void>;
 }

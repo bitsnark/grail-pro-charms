@@ -1,7 +1,11 @@
-import { logger } from './logger';
 import Client from 'bitcoin-core';
 import { PreviousTransactions, Utxo } from './types';
 import * as bitcoin from 'bitcoinjs-lib';
+import * as ecc from 'tiny-secp256k1';
+import { bitcoinjslibNetworks, Network } from './taproot/taproot-common';
+import { logger } from './logger';
+
+bitcoin.initEccLib(ecc);
 
 export const DUST_LIMIT = 546;
 
@@ -23,13 +27,41 @@ export function txHexToTxid(txHex: string): string {
 	return txBytesToTxid(txBytes);
 }
 
+export function getAddressFromScript(script: Buffer, network: Network): string {
+	const address = [
+		bitcoin.payments.p2ms,
+		bitcoin.payments.p2pk,
+		bitcoin.payments.p2pkh,
+		bitcoin.payments.p2sh,
+		bitcoin.payments.p2wpkh,
+		bitcoin.payments.p2wsh,
+		bitcoin.payments.p2tr,
+	]
+		.map(payment => {
+			try {
+				return payment({
+					output: script,
+					network: bitcoinjslibNetworks[network],
+				}).address;
+			} catch (error) {
+				logger.devnull(error);
+				return undefined;
+			}
+		})
+		.filter(Boolean)[0];
+	if (!address) {
+		return script.toString('hex'); // Fallback to hex representation if no address found
+	}
+	return address;
+}
+
 export class ExtendedClient {
 	client!: Client;
 	constructor(client: Client) {
 		this.client = client;
 	}
 
-	getRawTransaction(txid: string): Promise<any> {
+	getRawTransaction(txid: string): Promise<{ hex: string } | undefined> {
 		return this.client.command('getrawtransaction', txid, true);
 	}
 	sendRawTransaction(txHex: string): Promise<string> {
@@ -46,7 +78,7 @@ export class ExtendedClient {
 			amount: number;
 		}[],
 		sighashType?: string
-	): Promise<any> {
+	): Promise<{ complete: boolean; hex: string }> {
 		return this.client.command(
 			'signrawtransactionwithwallet',
 			txHex,
@@ -58,16 +90,18 @@ export class ExtendedClient {
 		minconf: number,
 		maxconf: number,
 		addresses: string[]
-	): Promise<any[]> {
+	): Promise<
+		{ spendable: boolean; amount: number; txid: string; vout: number }[]
+	> {
 		return this.client.command('listunspent', minconf, maxconf, addresses);
 	}
 	getNewAddress(): Promise<string> {
 		return this.client.command('getnewaddress');
 	}
-	loadWallet(name: string): Promise<any> {
+	loadWallet(name: string): Promise<boolean> {
 		return this.client.command('loadwallet', name);
 	}
-	unloadWallet(name: string): Promise<any> {
+	unloadWallet(name: string): Promise<void> {
 		return this.client.command('unloadwallet', name);
 	}
 	sendToAddress(toAddress: string, amountBtc: number): Promise<string> {
@@ -77,7 +111,7 @@ export class ExtendedClient {
 		txid: string,
 		vout: number,
 		includeMempool: boolean = true
-	): Promise<any> {
+	): Promise<Utxo | undefined> {
 		return this.client.command('gettxout', txid, vout, includeMempool);
 	}
 	generateToAddress(blocks: number, address: string): Promise<string[]> {
@@ -110,25 +144,26 @@ export class BitcoinClient {
 			const walletName = process.env.BTC_WALLET_NAME || 'default';
 			try {
 				await thus.client.loadWallet(walletName);
-			} catch (error: any) {
-				logger.error(error);
+			} catch (error) {
+				const message = (error as { message: string }).message ?? '';
 				// Check for various wallet already loaded error messages
 				if (
-					!error.message.includes('is already loaded') &&
-					!error.message.includes('Database is already opened') &&
-					!error.message.includes('Unable to obtain an exclusive lock')
+					!message.includes('is already loaded') &&
+					!message.includes('Database is already opened') &&
+					!message.includes('Unable to obtain an exclusive lock')
 				) {
-					throw new Error(`Failed to load wallet: ${error.message}`);
+					throw new Error(`Failed to load wallet: ${message}`);
 				}
 				// If it's a lock error, try to unload and reload
-				if (error.message.includes('Unable to obtain an exclusive lock')) {
+				if (message.includes('Unable to obtain an exclusive lock')) {
 					try {
 						await thus.client.unloadWallet(walletName);
 						await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
 						await thus.client.loadWallet(walletName);
-					} catch (reloadError: any) {
+					} catch (error) {
+						const message = (error as { message: string }).message ?? '';
 						throw new Error(
-							`Failed to reload wallet after lock error: ${reloadError.message}`
+							`Failed to reload wallet after lock error: ${message}`
 						);
 					}
 				}
@@ -161,7 +196,7 @@ export class BitcoinClient {
 	): Promise<Buffer> {
 		const tx = bitcoin.Transaction.fromBuffer(txBytes);
 		const prevtxinfo = prevtxsBytesMap
-			? tx.ins.map((input, index) => {
+			? tx.ins.map(input => {
 					const prevtxid = hashToTxid(input.hash);
 					const prevtxbytes = prevtxsBytesMap[prevtxid];
 					if (!prevtxbytes) {
@@ -199,12 +234,12 @@ export class BitcoinClient {
 		{ spendable: boolean; value: number; txid: string; vout: number }[]
 	> {
 		return this.client!.listUnspent(0, 9999999, address ? [address] : []).then(
-			utxos =>
-				utxos.map(utxo => ({
-					spendable: utxo.spendable,
-					value: Math.floor(utxo.amount * 1e8), // Convert BTC to satoshis
-					txid: utxo.txid,
-					vout: utxo.vout,
+			unspent =>
+				unspent.map(us => ({
+					spendable: us.spendable,
+					value: Math.floor(us.amount * 1e8), // Convert BTC to satoshis
+					txid: us.txid,
+					vout: us.vout,
 				}))
 		);
 	}

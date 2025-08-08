@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 // This is a hideous hack to overcome no proper support for Buffer in JSON.stringify/parse
 export function bufferReplacer(key: string, value: any): any {
 	if (value && value['type'] === 'Buffer' && Array.isArray(value['data'])) {

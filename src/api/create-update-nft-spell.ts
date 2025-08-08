@@ -2,13 +2,12 @@ import { logger } from '../core/logger';
 import { BitcoinClient } from '../core/bitcoin';
 import { showSpell } from '../core/charms-sdk';
 import { IContext } from '../core/i-context';
-import { bufferReplacer } from '../core/json';
 import {
 	GeneralizedInfo,
 	GrailState,
 	SignatureRequest,
 	Spell,
-	Utxo
+	Utxo,
 } from '../core/types';
 import { createGeneralizedSpell } from './create-generalized-spell';
 

@@ -12,10 +12,12 @@ import { Context } from '../core/context';
 import { parse } from '../core/env-parser';
 import { DEFAULT_FEERATE, ZKAPP_BIN } from './consts';
 import { createTransferSpell } from '../api/create-transfer-spell';
-import { getPreviousTransactions, transmitSpell } from '../api/spell-operations';
+import {
+	getPreviousTransactions,
+	transmitSpell,
+} from '../api/spell-operations';
 import { GrailState } from '../core/types';
 import { hashToTxid } from '../core/bitcoin';
-import { skip } from 'node:test';
 
 export async function sendUserPaymentCharms(
 	context: IContext,
@@ -35,7 +37,7 @@ export async function sendUserPaymentCharms(
 		},
 		network
 	);
-	
+
 	const charmsUtxos = await findCharmsUtxos(context, amount);
 	if (charmsUtxos.length === 0) {
 		throw new Error('No sufficient Charms UTXOs found for user payment.');
@@ -97,7 +99,10 @@ export async function sendUserPaymentBtc(
 		amount
 	);
 	logger.debug('Funds sent successfully, txid: ', txid);
-	logger.debug('Recovery public key: ', recoveryKeypair.publicKey.toString('hex'));
+	logger.debug(
+		'Recovery public key: ',
+		recoveryKeypair.publicKey.toString('hex')
+	);
 
 	return { txid, recoveryPublicKey: recoveryKeypair.publicKey.toString('hex') };
 }
@@ -191,9 +196,6 @@ export async function userPaymentCli(
 
 if (require.main === module) {
 	userPaymentCli(process.argv.slice(2))
-		.catch(error => {
-			logger.error('Error during NFT update: ', error);
-		})
 		.then(result => {
 			if (result) {
 				logger.log('User payment created successfully: ', result);
@@ -201,5 +203,9 @@ if (require.main === module) {
 				logger.error('User payment creation failed.');
 			}
 			process.exit(result ? 0 : 1);
+		})
+		.catch(error => {
+			logger.error(error);
+			process.exit(2);
 		});
 }
