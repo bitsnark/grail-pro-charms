@@ -109,14 +109,6 @@ async function calculateBitcoinToLock(
 	const incomingUserBtc = generalizedInfo.incomingUserBtc
 		.map(payment => getAmountFromUtxo(previousTransactions, payment))
 		.reduce((a, b) => a + b, 0);
-	const incomingUserCharms = (
-		await mapAsync(generalizedInfo.incomingUserCharms, utxo =>
-			getCharmsAmountFromUtxo(context, utxo)
-		)
-	).reduce((a, b) => a + b, 0);
-	const outgoingUserCharms = generalizedInfo.outgoingUserCharms
-		.map(outgoing => outgoing.amount)
-		.reduce((a, b) => a + b, 0);
 	const outgoingUserBtc = generalizedInfo.outgoingUserBtc
 		.map(outgoing => outgoing.amount)
 		.reduce((a, b) => a + b, 0);

@@ -49,6 +49,7 @@ export interface GeneralizedInfo {
     outgoingUserBtc: Outgoing[];
     outgoingUserCharms: Outgoing[];
     outgoingGrailBtc?: Outgoing;
+    disableSanity?: boolean;
 }
 export declare const generalizeInfoBlank: GeneralizedInfo;
 export interface GeneralizedRequest extends UpdateRequest {

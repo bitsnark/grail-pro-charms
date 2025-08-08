@@ -1,12 +1,5 @@
 import { logger } from '../core/logger';
-import * as bitcoin from 'bitcoinjs-lib';
-import {
-	GrailState,
-	SignatureRequest,
-	Spell,
-	UserPaymentDetails,
-	Utxo,
-} from '../core/types';
+import { SignatureRequest, Spell, Utxo } from '../core/types';
 import { IContext } from '../core/i-context';
 import { createGeneralizedSpell } from './create-generalized-spell';
 import { getPreviousGrailState } from './spell-operations';
