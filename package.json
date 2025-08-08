@@ -6,6 +6,7 @@
     "scripts": {
         "prettier-fix": "prettier --write \"**/*.ts\"",
         "build": "tsc --project . --outDir ./dist --declaration --pretty",
+        "prepare": "npm run build",
         "clean-js": "find ./src -type f -name \"*.js\" -delete",
         "test": "jest --detectOpenHandles --testPathIgnorePatterns=e2e --testPathIgnorePatterns=cli",
         "test:cli": "jest --detectOpenHandles --runInBand tests/cli/",
