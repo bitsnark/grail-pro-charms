@@ -4,7 +4,6 @@ import dotenv from 'dotenv';
 import * as secp from '@bitcoinerlab/secp256k1';
 import { Buffer } from 'node:buffer';
 import { randomBytes } from 'crypto';
-import { bufferReplacer } from '../core/json';
 import { array } from '../core/array-utils';
 
 interface Keypair {

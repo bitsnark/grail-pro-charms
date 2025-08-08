@@ -1,0 +1,18 @@
+"use strict";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.bufferReplacer = bufferReplacer;
+exports.bufferReviver = bufferReviver;
+// This is a hideous hack to overcome no proper support for Buffer in JSON.stringify/parse
+function bufferReplacer(key, value) {
+    if (value && value['type'] === 'Buffer' && Array.isArray(value['data'])) {
+        return '0x' + Buffer.from(value.data).toString('hex');
+    }
+    return value;
+}
+function bufferReviver(key, value) {
+    if (value instanceof String && value.startsWith('0x')) {
+        return Buffer.from(value.slice(2), 'hex');
+    }
+    return value;
+}

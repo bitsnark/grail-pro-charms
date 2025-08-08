@@ -1,19 +1,11 @@
 import { logger } from './logger';
-import fs from 'node:fs';
 import { getVerificationKey } from './charms-sdk';
 import { IContext } from './i-context';
 import { Network } from './taproot/taproot-common';
 import { randomBytes } from 'node:crypto';
-import Client from 'bitcoin-core';
 import { Utxo } from './types';
 import { sha256 } from 'bitcoinjs-lib/src/crypto';
 import { BitcoinClient } from './bitcoin';
-
-function assertFileExists(desc: string, path?: string): void {
-	if (!fs.existsSync(path || '')) {
-		throw new Error(`File not found, desc: ${desc}, path: ${path}`);
-	}
-}
 
 export class Context implements IContext {
 	charmsBin!: string;
@@ -31,7 +23,7 @@ export class Context implements IContext {
 
 	bitcoinClient!: BitcoinClient;
 
-	private constructor() { }
+	private constructor() {}
 
 	public static async create(obj: Partial<IContext>): Promise<Context> {
 		const thus = new Context();
@@ -50,7 +42,9 @@ export class Context implements IContext {
 		thus.mockProof = obj.mockProof || false;
 		thus.skipProof = obj.skipProof || false;
 
-		const charmsSecret = process.env.CHARMS_SECRET ? Buffer.from(process.env.CHARMS_SECRET, 'hex') : randomBytes(32);
+		const charmsSecret = process.env.CHARMS_SECRET
+			? Buffer.from(process.env.CHARMS_SECRET, 'hex')
+			: randomBytes(32);
 		thus.temporarySecret = charmsSecret;
 
 		if (!obj.appVk) {

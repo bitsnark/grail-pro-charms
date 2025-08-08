@@ -2,12 +2,10 @@ import { logger } from '../core/logger';
 import minimist from 'minimist';
 import dotenv from 'dotenv';
 import { Network } from '../core/taproot/taproot-common';
-import { bufferReplacer } from '../core/json';
 import { Context } from '../core/context';
 import { parse } from '../core/env-parser';
 import { TICKER, ZKAPP_BIN } from './consts';
 import { findCharmsUtxos } from '../core/spells';
-import { skip } from 'node:test';
 
 export async function showWalletCharmsCli(
 	_argv: string[]
@@ -52,8 +50,9 @@ export async function showWalletCharmsCli(
 
 if (require.main === module) {
 	showWalletCharmsCli(process.argv.slice(2))
+		.then(result => process.exit(result ? 0 : 2))
 		.catch(error => {
-			logger.error('Error during NFT update: ', error);
-		})
-		.then(result => process.exit(result ? 0 : 1));
+			logger.error(error);
+			process.exit(1);
+		});
 }

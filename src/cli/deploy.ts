@@ -10,7 +10,6 @@ import { IContext } from '../core/i-context';
 import { createSpell } from '../core/spells';
 import { transmitSpell } from '../api/spell-operations';
 import { parse } from '../core/env-parser';
-import { bufferReplacer } from '../core/json';
 import { DEFAULT_FEERATE, TICKER, ZKAPP_BIN } from './consts';
 
 export async function deployNft(
@@ -138,13 +137,12 @@ export async function deployNftCli(
 	return {
 		appId: context.appId,
 		appVk: context.appVk,
-		spellTxid
+		spellTxid,
 	};
 }
 
 if (require.main === module) {
-	deployNftCli(process.argv.slice(2))
-		.catch(error => {
-			logger.error('Error during NFT deployment: ', error);
-		});
+	deployNftCli(process.argv.slice(2)).catch(error => {
+		logger.error('Error during NFT deployment: ', error);
+	});
 }

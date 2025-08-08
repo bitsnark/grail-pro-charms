@@ -7,7 +7,6 @@ import {
 	UserPaymentDetails,
 	Utxo,
 } from '../core/types';
-import { bufferReplacer } from '../core/json';
 import { IContext } from '../core/i-context';
 import { createGeneralizedSpell } from './create-generalized-spell';
 import { getPreviousGrailState } from './spell-operations';
