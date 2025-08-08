@@ -1,10 +1,10 @@
-/* eslint-disable  @typescript-eslint/no-explicit-any */
-import { DEBUG_LEVELS, logger } from '../src/core/logger';
-import { generateRandomKeypair } from '../src/cli/generate-random-keypairs';
-import { deployNftCli } from '../src/cli/deploy';
-import { userPaymentCli } from '../src/cli/user-payment';
-import { peginCli } from '../src/cli/pegin';
-import { BitcoinClient } from '../src/core/bitcoin';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { DEBUG_LEVELS, logger } from '../../src/core/logger';
+import { generateRandomKeypair } from '../../src/cli/generate-random-keypairs';
+import { deployNftCli } from '../../src/cli/deploy';
+import { userPaymentCli } from '../../src/cli/user-payment';
+import { peginCli } from '../../src/cli/pegin';
+import { BitcoinClient } from '../../src/core/bitcoin';
 
 jest.setTimeout(600000000);
 logger.setLoggerOptions(DEBUG_LEVELS.ALL, true, true); // Set debug level to ALL, print date and level

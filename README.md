@@ -85,7 +85,7 @@ ts-node ./src/cli/pegin.ts --app-id 3b0ad31236878d16961cdd16f99c37b048943747c09a
 
 ***
 
-# How to Run E2E Tests
+# How to Run CLI Tests
 
 ## Prerequisites
 
@@ -137,36 +137,51 @@ debug=1
 fallbackfee=0.0001
 ```
 
-### 2. Bitcoin Node Setup
+### 2. Initialize Docker Test Bitcoin Node
 
-Start the Bitcoin regtest node and perform initial setup:
-
-```bash
-# Start bitcoind
-bitcoind
-
-# Create wallet
-b createwallet testwallet
-
-# Unload wallet (if needed)
-b loadwallet "testwallet"
-
-# Generate new address
-b getnewaddress
-# Example output: bcrt1pyezp8aenr3d779g6hg7z8jhjmrdwuvw3lnt9a2gdlec72hrkfpxqqx6m5p
-
-# Generate 101 blocks to the address (for coinbase maturity)
-b generatetoaddress 101 bcrt1pyezp8aenr3d779g6hg7z8jhjmrdwuvw3lnt9a2gdlec72hrkfpxqqx6m5p
-
-# List unspent transactions
-b listunspent
-```
-
-
-# Running the Tests
+**Prerequisites:**
+- Docker CLI must be installed and running
+- User must have sudo privileges
 
 ```bash
-$ npm run test:e2e
+$ sudo ./scripts/regtest.sh
 ```
 
-_Note:_ See pegin-e2e-test-log.md
+This script will:
+- Start a Bitcoin regtest node in Docker
+- Create and load a test wallet
+- Generate initial blocks and activate segwit
+- Wait for the node to be ready
+
+# Running the CLI Tests
+
+## Prerequisites
+
+Before running any CLI tests, ensure you have:
+- Docker CLI installed and running
+- Bitcoin regtest node initialized (see above)
+- All environment variables set (see Environment Setup section)
+
+## Running All CLI Tests
+
+To run all CLI tests in sequence:
+```bash
+$ npm run test:cli
+```
+
+## Running Specific Test Suites
+
+### Deploy Tests
+```bash
+$ npm run test:cli:deploy
+```
+
+### Update Tests  
+```bash
+$ npm run test:cli:update
+```
+
+### Simple E2E Tests (deploy to pegin)
+```bash
+$ npm run test:cli:simple
+```

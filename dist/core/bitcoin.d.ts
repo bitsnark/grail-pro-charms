@@ -33,6 +33,7 @@ export declare class ExtendedClient {
     }[]>;
     getNewAddress(): Promise<string>;
     loadWallet(name: string): Promise<boolean>;
+    unloadWallet(name: string): Promise<any>;
     sendToAddress(toAddress: string, amountBtc: number): Promise<string>;
     getTxOut(txid: string, vout: number, includeMempool?: boolean): Promise<Utxo | undefined>;
     generateToAddress(blocks: number, address: string): Promise<string[]>;

@@ -24,5 +24,5 @@ export default tseslint.config(eslint.configs.recommended, ...tseslint.configs.r
             require: 'readonly'
         }
     },
-    ignores: ['node_modules', 'dist', 'build', 'eslint.config.mjs', 'jest.config.ts', 'tests/*', 'coverage', 'scripts'],
+    ignores: ['node_modules', 'dist', 'build', 'eslint.config.mjs', 'jest.config.ts', 'tests', '*.test.ts', 'tests/*', 'coverage', 'scripts'],
 });

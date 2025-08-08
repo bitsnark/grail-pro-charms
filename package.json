@@ -7,8 +7,12 @@
 		"prettier-fix": "prettier --write \"**/*.ts\"",
 		"build": "tsc --project . --outDir ./dist --declaration --pretty",
 		"clean-js": "find ./src -type f -name \"*.js\" -delete",
-		"test": "jest --detectOpenHandles --testPathIgnorePatterns=e2e",
-		"test:e2e": "jest --detectOpenHandles --runInBand tests/simple-e2e.test.ts",
+		"test": "jest --detectOpenHandles --testPathIgnorePatterns=e2e --testPathIgnorePatterns=cli",
+		"test:cli": "jest --detectOpenHandles --runInBand tests/cli/",
+		"test:cli:deploy": "jest --detectOpenHandles --runInBand tests/cli/deploy.test.ts",
+		"test:cli:update": "jest --detectOpenHandles --runInBand tests/cli/update.test.ts",
+		"test:cli:simple": "jest --detectOpenHandles --runInBand tests/cli/simple.test.ts",
+		"test:e2e": "jest --detectOpenHandles --runInBand tests/e2e/",
 		"lint": "eslint --ignore-pattern node_modules/ --ignore-pattern dist/ --ignore-pattern python/ .",
 		"lint-fix": "npm run lint -- --fix"
 	},
@@ -20,9 +24,9 @@
 		"@types/minimist": "1.2.5",
 		"@types/node": "20.16.10",
 		"jest": "29.7.0",
-		"prettier": "3.6.2",
 		"ts-jest": "29.2.6",
-		"ts-node": "10.9.2"
+		"ts-node": "10.9.2",
+		"prettier": "3.6.2"
 	},
 	"dependencies": {
 		"@bitcoinerlab/secp256k1": "1.2.0",
@@ -33,12 +37,12 @@
 		"bitcoin-core": "5.0.0",
 		"bitcoinjs-lib": "6.1.7",
 		"dotenv": "16.4.7",
-		"eslint": "^9.32.0",
-		"eslint-plugin-unused-imports": "^4.1.4",
 		"js-yaml": "4.1.0",
 		"minimist": "1.2.8",
 		"mustache": "4.2.0",
 		"tiny-secp256k1": "2.2.3",
+		"eslint": "9.32.0",
+		"eslint-plugin-unused-imports": "^4.1.4",
 		"typescript-eslint": "^8.39.0"
 	},
 	"repository": {
