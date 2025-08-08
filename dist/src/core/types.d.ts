@@ -17,13 +17,13 @@ export interface CharmerRequest {
     toYamlObj(): any;
 }
 export interface NftRequest extends CharmerRequest {
-    ticker: string;
     previousUtxo?: Utxo;
     nextNftAddress: string;
     currentNftState: {
         publicKeysAsString: string;
         threshold: number;
     };
+    tokenDetails: TokenDetails;
 }
 export interface DeployRequest extends NftRequest {
 }
@@ -123,5 +123,11 @@ export interface SpellMetadata {
             [key: string]: CharmsDesc;
         };
     }[];
+}
+export interface TokenDetails {
+    ticker?: string;
+    name?: string;
+    image?: string;
+    url?: string;
 }
 export {};

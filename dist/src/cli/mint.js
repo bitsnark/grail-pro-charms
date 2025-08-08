@@ -49,7 +49,6 @@ async function mintCli(_argv) {
         network,
         mockProof: !!argv['mock-proof'],
         skipProof: !!argv['skip-proof'],
-        ticker: 'GRAIL-NFT',
     });
     const previousNftTxid = argv['previous-nft-txid'];
     if (!previousNftTxid) {
@@ -72,7 +71,13 @@ async function mintCli(_argv) {
     if (!amount || isNaN(amount) || amount <= 0) {
         throw new Error('--amount is required and must be a valid number');
     }
-    const { spell, signatureRequest } = await (0, create_mint_spell_1.createMintSpell)(context, feerate, previousNftTxid, amount, userWalletAddress, fundingUtxo);
+    const tokenDetails = {
+        ticker: argv['ticker'],
+        name: argv['token-name'],
+        image: argv['token-image'],
+        url: argv['token-url'],
+    };
+    const { spell, signatureRequest } = await (0, create_mint_spell_1.createMintSpell)(context, tokenDetails, feerate, previousNftTxid, amount, userWalletAddress, fundingUtxo);
     logger_1.logger.debug('Spell created: ', spell);
     const fromCosigners = privateKeys
         .map(pk => Buffer.from(pk, 'hex'))

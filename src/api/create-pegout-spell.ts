@@ -116,6 +116,7 @@ export async function createPegoutSpell(
 				},
 			],
 		},
+		{},
 		fundingUtxo
 	);
 

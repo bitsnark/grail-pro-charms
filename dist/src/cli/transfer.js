@@ -44,7 +44,6 @@ async function transferCli(_argv) {
         network: network,
         mockProof: !!argv['mock-proof'],
         skipProof: !!argv['skip-proof'],
-        ticker: consts_1.TICKER,
     });
     const transmit = !!argv['transmit'];
     const feerate = Number.parseFloat(argv['feerate']);

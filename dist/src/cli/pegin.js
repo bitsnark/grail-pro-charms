@@ -49,7 +49,6 @@ async function peginCli(_argv) {
         network,
         mockProof: !!argv['mock-proof'],
         skipProof: !!argv['skip-proof'],
-        ticker: 'GRAIL-NFT',
     });
     if (!argv['new-public-keys']) {
         throw new Error('--new-public-keys is required');

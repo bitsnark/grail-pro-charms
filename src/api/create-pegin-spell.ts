@@ -64,6 +64,7 @@ export async function createPeginSpell(
 			],
 			outgoingUserBtc: [],
 		},
+		{},
 		fundingUtxo
 	);
 

@@ -5,7 +5,7 @@ import { BitcoinClient } from '../core/bitcoin';
 import { Network } from '../core/taproot/taproot-common';
 import { Context } from '../core/context';
 import { parse } from '../core/env-parser';
-import { SignatureResponse } from '../core/types';
+import { SignatureResponse, TokenDetails } from '../core/types';
 import {
 	injectSignaturesIntoSpell,
 	signAsCosigner,
@@ -55,7 +55,6 @@ export async function mintCli(_argv: string[]): Promise<[string, string]> {
 		network,
 		mockProof: !!argv['mock-proof'],
 		skipProof: !!argv['skip-proof'],
-		ticker: 'GRAIL-NFT',
 	});
 
 	const previousNftTxid = argv['previous-nft-txid'] as string;
@@ -86,8 +85,16 @@ export async function mintCli(_argv: string[]): Promise<[string, string]> {
 		throw new Error('--amount is required and must be a valid number');
 	}
 
+	const tokenDetails: TokenDetails = {
+		ticker: argv['ticker'] as string,
+		name: argv['token-name'] as string,
+		image: argv['token-image'] as string,
+		url: argv['token-url'] as string,
+	};
+
 	const { spell, signatureRequest } = await createMintSpell(
 		context,
+		tokenDetails,
 		feerate,
 		previousNftTxid,
 		amount,

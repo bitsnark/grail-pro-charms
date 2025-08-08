@@ -4,7 +4,7 @@ exports.createMintSpell = createMintSpell;
 const logger_1 = require("../core/logger");
 const create_generalized_spell_1 = require("./create-generalized-spell");
 const spell_operations_1 = require("./spell-operations");
-async function createMintSpell(context, feerate, previousNftTxid, amount, userWalletAddress, fundingUtxo) {
+async function createMintSpell(context, tokenDetails, feerate, previousNftTxid, amount, userWalletAddress, fundingUtxo) {
     const previousNftTxhex = await context.bitcoinClient.getTransactionHex(previousNftTxid);
     if (!previousNftTxhex) {
         throw new Error(`Previous NFT transaction ${previousNftTxid} not found`);
@@ -26,7 +26,8 @@ async function createMintSpell(context, feerate, previousNftTxid, amount, userWa
             },
         ],
         outgoingUserBtc: [],
-    }, fundingUtxo);
+    }, tokenDetails, // Empty token details for minting
+    fundingUtxo);
     logger_1.logger.debug('Mint spell created: ', spell);
     return { spell, signatureRequest };
 }

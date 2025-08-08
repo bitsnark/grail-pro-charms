@@ -50,7 +50,6 @@ export async function visualizeCli(_argv: string[]): Promise<void> {
 		network,
 		mockProof: !!argv['mock-proof'],
 		skipProof: !!argv['skip-proof'],
-		ticker: 'GRAIL-NFT',
 	});
 
 	const txid = argv['txid'] as string;

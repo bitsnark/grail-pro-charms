@@ -1,7 +1,7 @@
-import { DEBUG_LEVELS, logger } from '../src/core/logger';
-import { generateRandomKeypair } from '../src/cli/generate-random-keypairs';
-import { deployNftCli } from '../src/cli/deploy';
-import { mintCli } from '../src/cli/mint';
+import { DEBUG_LEVELS, logger } from '../../src/core/logger';
+import { generateRandomKeypair } from '../../src/cli/generate-random-keypairs';
+import { deployNftCli } from '../../src/cli/deploy';
+import { mintCli } from '../../src/cli/mint';
 
 jest.setTimeout(600000000);
 logger.setLoggerOptions(DEBUG_LEVELS.ALL, true, true); // Set debug level to ALL, print date and level

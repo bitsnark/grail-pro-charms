@@ -14,8 +14,6 @@ export class Context implements IContext {
 	appId!: string;
 	appVk!: string;
 
-	ticker!: string;
-
 	network!: Network;
 	mockProof!: boolean;
 	skipProof!: boolean;
@@ -56,9 +54,6 @@ export class Context implements IContext {
 			thus.appVk = obj.appVk;
 		}
 		logger.info('App Verification Key: ', thus.appVk);
-
-		if (!obj.ticker) throw new Error('Ticker is required');
-		thus.ticker = obj.ticker;
 
 		thus.bitcoinClient = await BitcoinClient.initialize(obj.core);
 

@@ -58,7 +58,6 @@ export async function pegoutCli(_argv: string[]): Promise<[string, string]> {
 		network: argv['network'] as Network,
 		mockProof: !!argv['mock-proof'],
 		skipProof: !!argv['skip-proof'],
-		ticker: 'GRAIL-NFT',
 	});
 
 	if (!argv['new-public-keys']) {

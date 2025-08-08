@@ -94,10 +94,6 @@ async function calculateBitcoinToLock(context, previousTransactions, generalized
     const incomingUserBtc = generalizedInfo.incomingUserBtc
         .map(payment => getAmountFromUtxo(previousTransactions, payment))
         .reduce((a, b) => a + b, 0);
-    const incomingUserCharms = (await (0, array_utils_1.mapAsync)(generalizedInfo.incomingUserCharms, utxo => (0, spells_1.getCharmsAmountFromUtxo)(context, utxo))).reduce((a, b) => a + b, 0);
-    const outgoingUserCharms = generalizedInfo.outgoingUserCharms
-        .map(outgoing => outgoing.amount)
-        .reduce((a, b) => a + b, 0);
     const outgoingUserBtc = generalizedInfo.outgoingUserBtc
         .map(outgoing => outgoing.amount)
         .reduce((a, b) => a + b, 0);
@@ -106,7 +102,7 @@ async function calculateBitcoinToLock(context, previousTransactions, generalized
         .reduce((a, b) => a + b, 0);
     return incomingGrailBtc + incomingUserBtc - outgoingUserBtc;
 }
-async function createGeneralizedSpell(context, feerate, previousNftTxid, nextGrailState, generalizedInfo, fundingUtxo) {
+async function createGeneralizedSpell(context, feerate, previousNftTxid, nextGrailState, generalizedInfo, tokenDetails = {}, fundingUtxo) {
     const allPreviousTxids = [
         previousNftTxid,
         ...generalizedInfo.incomingGrailBtc.map(utxo => utxo.txid),
@@ -152,7 +148,6 @@ async function createGeneralizedSpell(context, feerate, previousNftTxid, nextGra
     const request = {
         appId: context.appId,
         appVk: context.appVk,
-        ticker: context.ticker,
         fundingUtxo,
         fundingChangeAddress,
         feerate,
@@ -163,6 +158,7 @@ async function createGeneralizedSpell(context, feerate, previousNftTxid, nextGra
             publicKeysAsString: nextGrailState.publicKeys.join(','),
             threshold: nextGrailState.threshold,
         },
+        tokenDetails,
         generalizedInfo,
         toYamlObj: function () {
             return {
@@ -184,7 +180,6 @@ async function createGeneralizedSpell(context, feerate, previousNftTxid, nextGra
                         utxo_id: `${previousNftTxid}:0`,
                         charms: {
                             $00: {
-                                ticker: this.ticker,
                                 current_cosigners: this.previousGrailState.publicKeys.join(','),
                                 current_threshold: this.previousGrailState.threshold,
                             },
@@ -208,7 +203,10 @@ async function createGeneralizedSpell(context, feerate, previousNftTxid, nextGra
                         address: this.nextNftAddress,
                         charms: {
                             $00: {
-                                ticker: context.ticker,
+                                ticker: this.tokenDetails.ticker,
+                                name: this.tokenDetails.name,
+                                image: this.tokenDetails.image,
+                                url: this.tokenDetails.url,
                                 current_cosigners: this.currentNftState.publicKeysAsString,
                                 current_threshold: this.currentNftState.threshold,
                             },

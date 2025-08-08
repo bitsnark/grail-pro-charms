@@ -1,11 +1,12 @@
 import { logger } from '../core/logger';
-import { SignatureRequest, Spell, Utxo } from '../core/types';
+import { SignatureRequest, Spell, TokenDetails, Utxo } from '../core/types';
 import { IContext } from '../core/i-context';
 import { createGeneralizedSpell } from './create-generalized-spell';
 import { getPreviousGrailState } from './spell-operations';
 
 export async function createMintSpell(
 	context: IContext,
+	tokenDetails: TokenDetails,
 	feerate: number,
 	previousNftTxid: string,
 	amount: number,
@@ -46,6 +47,7 @@ export async function createMintSpell(
 			],
 			outgoingUserBtc: [],
 		},
+		tokenDetails, // Empty token details for minting
 		fundingUtxo
 	);
 

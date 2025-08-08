@@ -39,7 +39,6 @@ async function main() {
         network: argv['network'],
         mockProof: !!argv['mock-proof'],
         skipProof: !!argv['skip-proof'],
-        ticker: 'GRAIL-NFT',
     });
     await viewNft(context, nftTxid).catch(error => {
         logger_1.logger.error('Error viewing NFT: ', error);

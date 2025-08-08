@@ -145,7 +145,6 @@ async function userPaymentCli(_argv) {
         network,
         mockProof: !!argv['mock-proof'],
         skipProof: !!argv['skip-proof'],
-        ticker: 'GRAIL-NFT',
     });
     if (type == 'charms') {
         const changeAddress = await context.bitcoinClient.getAddress();

@@ -11,6 +11,7 @@ import {
 	GrailState,
 	SignatureRequest,
 	Spell,
+	TokenDetails,
 	Utxo,
 } from '../core/types';
 import { showSpell } from '../core/charms-sdk';
@@ -125,6 +126,7 @@ export async function createGeneralizedSpell(
 	previousNftTxid: string,
 	nextGrailState: GrailState,
 	generalizedInfo: GeneralizedInfo,
+	tokenDetails: TokenDetails = {},
 	fundingUtxo?: Utxo
 ): Promise<{ spell: Spell; signatureRequest: SignatureRequest }> {
 	const allPreviousTxids = [
@@ -204,7 +206,6 @@ export async function createGeneralizedSpell(
 	const request: GeneralizedRequest = {
 		appId: context.appId,
 		appVk: context.appVk,
-		ticker: context.ticker,
 		fundingUtxo,
 		fundingChangeAddress,
 		feerate,
@@ -215,6 +216,7 @@ export async function createGeneralizedSpell(
 			publicKeysAsString: nextGrailState.publicKeys.join(','),
 			threshold: nextGrailState.threshold,
 		},
+		tokenDetails,
 		generalizedInfo,
 
 		toYamlObj: function () {
@@ -238,7 +240,6 @@ export async function createGeneralizedSpell(
 						utxo_id: `${previousNftTxid}:0`,
 						charms: {
 							$00: {
-								ticker: this.ticker,
 								current_cosigners: this.previousGrailState.publicKeys.join(','),
 								current_threshold: this.previousGrailState.threshold,
 							},
@@ -262,7 +263,10 @@ export async function createGeneralizedSpell(
 						address: this.nextNftAddress,
 						charms: {
 							$00: {
-								ticker: context.ticker,
+								ticker: this.tokenDetails.ticker,
+								name: this.tokenDetails.name,
+								image: this.tokenDetails.image,
+								url: this.tokenDetails.url,
 								current_cosigners: this.currentNftState.publicKeysAsString,
 								current_threshold: this.currentNftState.threshold,
 							},
