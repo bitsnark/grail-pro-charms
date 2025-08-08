@@ -166,7 +166,7 @@ export async function injectSignaturesIntoSpell(
 					);
 				return { publicKey: ti.publicKey, signature: lsigs[0].signature };
 			});
-		// Do we have enbough signatures?
+		// Do we have enough signatures?
 		if (labeledSignatures.length < input.state.threshold) {
 			throw new Error(
 				`Not enough signatures for input ${input.index}. Required: ${input.state.threshold}, provided: ${labeledSignatures.length}`

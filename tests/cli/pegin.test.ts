@@ -31,6 +31,12 @@ const COSIGNER_2 = {
     privateKey: '9a130b7fea1ce168861aa4e1a0a54a212836434ee7c5b1721156b17e4695f1ee',
 };
 
+const COSIGNER_3 = {
+    publicKey: '9ca7db41e7ee352ea9f4d3021029e7f0e24a525b2d70ee49b23c82f76d7b577b',
+    privateKey:
+        '1cd377ff0666e4f16922910dfad570199c257ca72c19418dd47eac3701edf548',
+};
+
 describe('pegin e2e test', () => {
     let update: any;
     let payment: any;
@@ -73,10 +79,9 @@ describe('pegin e2e test', () => {
             }
         }
 
-        // Step 2: Mint block to confirm update
         await mintBlock();
 
-        // Step 3: Create user payment
+        // Create user payment
         payment = await userPaymentCli([
             '--app-id', app.appId,
             '--app-vk', app.appVk,
@@ -90,23 +95,86 @@ describe('pegin e2e test', () => {
     });
 
     it('should execute a pegin successfully', async () => {
-        // Step 4: Mint block to confirm payment
         await mintBlock();
 
-        // Step 5: Execute PegIn
         const peginResult = await peginCli([
             '--app-id', app.appId,
             '--app-vk', app.appVk,
             '--previous-nft-txid', update.spellTxid,
+
+            // Those are to search for the user payment vout and setup the new nft state
+            '--user-payment-txid', payment.txid,
             '--new-public-keys', `${COSIGNER_1.publicKey},${COSIGNER_2.publicKey}`,
             '--new-threshold', '1',
-            '--private-keys', `${COSIGNER_1.privateKey},${COSIGNER_2.privateKey}`,
             '--recovery-public-key', payment.recoveryPublicKey,
-            '--user-payment-txid', payment.txid,
+
+            '--private-keys', `${COSIGNER_1.privateKey},${COSIGNER_2.privateKey}`,
             ...TEST_CLI_ARGS,
         ]);
 
         expect(peginResult).toBeTruthy();
+    });
+
+    it('should update after pegin with new public keys update and new threshold', async () => {
+        await mintBlock();
+
+        //Create user payment
+        const payment2 = await userPaymentCli([
+            '--app-id', app.appId,
+            '--app-vk', app.appVk,
+            '--type', 'btc',
+            '--current-public-keys', `${COSIGNER_2.publicKey},${COSIGNER_3.publicKey}`,
+            '--current-threshold', '1',
+            '--amount', '500000',
+            ...TEST_CLI_ARGS,
+        ]);
+
+        const peginTxIds = await peginCli([
+            '--app-id', app.appId,
+            '--app-vk', app.appVk,
+            '--previous-nft-txid', update.spellTxid,
+            '--new-public-keys', `${COSIGNER_2.publicKey},${COSIGNER_3.publicKey}`,
+            '--new-threshold', '1',
+            '--private-keys', `${COSIGNER_1.privateKey},${COSIGNER_2.privateKey}`,
+            '--recovery-public-key', payment2.recoveryPublicKey,
+            '--user-payment-txid', payment2.txid,
+            ...TEST_CLI_ARGS,
+        ]);
+
+        expect(peginTxIds).toBeTruthy();
+        expect(peginTxIds).toHaveLength(2);
+
+        await mintBlock();
+
+        const tempGrailStateFile = path.join(
+            __dirname,
+            `temp-grail-state-${Date.now()}.json`
+        );
+        fs.writeFileSync(tempGrailStateFile, JSON.stringify({
+            publicKeys: [COSIGNER_1, COSIGNER_2].map(c => c.publicKey),
+            threshold: 1,
+        }, null, 2));
+
+        let updateResult: any;
+        try {
+            updateResult = await updateNftCli([
+                '--app-id', app.appId,
+                '--app-vk', app.appVk,
+                '--previous-nft-txid', peginTxIds[1], // spell txid
+                '--new-grail-state-file', tempGrailStateFile,
+                '--private-keys', `${COSIGNER_3.privateKey},${COSIGNER_2.privateKey}`,
+                ...TEST_CLI_ARGS,
+            ]);
+        } finally {
+            // Clean up temporary file
+            if (fs.existsSync(tempGrailStateFile)) {
+                fs.unlinkSync(tempGrailStateFile);
+            }
+        }
+
+        expect(updateResult).toBeTruthy();
+
+
     });
 });
 
