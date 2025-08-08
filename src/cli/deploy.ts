@@ -5,15 +5,16 @@ import { Network } from '../core/taproot/taproot-common';
 import { Context } from '../core/context';
 import { BitcoinClient } from '../core/bitcoin';
 import { generateGrailPaymentAddress } from '../core/taproot';
-import { DeployRequest, Utxo } from '../core/types';
+import { DeployRequest, TokenDetails, Utxo } from '../core/types';
 import { IContext } from '../core/i-context';
 import { createSpell } from '../core/spells';
 import { transmitSpell } from '../api/spell-operations';
 import { parse } from '../core/env-parser';
-import { DEFAULT_FEERATE, TICKER, ZKAPP_BIN } from './consts';
+import { DEFAULT_FEERATE, ZKAPP_BIN } from './consts';
 
 export async function deployNft(
 	context: IContext,
+	tokenDetails: TokenDetails,
 	deployerPublicKey: Buffer,
 	feerate: number,
 	fundingUtxo: Utxo,
@@ -37,7 +38,7 @@ export async function deployNft(
 		fundingChangeAddress,
 		feerate,
 		nextNftAddress: grailAddress,
-		ticker: context.ticker,
+		tokenDetails,
 		currentNftState: {
 			publicKeysAsString: initialNftState.publicKeys.join(','),
 			threshold: initialNftState.threshold,
@@ -57,7 +58,10 @@ export async function deployNft(
 						address: this.nextNftAddress,
 						charms: {
 							$00: {
-								ticker: this.ticker,
+								ticker: this.tokenDetails.ticker,
+								name: this.tokenDetails.name,
+								image: this.tokenDetails.image,
+								url: this.tokenDetails.url,
 								current_cosigners: this.currentNftState.publicKeysAsString,
 								current_threshold: this.currentNftState.threshold,
 							},
@@ -121,13 +125,20 @@ export async function deployNftCli(
 			network: network,
 			mockProof: !!argv['mock-proof'],
 			skipProof: !!argv['skip-proof'],
-			ticker: TICKER,
 		},
 		fundingUtxo
 	);
 
+	const tokenDetails: TokenDetails = {
+		ticker: argv['ticker'],
+		name: argv['token-name'],
+		image: argv['token-image'],
+		url: argv['token-url'],
+	};
+
 	const [_, spellTxid] = await deployNft(
 		context,
+		tokenDetails,
 		deployerPublicKey,
 		feerate,
 		fundingUtxo,

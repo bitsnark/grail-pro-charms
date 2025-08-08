@@ -38,7 +38,6 @@ async function showWalletCharmsCli(_argv) {
         network: network,
         mockProof: !!argv['mock-proof'],
         skipProof: !!argv['skip-proof'],
-        ticker: consts_1.TICKER,
     });
     const utxos = await (0, spells_1.findCharmsUtxos)(context, Number.MAX_VALUE);
     logger_1.logger.debug('Found Charms UTXOs: ', utxos);

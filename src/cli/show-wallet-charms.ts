@@ -4,7 +4,7 @@ import dotenv from 'dotenv';
 import { Network } from '../core/taproot/taproot-common';
 import { Context } from '../core/context';
 import { parse } from '../core/env-parser';
-import { TICKER, ZKAPP_BIN } from './consts';
+import { ZKAPP_BIN } from './consts';
 import { findCharmsUtxos } from '../core/spells';
 
 export async function showWalletCharmsCli(
@@ -40,7 +40,6 @@ export async function showWalletCharmsCli(
 		network: network,
 		mockProof: !!argv['mock-proof'],
 		skipProof: !!argv['skip-proof'],
-		ticker: TICKER,
 	});
 
 	const utxos = await findCharmsUtxos(context, Number.MAX_VALUE);

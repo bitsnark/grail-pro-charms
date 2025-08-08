@@ -33,9 +33,6 @@ class Context {
             thus.appVk = obj.appVk;
         }
         logger_1.logger.info('App Verification Key: ', thus.appVk);
-        if (!obj.ticker)
-            throw new Error('Ticker is required');
-        thus.ticker = obj.ticker;
         thus.bitcoinClient = await bitcoin_1.BitcoinClient.initialize(obj.core);
         return thus;
     }

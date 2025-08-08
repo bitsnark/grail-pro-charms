@@ -48,7 +48,6 @@ async function visualizeCli(_argv) {
         network,
         mockProof: !!argv['mock-proof'],
         skipProof: !!argv['skip-proof'],
-        ticker: 'GRAIL-NFT',
     });
     const txid = argv['txid'];
     if (!txid) {

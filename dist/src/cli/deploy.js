@@ -15,7 +15,7 @@ const spells_1 = require("../core/spells");
 const spell_operations_1 = require("../api/spell-operations");
 const env_parser_1 = require("../core/env-parser");
 const consts_1 = require("./consts");
-async function deployNft(context, deployerPublicKey, feerate, fundingUtxo, transmit = false) {
+async function deployNft(context, tokenDetails, deployerPublicKey, feerate, fundingUtxo, transmit = false) {
     const initialNftState = {
         publicKeys: [deployerPublicKey.toString('hex')],
         threshold: 1,
@@ -29,7 +29,7 @@ async function deployNft(context, deployerPublicKey, feerate, fundingUtxo, trans
         fundingChangeAddress,
         feerate,
         nextNftAddress: grailAddress,
-        ticker: context.ticker,
+        tokenDetails,
         currentNftState: {
             publicKeysAsString: initialNftState.publicKeys.join(','),
             threshold: initialNftState.threshold,
@@ -48,7 +48,10 @@ async function deployNft(context, deployerPublicKey, feerate, fundingUtxo, trans
                         address: this.nextNftAddress,
                         charms: {
                             $00: {
-                                ticker: this.ticker,
+                                ticker: this.tokenDetails.ticker,
+                                name: this.tokenDetails.name,
+                                image: this.tokenDetails.image,
+                                url: this.tokenDetails.url,
                                 current_cosigners: this.currentNftState.publicKeysAsString,
                                 current_threshold: this.currentNftState.threshold,
                             },
@@ -97,9 +100,14 @@ async function deployNftCli(_argv) {
         network: network,
         mockProof: !!argv['mock-proof'],
         skipProof: !!argv['skip-proof'],
-        ticker: consts_1.TICKER,
     }, fundingUtxo);
-    const [_, spellTxid] = await deployNft(context, deployerPublicKey, feerate, fundingUtxo, transmit);
+    const tokenDetails = {
+        ticker: argv['ticker'],
+        name: argv['token-name'],
+        image: argv['token-image'],
+        url: argv['token-url'],
+    };
+    const [_, spellTxid] = await deployNft(context, tokenDetails, deployerPublicKey, feerate, fundingUtxo, transmit);
     return {
         appId: context.appId,
         appVk: context.appVk,

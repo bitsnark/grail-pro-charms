@@ -44,7 +44,6 @@ async function updateNftCli(_argv) {
         network: argv['network'],
         mockProof: !!argv['mock-proof'],
         skipProof: !!argv['skip-proof'],
-        ticker: 'GRAIL-NFT',
     });
     const previousNftTxid = argv['previous-nft-txid'];
     if (!previousNftTxid) {

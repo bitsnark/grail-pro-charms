@@ -36,11 +36,10 @@ export interface CharmerRequest {
 }
 
 export interface NftRequest extends CharmerRequest {
-	// NFT chain
-	ticker: string;
 	previousUtxo?: Utxo;
 	nextNftAddress: string;
 	currentNftState: { publicKeysAsString: string; threshold: number };
+	tokenDetails: TokenDetails;
 }
 
 export interface DeployRequest extends NftRequest {}
@@ -70,6 +69,7 @@ export interface GeneralizedInfo {
 	outgoingUserBtc: Outgoing[];
 	outgoingUserCharms: Outgoing[];
 	outgoingGrailBtc?: Outgoing;
+	disableSanity?: boolean;
 }
 
 export const generalizeInfoBlank: GeneralizedInfo = {
@@ -146,4 +146,11 @@ export interface SpellMetadata {
 			[key: string]: CharmsDesc;
 		};
 	}[];
+}
+
+export interface TokenDetails {
+	ticker?: string;
+	name?: string;
+	image?: string;
+	url?: string;
 }

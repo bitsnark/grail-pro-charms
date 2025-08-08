@@ -6,7 +6,6 @@ export interface IContext {
     zkAppBin: string;
     appId: string;
     appVk: string;
-    ticker: string;
     network: Network;
     mockProof?: boolean;
     skipProof?: boolean;

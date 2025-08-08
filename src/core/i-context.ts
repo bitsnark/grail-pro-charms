@@ -9,8 +9,6 @@ export interface IContext {
 	appId: string;
 	appVk: string;
 
-	ticker: string;
-
 	network: Network;
 
 	mockProof?: boolean;
@@ -19,5 +17,5 @@ export interface IContext {
 	temporarySecret: Buffer;
 
 	bitcoinClient: BitcoinClient;
-	core?: Client
+	core?: Client;
 }

@@ -9,7 +9,7 @@ import {
 	getPreviousTransactions,
 	transmitSpell,
 } from '../api/spell-operations';
-import { DEFAULT_FEERATE, TICKER, ZKAPP_BIN } from './consts';
+import { DEFAULT_FEERATE, ZKAPP_BIN } from './consts';
 import { createTransferSpell } from '../api/create-transfer-spell';
 import { findCharmsUtxos } from '../core/spells';
 
@@ -48,7 +48,6 @@ export async function transferCli(_argv: string[]): Promise<[string, string]> {
 		network: network,
 		mockProof: !!argv['mock-proof'],
 		skipProof: !!argv['skip-proof'],
-		ticker: TICKER,
 	});
 
 	const transmit = !!argv['transmit'];
