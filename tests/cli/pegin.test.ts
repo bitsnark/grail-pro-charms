@@ -54,31 +54,16 @@ describe('pegin e2e test', () => {
         app = { appId: deployment.appId, appVk: deployment.appVk };
 
         // Update the NFT to [1,2] t:1 
-        const tempGrailStateFile = path.join(
-            __dirname,
-            `temp-grail-state-${Date.now()}.json`
+        update = await updateNftWithTempGrailState(
+            app,
+            deployment.spellTxid,
+            [COSIGNER_1, COSIGNER_2],
+            1,
+            DEPLOYER.privateKey
         );
-        fs.writeFileSync(tempGrailStateFile, JSON.stringify({
-            publicKeys: [COSIGNER_1, COSIGNER_2].map(c => c.publicKey),
-            threshold: 1,
-        }, null, 2));
+    });
 
-        try {
-            update = await updateNftCli([
-                '--app-id', app.appId,
-                '--app-vk', app.appVk,
-                '--previous-nft-txid', deployment.spellTxid,
-                '--private-keys', DEPLOYER.privateKey,
-                '--new-grail-state-file', tempGrailStateFile,
-                ...TEST_CLI_ARGS,
-            ]);
-        } finally {
-            // Clean up temporary file
-            if (fs.existsSync(tempGrailStateFile)) {
-                fs.unlinkSync(tempGrailStateFile);
-            }
-        }
-
+    it('should execute a pegin successfully', async () => {
         await mintBlock();
 
         // Create user payment
@@ -92,9 +77,6 @@ describe('pegin e2e test', () => {
             ...TEST_CLI_ARGS,
         ]);
 
-    });
-
-    it('should execute a pegin successfully', async () => {
         await mintBlock();
 
         const peginResult = await peginCli([
@@ -146,37 +128,58 @@ describe('pegin e2e test', () => {
 
         await mintBlock();
 
-        const tempGrailStateFile = path.join(
-            __dirname,
-            `temp-grail-state-${Date.now()}.json`
+        const updateResult = await updateNftWithTempGrailState(
+            app,
+            peginTxIds[1], // spell txid
+            [COSIGNER_1, COSIGNER_2],
+            1,
+            `${COSIGNER_3.privateKey},${COSIGNER_2.privateKey}`
         );
-        fs.writeFileSync(tempGrailStateFile, JSON.stringify({
-            publicKeys: [COSIGNER_1, COSIGNER_2].map(c => c.publicKey),
-            threshold: 1,
-        }, null, 2));
-
-        let updateResult: any;
-        try {
-            updateResult = await updateNftCli([
-                '--app-id', app.appId,
-                '--app-vk', app.appVk,
-                '--previous-nft-txid', peginTxIds[1], // spell txid
-                '--new-grail-state-file', tempGrailStateFile,
-                '--private-keys', `${COSIGNER_3.privateKey},${COSIGNER_2.privateKey}`,
-                ...TEST_CLI_ARGS,
-            ]);
-        } finally {
-            // Clean up temporary file
-            if (fs.existsSync(tempGrailStateFile)) {
-                fs.unlinkSync(tempGrailStateFile);
-            }
-        }
 
         expect(updateResult).toBeTruthy();
 
 
     });
 });
+
+
+/**
+ * Helper function to create a temporary grail state file and update the NFT
+ */
+async function updateNftWithTempGrailState(
+    app: { appId: string; appVk: string },
+    previousNftTxid: string,
+    publicKeys: Array<{ publicKey: string }>,
+    threshold: number,
+    privateKeys: string,
+    testCliArgs: string[] = TEST_CLI_ARGS
+): Promise<any> {
+    const tempGrailStateFile = path.join(
+        __dirname,
+        `temp-grail-state-${Date.now()}.json`
+    );
+
+    fs.writeFileSync(tempGrailStateFile, JSON.stringify({
+        publicKeys: publicKeys.map(c => c.publicKey),
+        threshold,
+    }, null, 2));
+
+    try {
+        return await updateNftCli([
+            '--app-id', app.appId,
+            '--app-vk', app.appVk,
+            '--previous-nft-txid', previousNftTxid,
+            '--private-keys', privateKeys,
+            '--new-grail-state-file', tempGrailStateFile,
+            ...testCliArgs,
+        ]);
+    } finally {
+        // Clean up temporary file
+        if (fs.existsSync(tempGrailStateFile)) {
+            fs.unlinkSync(tempGrailStateFile);
+        }
+    }
+}
 
 async function mintBlock() {
     const bitcoinClient = await BitcoinClient.initialize();
