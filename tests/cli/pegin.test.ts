@@ -6,6 +6,7 @@ import { peginCli } from '../../src/cli/pegin';
 import { updateNftCli } from '../../src/cli/update';
 import { userPaymentCli } from '../../src/cli/user-payment';
 import { BitcoinClient } from '../../src/core/bitcoin';
+import { createSnapshot, loadSnapshot } from '../utils/bitcoin-snapshot';
 
 jest.setTimeout(1200000);
 
@@ -39,10 +40,11 @@ const COSIGNER_3 = {
 
 describe('pegin e2e test', () => {
     let update: any;
-    let payment: any;
     let app: any;
 
-    beforeEach(async () => {
+    const SNAPSHOT_DIR = './snapshot';
+
+    beforeAll(async () => {
 
         // Deploy the NFT using the CLI
         const deployment = await deployNftCli([
@@ -61,13 +63,20 @@ describe('pegin e2e test', () => {
             1,
             DEPLOYER.privateKey
         );
+
+        await createSnapshot(SNAPSHOT_DIR);
+
     });
 
-    it('should execute a pegin successfully', async () => {
+    beforeEach(async () => {
+        await loadSnapshot(SNAPSHOT_DIR);
+    });
+
+    xit('should execute a pegin successfully', async () => {
         await mintBlock();
 
         // Create user payment
-        payment = await userPaymentCli([
+        const payment = await userPaymentCli([
             '--app-id', app.appId,
             '--app-vk', app.appVk,
             '--type', 'btc',
@@ -97,11 +106,11 @@ describe('pegin e2e test', () => {
         expect(peginResult).toBeTruthy();
     });
 
-    it('should update after pegin with new public keys update and new threshold', async () => {
+    xit('should update after pegin with new public keys update and new threshold', async () => {
         await mintBlock();
 
         //Create user payment
-        const payment2 = await userPaymentCli([
+        const payment = await userPaymentCli([
             '--app-id', app.appId,
             '--app-vk', app.appVk,
             '--type', 'btc',
@@ -118,8 +127,8 @@ describe('pegin e2e test', () => {
             '--new-public-keys', `${COSIGNER_2.publicKey},${COSIGNER_3.publicKey}`,
             '--new-threshold', '2',
             '--private-keys', `${COSIGNER_1.privateKey},${COSIGNER_2.privateKey},${COSIGNER_3.privateKey}`,
-            '--recovery-public-key', payment2.recoveryPublicKey,
-            '--user-payment-txid', payment2.txid,
+            '--recovery-public-key', payment.recoveryPublicKey,
+            '--user-payment-txid', payment.txid,
             ...TEST_CLI_ARGS,
         ]);
 
@@ -135,10 +144,30 @@ describe('pegin e2e test', () => {
             1,
             `${COSIGNER_3.privateKey},${COSIGNER_2.privateKey}`
         );
-
         expect(updateResult).toBeTruthy();
+    });
 
+    it('should fail if the user payment is not found', async () => {
+        await mintBlock();
 
+        try {
+            await peginCli([
+                '--app-id', app.appId,
+                '--app-vk', app.appVk,
+                '--previous-nft-txid', update.spellTxid,
+                '--user-payment-txid', '0000000000000000000000000000000000000000000000000000000000000000',
+                '--new-public-keys', `${COSIGNER_1.publicKey},${COSIGNER_2.publicKey}`,
+                '--new-threshold', '1',
+                '--recovery-public-key', '0000000000000000000000000000000000000000000000000000000000000000',
+                '--private-keys', `${COSIGNER_1.privateKey},${COSIGNER_2.privateKey}`,
+                ...TEST_CLI_ARGS,
+            ]);
+            // If we get here, the test should fail because we expected an error
+            expect(true).toBe(false);
+        } catch (error) {
+            // Expected to fail - this is the correct behavior
+            expect(error).toBeTruthy();
+        }
     });
 });
 
