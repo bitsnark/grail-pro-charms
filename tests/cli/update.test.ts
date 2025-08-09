@@ -4,8 +4,16 @@ import path from 'path';
 import { deployNftCli } from '../../src/cli/deploy';
 import { updateNftCli } from '../../src/cli/update';
 import { BitcoinClient } from '../../src/core/bitcoin';
+import { createSnapshot, loadSnapshot } from '../utils/bitcoin-snapshot';
 
 jest.setTimeout(1200000);
+
+
+// Common CLI arguments for testing
+const TEST_CLI_ARGS = [
+	'--mock-proof', 'true',
+	'--skip-proof', 'true',
+];
 
 // Cosigner constants
 //3
@@ -36,32 +44,30 @@ const COSIGNER_3 = {
 		'1cd377ff0666e4f16922910dfad570199c257ca72c19418dd47eac3701edf548',
 };
 
-describe('update e2e test', () => {
-	let deploymentResult: any;
+const SNAPSHOT_DIR = './snapshot';
 
-	beforeEach(async () => {
-		const deployerPublicKey = COSIGNER_0.publicKey;
+describe('update e2e test', () => {
+	let deployment: any;
+
+	beforeAll(async () => {
 
 		// Deploy the NFT using the CLI
-		deploymentResult = await deployNftCli([
-			'--deployer-public-key',
-			deployerPublicKey,
-			'--mock-proof',
-			'true',
-			'--network',
-			'regtest',
-			'--feerate',
-			'0.00002',
-			'--transmit',
-			'true',
-			'--ticker',
-			'TESTNFT',
+		deployment = await deployNftCli([
+			'--deployer-public-key', COSIGNER_0.publicKey,
+			'--ticker', 'TESTNFT',
+			...TEST_CLI_ARGS,
 		]);
 
-		expect(deploymentResult).toBeTruthy();
-		expect(deploymentResult.appId).toBeDefined();
-		expect(deploymentResult.appVk).toBeDefined();
-		expect(deploymentResult.spellTxid).toBeDefined();
+		expect(deployment).toBeTruthy();
+		expect(deployment.appId).toBeDefined();
+		expect(deployment.appVk).toBeDefined();
+		expect(deployment.spellTxid).toBeDefined();
+
+		await createSnapshot(SNAPSHOT_DIR);
+	});
+
+	beforeEach(async () => {
+		await loadSnapshot(SNAPSHOT_DIR);
 	});
 
 	describe('should allow cosigner rotation with 2 cosigners', () => {
@@ -71,7 +77,7 @@ describe('update e2e test', () => {
 			const signers = [COSIGNER_0];
 
 			const updateResult = await update(
-				deploymentResult,
+				deployment,
 				signers,
 				newCosigners,
 				newThreshold
@@ -89,7 +95,7 @@ describe('update e2e test', () => {
 			const fromThreshold = 1;
 			const deployer = [COSIGNER_0];
 			const updateResult = await update(
-				deploymentResult,
+				deployment,
 				deployer,
 				fromCosigners,
 				fromThreshold
@@ -118,7 +124,7 @@ describe('update e2e test', () => {
 			const fromThreshold = 1;
 			const deployer = [COSIGNER_0];
 			const updateResult = await update(
-				deploymentResult,
+				deployment,
 				deployer,
 				fromCosigners,
 				fromThreshold
@@ -147,7 +153,7 @@ describe('update e2e test', () => {
 			const fromThreshold = 1;
 			const deployer = [COSIGNER_0];
 			const updateResult = await update(
-				deploymentResult,
+				deployment,
 				deployer,
 				fromCosigners,
 				fromThreshold
@@ -176,7 +182,7 @@ describe('update e2e test', () => {
 			const fromThreshold = 1;
 			const deployer = [COSIGNER_0];
 			const updateResult = await update(
-				deploymentResult,
+				deployment,
 				deployer,
 				fromCosigners,
 				fromThreshold
@@ -205,7 +211,7 @@ describe('update e2e test', () => {
 			const fromThreshold = 2;
 			const deployer = [COSIGNER_0];
 			const updateResult = await update(
-				deploymentResult,
+				deployment,
 				deployer,
 				fromCosigners,
 				fromThreshold
@@ -234,7 +240,7 @@ describe('update e2e test', () => {
 			const fromThreshold = 1;
 			const deployer = [COSIGNER_0];
 			const updateResult = await update(
-				deploymentResult,
+				deployment,
 				deployer,
 				fromCosigners,
 				fromThreshold
@@ -263,7 +269,7 @@ describe('update e2e test', () => {
 			const fromThreshold = 1;
 			const deployer = [COSIGNER_0];
 			const updateResult = await update(
-				deploymentResult,
+				deployment,
 				deployer,
 				fromCosigners,
 				fromThreshold
@@ -294,7 +300,7 @@ describe('update e2e test', () => {
 			const fromThreshold = 3;
 			const deployer = [COSIGNER_0];
 			const result = await update(
-				deploymentResult,
+				deployment,
 				deployer,
 				fromCosigners,
 				fromThreshold
@@ -312,7 +318,7 @@ describe('update e2e test', () => {
 			const fromThreshold = 3;
 			const deployer = [COSIGNER_0];
 			const updateResult = await update(
-				deploymentResult,
+				deployment,
 				deployer,
 				fromCosigners,
 				fromThreshold
@@ -341,7 +347,7 @@ describe('update e2e test', () => {
 			const fromThreshold = 2;
 			const deployer = [COSIGNER_0];
 			const updateResult = await update(
-				deploymentResult,
+				deployment,
 				deployer,
 				fromCosigners,
 				fromThreshold
@@ -370,7 +376,7 @@ describe('update e2e test', () => {
 			const fromThreshold = 1;
 			const deployer = [COSIGNER_0];
 			const updateResult = await update(
-				deploymentResult,
+				deployment,
 				deployer,
 				fromCosigners,
 				fromThreshold
@@ -401,7 +407,7 @@ describe('update e2e test', () => {
 		newThreshold: number
 	) {
 		return await updateNftWithTempFile(
-			deploymentResult,
+			deployment,
 			prevResult.spellTxid,
 			signers.map(s => s.privateKey).join(','),
 			{
@@ -428,22 +434,14 @@ const updateNftWithTempFile = async (
 
 	try {
 		const result = await updateNftCli([
-			'--app-id',
-			deploymentResult.appId,
-			'--app-vk',
-			deploymentResult.appVk,
-			'--previous-nft-txid',
-			previousNftTxid,
-			'--private-keys',
-			privateKeys,
-			'--new-grail-state-file',
-			tempGrailStateFile,
-			'--feerate',
-			feerate,
-			'--mock-proof',
-			'true',
-			'--transmit',
-			'true',
+			'--app-id', deploymentResult.appId,
+			'--app-vk', deploymentResult.appVk,
+			'--previous-nft-txid', previousNftTxid,
+			'--private-keys', privateKeys,
+			'--new-grail-state-file', tempGrailStateFile,
+			'--feerate', feerate,
+			'--mock-proof', 'true',
+			'--transmit', 'true',
 		]);
 
 		return result;
