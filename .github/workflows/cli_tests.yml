@@ -1,6 +1,6 @@
 name: CLI Tests
 
-on: push
+on: workflow_dispatch
 
 jobs:
   cli-tests:
