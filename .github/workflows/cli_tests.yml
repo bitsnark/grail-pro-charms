@@ -28,7 +28,7 @@ jobs:
           git clone https://github.com/bitsnark/charms.git
           cd charms
           git checkout em-avoid-proving
-          cargo build --release --features provercp
+          cargo build --release --features prover
           mkdir -p ~/.cargo/bin
           cp target/release/charms ~/.cargo/bin/
 
