@@ -1,0 +1,45 @@
+name: CLI Tests
+
+on: workflow_dispatch
+
+jobs:
+  cli-tests:
+    runs-on: ubuntu-latest
+
+    env:
+      BTC_WALLET_NAME: testwallet
+      CHARMS_BIN: ~/.cargo/bin/charms
+      # Add other env vars your tests may need
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Build Charms CLI from em-avoid-proving branch
+        run: |
+          git clone https://github.com/bitsnark/charms.git
+          cd charms
+          git checkout em-avoid-proving
+          cargo build --release --features prover
+          mkdir -p ~/.cargo/bin
+          cp target/release/charms ~/.cargo/bin/
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Start Bitcoin regtest node
+        run: |
+          chmod +x ./scripts/regtest.sh
+          sudo ./scripts/regtest.sh &
+          sleep 10  # wait for node to be ready
+
+      - name: Run CLI tests
+        run: npm run test:cli:simple

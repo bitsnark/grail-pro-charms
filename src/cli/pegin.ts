@@ -164,7 +164,7 @@ export async function peginCli(_argv: string[]): Promise<[string, string]> {
 		),
 	}));
 	logger.debug(
-		'Signature responses from cosigners after fiultering: ',
+		'Signature responses from cosigners after filtering: ',
 		filteredSignatures
 	);
 
