@@ -5,8 +5,7 @@
 	"main": "dist/src/index.js",
 	"scripts": {
 		"prettier-fix": "prettier --write \"**/*.ts\"",
-		"build": "npm run build-zkapp && npm run build-ts",
-		"build-ts": "tsc --project . --outDir ./dist --declaration --pretty",
+		"build": "tsc --project . --outDir ./dist --declaration --pretty",
 		"build-zkapp": "cd ./zkapp && ./build.sh",
 		"prepare": "npm run build",
 		"clean-js": "find ./src -type f -name \"*.js\" -delete",
