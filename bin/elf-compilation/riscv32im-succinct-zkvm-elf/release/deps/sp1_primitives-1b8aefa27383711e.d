@@ -1,0 +1,10 @@
+/Users/gadiguy/workspace/grail-pro-charms/zkapp/target/elf-compilation/riscv32im-succinct-zkvm-elf/release/deps/libsp1_primitives-1b8aefa27383711e.rmeta: /Users/gadiguy/.cargo/registry/src/index.crates.io-6f17d22bba15001f/sp1-primitives-4.2.1/src/lib.rs /Users/gadiguy/.cargo/registry/src/index.crates.io-6f17d22bba15001f/sp1-primitives-4.2.1/src/consts.rs /Users/gadiguy/.cargo/registry/src/index.crates.io-6f17d22bba15001f/sp1-primitives-4.2.1/src/io.rs /Users/gadiguy/.cargo/registry/src/index.crates.io-6f17d22bba15001f/sp1-primitives-4.2.1/src/types.rs
+
+/Users/gadiguy/workspace/grail-pro-charms/zkapp/target/elf-compilation/riscv32im-succinct-zkvm-elf/release/deps/libsp1_primitives-1b8aefa27383711e.rlib: /Users/gadiguy/.cargo/registry/src/index.crates.io-6f17d22bba15001f/sp1-primitives-4.2.1/src/lib.rs /Users/gadiguy/.cargo/registry/src/index.crates.io-6f17d22bba15001f/sp1-primitives-4.2.1/src/consts.rs /Users/gadiguy/.cargo/registry/src/index.crates.io-6f17d22bba15001f/sp1-primitives-4.2.1/src/io.rs /Users/gadiguy/.cargo/registry/src/index.crates.io-6f17d22bba15001f/sp1-primitives-4.2.1/src/types.rs
+
+/Users/gadiguy/workspace/grail-pro-charms/zkapp/target/elf-compilation/riscv32im-succinct-zkvm-elf/release/deps/sp1_primitives-1b8aefa27383711e.d: /Users/gadiguy/.cargo/registry/src/index.crates.io-6f17d22bba15001f/sp1-primitives-4.2.1/src/lib.rs /Users/gadiguy/.cargo/registry/src/index.crates.io-6f17d22bba15001f/sp1-primitives-4.2.1/src/consts.rs /Users/gadiguy/.cargo/registry/src/index.crates.io-6f17d22bba15001f/sp1-primitives-4.2.1/src/io.rs /Users/gadiguy/.cargo/registry/src/index.crates.io-6f17d22bba15001f/sp1-primitives-4.2.1/src/types.rs
+
+/Users/gadiguy/.cargo/registry/src/index.crates.io-6f17d22bba15001f/sp1-primitives-4.2.1/src/lib.rs:
+/Users/gadiguy/.cargo/registry/src/index.crates.io-6f17d22bba15001f/sp1-primitives-4.2.1/src/consts.rs:
+/Users/gadiguy/.cargo/registry/src/index.crates.io-6f17d22bba15001f/sp1-primitives-4.2.1/src/io.rs:
+/Users/gadiguy/.cargo/registry/src/index.crates.io-6f17d22bba15001f/sp1-primitives-4.2.1/src/types.rs:
