@@ -1,11 +1,8 @@
 import { logger } from '../core/logger';
 import minimist from 'minimist';
 import dotenv from 'dotenv';
-import { Network } from '../core/taproot/taproot-common';
-import { Context } from '../core/context';
-import { parse } from '../core/env-parser';
-import { ZKAPP_BIN } from './consts';
 import { findCharmsUtxos } from '../core/spells';
+import { createContext } from './utils';
 
 export async function showWalletCharmsCli(
 	_argv: string[]
@@ -24,23 +21,7 @@ export async function showWalletCharmsCli(
 		'--': true,
 	});
 
-	const network = argv['network'] as Network;
-
-	const appId = argv['app-id'] as string;
-	if (!appId) {
-		throw new Error('--app-id is required');
-	}
-	const appVk = argv['app-vk'] as string;
-
-	const context = await Context.create({
-		appId,
-		appVk,
-		charmsBin: parse.string('CHARMS_BIN'),
-		zkAppBin: ZKAPP_BIN,
-		network: network,
-		mockProof: !!argv['mock-proof'],
-		skipProof: !!argv['skip-proof'],
-	});
+	const context = await createContext(argv);
 
 	const utxos = await findCharmsUtxos(context, Number.MAX_VALUE);
 	logger.debug('Found Charms UTXOs: ', utxos);

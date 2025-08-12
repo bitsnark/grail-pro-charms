@@ -10,8 +10,9 @@ exports.info = info;
 exports.debug = debug;
 exports.devnull = devnull;
 /* eslint-disable  @typescript-eslint/no-explicit-any */
+const env_parser_1 = require("./env-parser");
 const json_1 = require("./json");
-let debugLevel = parseInt(process.env.DEBUG || '0');
+let debugLevel = env_parser_1.parse.integer('DEBUG_LEVEL', 1);
 let printDate = false;
 let printLevel = false;
 exports.DEBUG_LEVELS = {

@@ -97,7 +97,8 @@ export interface TokenUtxo {
     vout: number;
     amount: number;
 }
-type CharmsDesc = number | {
+export type CharmsDesc = number | {
+    ticker?: string;
     current_cosigners?: string;
     current_threshold?: number;
 };
@@ -129,5 +130,10 @@ export interface TokenDetails {
     name?: string;
     image?: string;
     url?: string;
+}
+export declare class Outspend {
+    spent: boolean;
+    txid?: string;
+    vin?: number;
 }
 export {};

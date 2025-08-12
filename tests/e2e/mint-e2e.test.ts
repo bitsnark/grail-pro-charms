@@ -1,19 +1,16 @@
 import { DEBUG_LEVELS, logger } from '../../src/core/logger';
-import { generateRandomKeypair } from '../../src/cli/generate-random-keypairs';
-import { deployNftCli } from '../../src/cli/deploy';
 import { mintCli } from '../../src/cli/mint';
+import { deployNftCli } from '../../src/cli/deploy';
 
 jest.setTimeout(600000000);
 logger.setLoggerOptions(DEBUG_LEVELS.ALL, true, true); // Set debug level to ALL, print date and level
 
-const USE_MOCK_PROOF = 'true'; // Use mock proof for testing
-logger.warn(`Using mock proof: ${USE_MOCK_PROOF}.`);
-
 describe('mint e2e test', () => {
 	it('should deploy, then mint successfully', async () => {
-		const deployerKaypair = generateRandomKeypair();
-		const deployerPublicKey = deployerKaypair.publicKey.toString('hex');
-		const deployerPrivateKey = deployerKaypair.privateKey.toString('hex');
+		const deployerPublicKey =
+			'52d8f3bcb43c926eac49da429884d85f8299d807821dee4d4ef008c5dec69170';
+		const deployerPrivateKey =
+			'35b49ca966cfbffd592eed5e25931862603dcc5a7c2d5378049aa92152fa0d9b';
 
 		logger.log('Deployer Public Key: ', deployerPublicKey);
 		logger.log('Deployer Private Key: ', deployerPrivateKey);
@@ -24,22 +21,33 @@ describe('mint e2e test', () => {
 			'--deployer-public-key',
 			deployerPublicKey,
 			'--mock-proof',
-			USE_MOCK_PROOF,
+			'false',
 			'--network',
-			'regtest',
+			'mainnnet',
 			'--feerate',
-			'0.00002',
+			'0.00000004',
 			'--transmit',
 			'true',
 			'--ticker',
-			'TESTNFT',
+			'zkBTC',
+			'--token-name',
+			'BOS zkBTC',
+			'--token-image',
+			'https://bitcoinos.build/images/logo-dark.png',
+			'--token-url',
+			'https://bitcoinos.build/zkbtc',
 		]);
 		expect(deployResult).toBeTruthy();
 		logger.log('Deployment Result: ', deployResult);
 
-		logger.log('*** User payment ***');
+		// const deployResult = {
+		// 	appId: '02c462f8a3fadebf76ffd864ee17974bfe2df2f558dd04445ac1e0b4d570059c',
+		// 	appVk: 'd0c90877df715c3be2d6b143953c5064f8f39f2745e2b1517712e83ba7548a03',
+		// 	spellTxid:
+		// 		'ecef3abe297a57fb5393abf4c59ceab89fb1d8db7e9b81e10e55c1f2e357da12',
+		// };
 
-		const mintAmount = 666666;
+		const mintAmount = 9000000000;
 
 		logger.log('*** Mint ***');
 
@@ -53,17 +61,23 @@ describe('mint e2e test', () => {
 			'--private-keys',
 			[deployerPrivateKey].join(','),
 			'--mock-proof',
-			USE_MOCK_PROOF,
+			'false',
 			'--network',
-			'regtest',
+			'mainnnet',
 			'--feerate',
-			'0.00002',
+			'0.00000004',
 			'--transmit',
 			'true',
-			'--ticker',
-			'TESTNFT',
 			'--amount',
 			mintAmount.toString(),
+			'--ticker',
+			'zkBTC',
+			'--token-name',
+			'BOS zkBTC',
+			'--token-image',
+			'https://bitcoinos.build/images/logo-dark.png',
+			'--token-url',
+			'https://bitcoinos.build/zkbtc',
 		]);
 		expect(mintResult).toBeTruthy();
 		logger.log('Mint Result: ', mintResult);

@@ -6,7 +6,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getNewGrailStateFromArgv = getNewGrailStateFromArgv;
 exports.getUserPaymentFromArgv = getUserPaymentFromArgv;
+exports.createContext = createContext;
 const node_fs_1 = __importDefault(require("node:fs"));
+const env_parser_1 = require("../core/env-parser");
+const consts_1 = require("./consts");
+const context_1 = require("../core/context");
 const grailStateSchema = {
     publicKeys: [''],
     threshold: 0,
@@ -64,4 +68,19 @@ function getUserPaymentFromArgv(argv) {
         throw new Error(`Invalid user payment details format. Required format: ${JSON.stringify(userPaymentDetails)}`);
     }
     return userPaymentDetails;
+}
+async function createContext(argv) {
+    const appId = argv['app-id'];
+    if (!appId) {
+        throw new Error('--app-id is required');
+    }
+    return await context_1.Context.create({
+        appId: argv['app-id'],
+        appVk: argv['app-vk'],
+        charmsBin: env_parser_1.parse.string('CHARMS_BIN'),
+        zkAppBin: consts_1.ZKAPP_BIN,
+        network: argv['network'] ?? env_parser_1.parse.string('BTC_NETWORK', 'regtest'),
+        mockProof: !!argv['mock-proof'],
+        skipProof: !!argv['skip-proof'],
+    });
 }

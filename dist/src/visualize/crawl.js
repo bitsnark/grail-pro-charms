@@ -33,12 +33,13 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.crawl = crawl;
+exports.crawlBack = crawlBack;
+exports.crawlForward = crawlForward;
 const bitcoin = __importStar(require("bitcoinjs-lib"));
 const bitcoin_1 = require("../core/bitcoin");
 const charms_sdk_1 = require("../core/charms-sdk");
 const logger_1 = require("../core/logger");
-async function crawl(context, maxDepth, txid, 
+async function crawlBack(context, maxDepth, txid, 
 /* out */ transactions = {}) {
     if (maxDepth <= 0)
         return transactions;
@@ -68,7 +69,43 @@ async function crawl(context, maxDepth, txid,
     }
     for (const input of transactions[txid].tx.ins) {
         const inputTxid = (0, bitcoin_1.hashToTxid)(input.hash);
-        await crawl(context, maxDepth - 1, inputTxid, transactions);
+        await crawlBack(context, maxDepth - 1, inputTxid, transactions);
+    }
+    return transactions;
+}
+async function crawlForward(context, maxDepth, txid, 
+/* out */ transactions = {}) {
+    if (maxDepth <= 0)
+        return transactions;
+    try {
+        const txBytes = await context.bitcoinClient.getTransactionBytes(txid);
+        if (!txBytes || txBytes.length === 0)
+            return transactions;
+        transactions[txid] = {
+            txid,
+            bytes: txBytes,
+            tx: bitcoin.Transaction.fromBuffer(txBytes),
+        };
+    }
+    catch (error) {
+        logger_1.logger.warn(`Error fetching transaction ${txid}:`, error);
+        return transactions;
+    }
+    try {
+        const spell = await (0, charms_sdk_1.showSpell)(context, txid);
+        if (!spell)
+            return transactions;
+        transactions[txid].spell = spell;
+    }
+    catch (error) {
+        logger_1.logger.warn(`Error showing spell for txid ${txid}:`, error);
+        return transactions;
+    }
+    const outspends = await context.bitcoinClient.getOutspends(txid);
+    for (const outspend of outspends) {
+        if (!outspend?.spent || !outspend.txid)
+            continue;
+        await crawlForward(context, maxDepth - 1, outspend.txid, transactions);
     }
     return transactions;
 }

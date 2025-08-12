@@ -47,12 +47,11 @@ const taproot_1 = require("../core/taproot");
 const generate_random_keypairs_1 = require("./generate-random-keypairs");
 const pegin_1 = require("./pegin");
 const spells_1 = require("../core/spells");
-const context_1 = require("../core/context");
-const env_parser_1 = require("../core/env-parser");
 const consts_1 = require("./consts");
 const create_transfer_spell_1 = require("../api/create-transfer-spell");
 const spell_operations_1 = require("../api/spell-operations");
 const bitcoin_1 = require("../core/bitcoin");
+const utils_1 = require("./utils");
 async function sendUserPaymentCharms(context, feerate, grailState, amount, changeAddress, network) {
     const recoveryKeypair = (0, generate_random_keypairs_1.generateRandomKeypair)();
     const userPaymentAddress = (0, taproot_1.generateUserPaymentAddress)(grailState, {
@@ -78,12 +77,12 @@ async function sendUserPaymentCharms(context, feerate, grailState, amount, chang
         recoveryPublicKey: recoveryKeypair.publicKey.toString('hex'),
     };
 }
-async function sendUserPaymentBtc(context, grailState, amount, network) {
+async function sendUserPaymentBtc(context, grailState, amount) {
     const recoveryKeypair = (0, generate_random_keypairs_1.generateRandomKeypair)();
     const userPaymentAddress = (0, taproot_1.generateUserPaymentAddress)(grailState, {
         recoveryPublicKey: recoveryKeypair.publicKey.toString('hex'),
         timelockBlocks: pegin_1.TIMELOCK_BLOCKS,
-    }, network);
+    }, context.network);
     logger_1.logger.debug('Sending funds to user payment address: ', userPaymentAddress);
     const txid = await context.bitcoinClient.fundAddress(userPaymentAddress, amount);
     logger_1.logger.debug('Funds sent successfully, txid: ', txid);
@@ -103,7 +102,6 @@ async function userPaymentCli(_argv) {
         },
         '--': true,
     });
-    const network = argv['network'];
     if (!argv['current-public-keys']) {
         throw new Error('--current-public-keys is required.');
     }
@@ -129,29 +127,13 @@ async function userPaymentCli(_argv) {
     if (type !== 'charms' && type !== 'btc') {
         throw new Error('--type must be either "charms" or "btc".');
     }
-    const appId = argv['app-id'];
-    if (!appId) {
-        throw new Error('--app-id is required.');
-    }
-    const appVk = argv['app-vk'];
-    if (!appVk) {
-        throw new Error('--app-vk is required.');
-    }
-    const context = await context_1.Context.create({
-        appId,
-        appVk,
-        charmsBin: env_parser_1.parse.string('CHARMS_BIN'),
-        zkAppBin: consts_1.ZKAPP_BIN,
-        network,
-        mockProof: !!argv['mock-proof'],
-        skipProof: !!argv['skip-proof'],
-    });
+    const context = await (0, utils_1.createContext)(argv);
     if (type == 'charms') {
         const changeAddress = await context.bitcoinClient.getAddress();
-        return await sendUserPaymentCharms(context, feerate, grailState, amount, changeAddress, network);
+        return await sendUserPaymentCharms(context, feerate, grailState, amount, changeAddress, context.network);
     }
     else if (type == 'btc') {
-        return await sendUserPaymentBtc(context, grailState, amount, network);
+        return await sendUserPaymentBtc(context, grailState, amount);
     }
     else
         throw new Error('Invalid type specified. Use "charms" or "btc".');

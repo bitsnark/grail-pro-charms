@@ -93,11 +93,10 @@ async function deployNftCli(_argv) {
     const transmit = !!argv['transmit'];
     const bitcoinClient = await bitcoin_1.BitcoinClient.initialize();
     const fundingUtxo = await bitcoinClient.getFundingUtxo();
-    const network = argv['network'];
     const context = await context_1.Context.createForDeploy({
         charmsBin: env_parser_1.parse.string('CHARMS_BIN'),
         zkAppBin: consts_1.ZKAPP_BIN,
-        network: network,
+        network: argv['network'] ?? env_parser_1.parse.string('BTC_NETWORK', 'regtest'),
         mockProof: !!argv['mock-proof'],
         skipProof: !!argv['skip-proof'],
     }, fundingUtxo);

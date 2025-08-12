@@ -15,4 +15,5 @@ export declare class Context implements IContext {
     private constructor();
     static create(obj: Partial<IContext>): Promise<Context>;
     static createForDeploy(obj: Partial<Exclude<IContext, ['appId']>>, fundingUtxo: Utxo): Promise<Context>;
+    static createForVisualize(obj: Partial<IContext>): Promise<Context>;
 }

@@ -32,28 +32,13 @@ var __importStar = (this && this.__importStar) || (function () {
         return result;
     };
 })();
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.generateSpendingScriptForGrail = generateSpendingScriptForGrail;
 exports.generateSpendingScriptsForUserPayment = generateSpendingScriptsForUserPayment;
 exports.generateUserPaymentAddress = generateUserPaymentAddress;
 exports.generateGrailPaymentAddress = generateGrailPaymentAddress;
-const logger_1 = require("./logger");
-const node_fs_1 = __importDefault(require("node:fs"));
 const bitcoin = __importStar(require("bitcoinjs-lib"));
 const taptree_1 = require("./taproot/taptree");
-if (process.env.DEBUG_TAPROOT) {
-    try {
-        if (!node_fs_1.default.existsSync('./debuglog/taproot')) {
-            node_fs_1.default.mkdirSync('./debuglog/taproot', { recursive: true });
-        }
-    }
-    catch (e) {
-        logger_1.logger.error('Error in debugLog: ', e);
-    }
-}
 function generateSpendingScriptForGrail(grailState, network) {
     const multisigScript = generateMultisigScript(grailState);
     const stt = new taptree_1.SimpleTapTree([multisigScript], network);

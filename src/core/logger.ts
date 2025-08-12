@@ -1,7 +1,8 @@
 /* eslint-disable  @typescript-eslint/no-explicit-any */
+import { parse } from './env-parser';
 import { bufferReplacer } from './json';
 
-let debugLevel = parseInt(process.env.DEBUG || '0');
+let debugLevel = parse.integer('DEBUG_LEVEL', 1);
 let printDate = false;
 let printLevel = false;
 

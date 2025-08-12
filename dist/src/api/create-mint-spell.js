@@ -26,8 +26,7 @@ async function createMintSpell(context, tokenDetails, feerate, previousNftTxid, 
             },
         ],
         outgoingUserBtc: [],
-    }, tokenDetails, // Empty token details for minting
-    fundingUtxo);
+    }, tokenDetails, fundingUtxo);
     logger_1.logger.debug('Mint spell created: ', spell);
     return { spell, signatureRequest };
 }

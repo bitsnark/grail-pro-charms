@@ -1,5 +1,5 @@
 import Client from 'bitcoin-core';
-import { PreviousTransactions, Utxo } from './types';
+import { Outspend, PreviousTransactions, Utxo } from './types';
 import { Network } from './taproot/taproot-common';
 export declare const DUST_LIMIT = 546;
 export declare function txidToHash(txid: string): Buffer;
@@ -39,8 +39,41 @@ export declare class ExtendedClient {
     generateToAddress(blocks: number, address: string): Promise<string[]>;
     generateBlocks(address: string, txids: string[]): Promise<void>;
 }
+export interface ExtendedTxInput {
+    prevout: {
+        hash: string;
+        index: number;
+    };
+    script: string;
+    witness: string;
+    sequence: number;
+    address: string | null;
+}
+export interface ExtendedTxOutput {
+    value: number;
+    script: string;
+    address: string | null;
+}
+export interface ExtendedTransaction {
+    txid: string;
+    version: number;
+    locktime: number;
+    vin: ExtendedTxInput[];
+    vout: ExtendedTxOutput[];
+    size: number;
+    weight?: number;
+    fee?: number;
+    status: {
+        confirmed: boolean;
+        block_height?: number;
+        block_hash?: string;
+        block_time?: number;
+    };
+    hex?: string;
+}
 export declare class BitcoinClient {
     private client;
+    private mempoolUrl;
     private static txhash;
     private constructor();
     static initialize(client?: Client): Promise<BitcoinClient>;
@@ -64,4 +97,6 @@ export declare class BitcoinClient {
     isUtxoSpendable(txid: string, vout: number): Promise<boolean>;
     generateBlocks(txids: string[]): Promise<void>;
     generateToAddress(blocks: number, address: string): Promise<string[]>;
+    getOutspends(txid: string): Promise<Outspend[]>;
+    getExtendedTransactionData(txid: string): Promise<ExtendedTransaction>;
 }

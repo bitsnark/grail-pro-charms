@@ -9,6 +9,7 @@ import {
 	injectSignaturesIntoSpell,
 	signAsCosigner,
 	filterValidCosignerSignatures,
+	transmitSpell,
 } from './api/spell-operations';
 import { Context } from './core/context';
 
@@ -23,5 +24,6 @@ export {
 	injectSignaturesIntoSpell,
 	createTransferSpell,
 	filterValidCosignerSignatures,
-	createGeneralizedSpell
+	createGeneralizedSpell,
+	transmitSpell,
 };

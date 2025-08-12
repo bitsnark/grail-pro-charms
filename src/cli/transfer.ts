@@ -2,16 +2,14 @@ import { logger } from '../core/logger';
 import minimist from 'minimist';
 import dotenv from 'dotenv';
 import { BitcoinClient } from '../core/bitcoin';
-import { Network } from '../core/taproot/taproot-common';
-import { Context } from '../core/context';
-import { parse } from '../core/env-parser';
 import {
 	getPreviousTransactions,
 	transmitSpell,
 } from '../api/spell-operations';
-import { DEFAULT_FEERATE, ZKAPP_BIN } from './consts';
+import { DEFAULT_FEERATE } from './consts';
 import { createTransferSpell } from '../api/create-transfer-spell';
 import { findCharmsUtxos } from '../core/spells';
+import { createContext } from './utils';
 
 export async function transferCli(_argv: string[]): Promise<[string, string]> {
 	dotenv.config({ path: ['.env.test', '.env.local', '.env'] });
@@ -32,23 +30,7 @@ export async function transferCli(_argv: string[]): Promise<[string, string]> {
 	const bitcoinClient = await BitcoinClient.initialize();
 	const fundingUtxo = await bitcoinClient.getFundingUtxo();
 
-	const appId = argv['app-id'] as string;
-	if (!appId) {
-		throw new Error('--app-id is required');
-	}
-	const appVk = argv['app-vk'] as string;
-
-	const network = argv['network'] as Network;
-
-	const context = await Context.create({
-		appId,
-		appVk,
-		charmsBin: parse.string('CHARMS_BIN'),
-		zkAppBin: ZKAPP_BIN,
-		network: network,
-		mockProof: !!argv['mock-proof'],
-		skipProof: !!argv['skip-proof'],
-	});
+	const context = await createContext(argv);
 
 	const transmit = !!argv['transmit'];
 

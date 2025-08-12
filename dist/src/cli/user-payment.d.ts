@@ -5,7 +5,7 @@ export declare function sendUserPaymentCharms(context: IContext, feerate: number
     txid: string;
     recoveryPublicKey: string;
 }>;
-export declare function sendUserPaymentBtc(context: IContext, grailState: GrailState, amount: number, network: Network): Promise<{
+export declare function sendUserPaymentBtc(context: IContext, grailState: GrailState, amount: number): Promise<{
     txid: string;
     recoveryPublicKey: string;
 }>;

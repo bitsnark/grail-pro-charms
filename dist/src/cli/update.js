@@ -8,8 +8,6 @@ const logger_1 = require("../core/logger");
 const minimist_1 = __importDefault(require("minimist"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const bitcoin_1 = require("../core/bitcoin");
-const context_1 = require("../core/context");
-const env_parser_1 = require("../core/env-parser");
 const create_update_nft_spell_1 = require("../api/create-update-nft-spell");
 const generate_random_keypairs_1 = require("./generate-random-keypairs");
 const spell_operations_1 = require("../api/spell-operations");
@@ -31,20 +29,7 @@ async function updateNftCli(_argv) {
     });
     const bitcoinClient = await bitcoin_1.BitcoinClient.initialize();
     const fundingUtxo = await bitcoinClient.getFundingUtxo();
-    const appId = argv['app-id'];
-    if (!appId) {
-        throw new Error('--app-id is required');
-    }
-    const appVk = argv['app-vk'];
-    const context = await context_1.Context.create({
-        appId,
-        appVk,
-        charmsBin: env_parser_1.parse.string('CHARMS_BIN'),
-        zkAppBin: './zkapp/target/charms-app',
-        network: argv['network'],
-        mockProof: !!argv['mock-proof'],
-        skipProof: !!argv['skip-proof'],
-    });
+    const context = await (0, utils_1.createContext)(argv);
     const previousNftTxid = argv['previous-nft-txid'];
     if (!previousNftTxid) {
         throw new Error('--previous-nft-txid is required');

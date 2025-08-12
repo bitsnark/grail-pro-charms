@@ -8,12 +8,11 @@ const minimist_1 = __importDefault(require("minimist"));
 const node_fs_1 = __importDefault(require("node:fs"));
 const logger_1 = require("../core/logger");
 const dotenv_1 = __importDefault(require("dotenv"));
-const context_1 = require("../core/context");
-const env_parser_1 = require("../core/env-parser");
 const consts_1 = require("./consts");
-const crawl_1 = require("../visualize/crawl");
 const dot_1 = require("../visualize/dot");
 const child_process_1 = require("child_process");
+const crawl_1 = require("../visualize/crawl");
+const utils_1 = require("./utils");
 async function visualizeCli(_argv) {
     dotenv_1.default.config({ path: ['.env.test', '.env.local', '.env'] });
     const argv = (0, minimist_1.default)(_argv, {
@@ -33,22 +32,7 @@ async function visualizeCli(_argv) {
         },
         '--': true,
     });
-    const network = argv['network'];
-    const appId = argv['app-id'];
-    if (!appId) {
-        logger_1.logger.error('--app-id is required');
-        return;
-    }
-    const appVk = argv['app-vk'];
-    const context = await context_1.Context.create({
-        appId,
-        appVk,
-        charmsBin: env_parser_1.parse.string('CHARMS_BIN'),
-        zkAppBin: './zkapp/target/charms-app',
-        network,
-        mockProof: !!argv['mock-proof'],
-        skipProof: !!argv['skip-proof'],
-    });
+    const context = await (0, utils_1.createContext)(argv);
     const txid = argv['txid'];
     if (!txid) {
         logger_1.logger.error('--txid is required');
@@ -64,12 +48,13 @@ async function visualizeCli(_argv) {
         logger_1.logger.error('--max-depth must be a positive integer');
         return;
     }
-    const transactionInfoMap = await (0, crawl_1.crawl)(context, maxDepth, txid);
+    const transactionInfoMap = await (0, crawl_1.crawlBack)(context, maxDepth, txid);
+    await (0, crawl_1.crawlForward)(context, maxDepth, txid, transactionInfoMap);
     const dotFile = outfile.replace('.svg', '') + '.dot';
     // Open a write stream to the output file
     const fileWriter = node_fs_1.default.createWriteStream(dotFile, { flags: 'w' });
     const out = { log: (s) => fileWriter.write(s + '\n') };
-    await (0, dot_1.dot)(context, transactionInfoMap, out);
+    await (0, dot_1.dot)(context, txid, transactionInfoMap, out);
     fileWriter.close();
     return new Promise((resolve, reject) => {
         (0, child_process_1.exec)(`dot -Tsvg ${dotFile} -o ${outfile}`, (error, stdout, stderr) => {

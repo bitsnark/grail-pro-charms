@@ -1,7 +1,7 @@
 "use strict";
 /* eslint-disable @typescript-eslint/no-empty-object-type */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.generalizeInfoBlank = void 0;
+exports.Outspend = exports.generalizeInfoBlank = void 0;
 exports.utxoFromUtxoId = utxoFromUtxoId;
 function utxoFromUtxoId(str) {
     const parts = str.split(':');
@@ -20,3 +20,6 @@ exports.generalizeInfoBlank = {
     outgoingUserBtc: [],
     outgoingUserCharms: [],
 };
+class Outspend {
+}
+exports.Outspend = Outspend;

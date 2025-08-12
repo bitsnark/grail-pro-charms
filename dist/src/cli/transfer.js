@@ -8,12 +8,11 @@ const logger_1 = require("../core/logger");
 const minimist_1 = __importDefault(require("minimist"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const bitcoin_1 = require("../core/bitcoin");
-const context_1 = require("../core/context");
-const env_parser_1 = require("../core/env-parser");
 const spell_operations_1 = require("../api/spell-operations");
 const consts_1 = require("./consts");
 const create_transfer_spell_1 = require("../api/create-transfer-spell");
 const spells_1 = require("../core/spells");
+const utils_1 = require("./utils");
 async function transferCli(_argv) {
     dotenv_1.default.config({ path: ['.env.test', '.env.local', '.env'] });
     const argv = (0, minimist_1.default)(_argv, {
@@ -30,21 +29,7 @@ async function transferCli(_argv) {
     });
     const bitcoinClient = await bitcoin_1.BitcoinClient.initialize();
     const fundingUtxo = await bitcoinClient.getFundingUtxo();
-    const appId = argv['app-id'];
-    if (!appId) {
-        throw new Error('--app-id is required');
-    }
-    const appVk = argv['app-vk'];
-    const network = argv['network'];
-    const context = await context_1.Context.create({
-        appId,
-        appVk,
-        charmsBin: env_parser_1.parse.string('CHARMS_BIN'),
-        zkAppBin: consts_1.ZKAPP_BIN,
-        network: network,
-        mockProof: !!argv['mock-proof'],
-        skipProof: !!argv['skip-proof'],
-    });
+    const context = await (0, utils_1.createContext)(argv);
     const transmit = !!argv['transmit'];
     const feerate = Number.parseFloat(argv['feerate']);
     if (isNaN(feerate) || feerate <= 0) {

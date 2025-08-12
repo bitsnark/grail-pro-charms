@@ -6,6 +6,7 @@ const charms_sdk_1 = require("./charms-sdk");
 const node_crypto_1 = require("node:crypto");
 const crypto_1 = require("bitcoinjs-lib/src/crypto");
 const bitcoin_1 = require("./bitcoin");
+const env_parser_1 = require("./env-parser");
 class Context {
     constructor() { }
     static async create(obj) {
@@ -21,8 +22,8 @@ class Context {
         thus.network = obj.network || 'regtest';
         thus.mockProof = obj.mockProof || false;
         thus.skipProof = obj.skipProof || false;
-        const charmsSecret = process.env.CHARMS_SECRET
-            ? Buffer.from(process.env.CHARMS_SECRET, 'hex')
+        const charmsSecret = env_parser_1.parse.string('CHARMS_SECRET', '')
+            ? Buffer.from(env_parser_1.parse.string('CHARMS_SECRET'), 'hex')
             : (0, node_crypto_1.randomBytes)(32);
         thus.temporarySecret = charmsSecret;
         if (!obj.appVk) {
@@ -39,6 +40,15 @@ class Context {
     static async createForDeploy(obj, fundingUtxo) {
         const appId = (0, crypto_1.sha256)(Buffer.from(`${fundingUtxo.txid}:${fundingUtxo.vout}`, 'ascii')).toString('hex');
         return Context.create({ ...obj, appId });
+    }
+    static async createForVisualize(obj) {
+        const context = await Context.create({
+            ...obj,
+            appId: 'visualize',
+            appVk: 'visualize',
+            zkAppBin: env_parser_1.parse.string('ZKAPP_BIN', 'zkapp'),
+        });
+        return context;
     }
 }
 exports.Context = Context;

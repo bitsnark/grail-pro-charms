@@ -8,8 +8,7 @@ const minimist_1 = __importDefault(require("minimist"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const bitcoin_1 = require("../core/bitcoin");
 const charms_sdk_1 = require("../core/charms-sdk");
-const env_parser_1 = require("../core/env-parser");
-const context_1 = require("../core/context");
+const utils_1 = require("./utils");
 async function viewNft(context, nftTxid) {
     const bitcoinClient = await bitcoin_1.BitcoinClient.initialize();
     const txhex = await bitcoinClient.getTransactionHex(nftTxid);
@@ -33,13 +32,7 @@ async function main() {
         logger_1.logger.error('Please provide the NFT transaction ID using --nft-txid');
         process.exit(1);
     }
-    const context = await context_1.Context.create({
-        charmsBin: env_parser_1.parse.string('CHARMS_BIN'),
-        zkAppBin: './zkapp/target/charms-app',
-        network: argv['network'],
-        mockProof: !!argv['mock-proof'],
-        skipProof: !!argv['skip-proof'],
-    });
+    const context = await (0, utils_1.createContext)(argv);
     await viewNft(context, nftTxid).catch(error => {
         logger_1.logger.error('Error viewing NFT: ', error);
     });

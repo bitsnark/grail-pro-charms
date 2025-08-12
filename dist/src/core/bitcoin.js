@@ -47,6 +47,7 @@ const bitcoin = __importStar(require("bitcoinjs-lib"));
 const ecc = __importStar(require("tiny-secp256k1"));
 const taproot_common_1 = require("./taproot/taproot-common");
 const logger_1 = require("./logger");
+const env_parser_1 = require("./env-parser");
 bitcoin.initEccLib(ecc);
 exports.DUST_LIMIT = 546;
 function txidToHash(txid) {
@@ -133,6 +134,7 @@ exports.ExtendedClient = ExtendedClient;
 class BitcoinClient {
     constructor() {
         this.client = null;
+        this.mempoolUrl = env_parser_1.parse.string('MEMPOOL_URL', 'https://mempool.space/api');
     }
     static async initialize(client) {
         const thus = new BitcoinClient();
@@ -141,12 +143,12 @@ class BitcoinClient {
         }
         else {
             thus.client = new ExtendedClient(new bitcoin_core_1.default({
-                username: process.env.BTC_NODE_USERNAME || 'bitcoin',
-                password: process.env.BTC_NODE_PASSWORD || '1234',
-                host: process.env.BTC_NODE_HOST || 'http://localhost:18443', // default for regtest
+                username: env_parser_1.parse.string('BTC_NODE_USERNAME', 'bitcoin'),
+                password: env_parser_1.parse.string('BTC_NODE_PASSWORD', '1234'),
+                host: env_parser_1.parse.string('BTC_NODE_HOST', 'http://localhost:18443'),
                 timeout: 30000, // 30 seconds
             }));
-            const walletName = process.env.BTC_WALLET_NAME || 'default';
+            const walletName = env_parser_1.parse.string('BTC_WALLET_NAME', 'default');
             try {
                 await thus.client.loadWallet(walletName);
             }
@@ -156,6 +158,7 @@ class BitcoinClient {
                 if (!message.includes('is already loaded') &&
                     !message.includes('Database is already opened') &&
                     !message.includes('Unable to obtain an exclusive lock')) {
+                    logger_1.logger.error(error);
                     throw new Error(`Failed to load wallet: ${message}`);
                 }
                 // If it's a lock error, try to unload and reload
@@ -230,7 +233,7 @@ class BitcoinClient {
         return this.client.getNewAddress();
     }
     async getFundingUtxo() {
-        const unspent = (await this.listUnspent()).filter(utxo => utxo.spendable && utxo.value >= 1000000 // 0.01 BTC minimum
+        const unspent = (await this.listUnspent()).filter(utxo => utxo.spendable && utxo.value >= 10000 // 0.001 BTC minimum
         );
         if (unspent.length === 0) {
             throw new Error('No suitable funding UTXO found');
@@ -265,6 +268,20 @@ class BitcoinClient {
     }
     async generateToAddress(blocks, address) {
         return this.client.generateToAddress(blocks, address);
+    }
+    async getOutspends(txid) {
+        const response = await fetch(`${this.mempoolUrl}/tx/${txid}/outspends`);
+        if (!response.ok) {
+            throw new Error(`Failed to fetch outspends: ${response.statusText}`);
+        }
+        return response.json();
+    }
+    async getExtendedTransactionData(txid) {
+        const response = await fetch(`${this.mempoolUrl}/tx/${txid}`);
+        if (!response.ok) {
+            throw new Error(`Failed to fetch transaction: ${response.statusText}`);
+        }
+        return response.json();
     }
 }
 exports.BitcoinClient = BitcoinClient;

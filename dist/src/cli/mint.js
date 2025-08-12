@@ -9,13 +9,12 @@ const logger_1 = require("../core/logger");
 const minimist_1 = __importDefault(require("minimist"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const bitcoin_1 = require("../core/bitcoin");
-const context_1 = require("../core/context");
-const env_parser_1 = require("../core/env-parser");
 const spell_operations_1 = require("../api/spell-operations");
 const generate_random_keypairs_1 = require("./generate-random-keypairs");
 const consts_1 = require("./consts");
 const spell_operations_2 = require("../api/spell-operations");
 const create_mint_spell_1 = require("../api/create-mint-spell");
+const utils_1 = require("./utils");
 exports.TIMELOCK_BLOCKS = 100; // Default timelock for user payments
 async function mintCli(_argv) {
     dotenv_1.default.config({ path: ['.env.test', '.env.local', '.env'] });
@@ -39,17 +38,7 @@ async function mintCli(_argv) {
     if (!appId) {
         throw new Error('--app-id is required');
     }
-    const appVk = argv['app-vk'];
-    const network = argv['network'];
-    const context = await context_1.Context.create({
-        appId,
-        appVk,
-        charmsBin: env_parser_1.parse.string('CHARMS_BIN'),
-        zkAppBin: './zkapp/target/charms-app',
-        network,
-        mockProof: !!argv['mock-proof'],
-        skipProof: !!argv['skip-proof'],
-    });
+    const context = await (0, utils_1.createContext)(argv);
     const previousNftTxid = argv['previous-nft-txid'];
     if (!previousNftTxid) {
         throw new Error('--previous-nft-txid is required');

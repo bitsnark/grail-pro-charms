@@ -9,13 +9,12 @@ const logger_1 = require("../core/logger");
 const minimist_1 = __importDefault(require("minimist"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const bitcoin_1 = require("../core/bitcoin");
-const context_1 = require("../core/context");
-const env_parser_1 = require("../core/env-parser");
 const create_pegin_spell_1 = require("../api/create-pegin-spell");
 const spell_operations_1 = require("../api/spell-operations");
 const generate_random_keypairs_1 = require("./generate-random-keypairs");
 const consts_1 = require("./consts");
 const spell_operations_2 = require("../api/spell-operations");
+const utils_1 = require("./utils");
 exports.TIMELOCK_BLOCKS = 100; // Default timelock for user payments
 async function peginCli(_argv) {
     dotenv_1.default.config({ path: ['.env.test', '.env.local', '.env'] });
@@ -35,21 +34,7 @@ async function peginCli(_argv) {
     });
     const bitcoinClient = await bitcoin_1.BitcoinClient.initialize();
     const fundingUtxo = await bitcoinClient.getFundingUtxo();
-    const appId = argv['app-id'];
-    if (!appId) {
-        throw new Error('--app-id is required');
-    }
-    const appVk = argv['app-vk'];
-    const network = argv['network'];
-    const context = await context_1.Context.create({
-        appId,
-        appVk,
-        charmsBin: env_parser_1.parse.string('CHARMS_BIN'),
-        zkAppBin: './zkapp/target/charms-app',
-        network,
-        mockProof: !!argv['mock-proof'],
-        skipProof: !!argv['skip-proof'],
-    });
+    const context = await (0, utils_1.createContext)(argv);
     if (!argv['new-public-keys']) {
         throw new Error('--new-public-keys is required');
     }
@@ -86,7 +71,7 @@ async function peginCli(_argv) {
         throw new Error('--user-payment-txid is required');
     }
     const userPaymentVout = await (0, spell_operations_1.findUserPaymentVout)(context, newGrailState, userPaymentTxid, recoveryPublicKey, exports.TIMELOCK_BLOCKS);
-    const userWalletAddress = await (0, spell_operations_1.getUserWalletAddressFromUserPaymentUtxo)(context, { txid: userPaymentTxid, vout: userPaymentVout }, network);
+    const userWalletAddress = await (0, spell_operations_1.getUserWalletAddressFromUserPaymentUtxo)(context, { txid: userPaymentTxid, vout: userPaymentVout }, context.network);
     const userPaymentDetails = {
         txid: userPaymentTxid,
         vout: userPaymentVout,

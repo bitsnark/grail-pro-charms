@@ -8,13 +8,12 @@ const logger_1 = require("../core/logger");
 const minimist_1 = __importDefault(require("minimist"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const bitcoin_1 = require("../core/bitcoin");
-const context_1 = require("../core/context");
-const env_parser_1 = require("../core/env-parser");
 const spell_operations_1 = require("../api/spell-operations");
 const generate_random_keypairs_1 = require("./generate-random-keypairs");
 const create_pegout_spell_1 = require("../api/create-pegout-spell");
 const pegin_1 = require("./pegin");
 const consts_1 = require("./consts");
+const utils_1 = require("./utils");
 async function pegoutCli(_argv) {
     dotenv_1.default.config({ path: ['.env.test', '.env.local', '.env'] });
     const argv = (0, minimist_1.default)(_argv, {
@@ -40,16 +39,7 @@ async function pegoutCli(_argv) {
     if (appVk === undefined) {
         throw new Error('--app-vk is required');
     }
-    const network = argv['network'];
-    const context = await context_1.Context.create({
-        appId,
-        appVk,
-        charmsBin: env_parser_1.parse.string('CHARMS_BIN'),
-        zkAppBin: './zkapp/target/charms-app',
-        network: argv['network'],
-        mockProof: !!argv['mock-proof'],
-        skipProof: !!argv['skip-proof'],
-    });
+    const context = await (0, utils_1.createContext)(argv);
     if (!argv['new-public-keys']) {
         throw new Error('--new-public-keys is required');
     }
@@ -89,7 +79,7 @@ async function pegoutCli(_argv) {
         throw new Error('--user-payment-txid is required');
     }
     const userPaymentVout = await (0, spell_operations_1.findUserPaymentVout)(context, newGrailState, userPaymentTxid, recoveryPublicKey, pegin_1.TIMELOCK_BLOCKS);
-    const userWalletAddress = await (0, spell_operations_1.getUserWalletAddressFromUserPaymentUtxo)(context, { txid: userPaymentTxid, vout: userPaymentVout }, network);
+    const userWalletAddress = await (0, spell_operations_1.getUserWalletAddressFromUserPaymentUtxo)(context, { txid: userPaymentTxid, vout: userPaymentVout }, context.network);
     const userPaymentDetails = {
         txid: userPaymentTxid,
         vout: userPaymentVout,

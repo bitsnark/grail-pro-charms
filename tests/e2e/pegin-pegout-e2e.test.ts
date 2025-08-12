@@ -28,6 +28,8 @@ describe('peg-in and peg-out e2e test', () => {
 			deployerPublicKey,
 			'--mock-proof',
 			USE_MOCK_PROOF,
+			'--skip-proof',
+			USE_MOCK_PROOF,
 			'--network',
 			'regtest',
 			'--feerate',
@@ -84,6 +86,8 @@ describe('peg-in and peg-out e2e test', () => {
 			[deployerPrivateKey].join(','),
 			'--mock-proof',
 			USE_MOCK_PROOF,
+			'--skip-proof',
+			USE_MOCK_PROOF,
 			'--network',
 			'regtest',
 			'--feerate',
@@ -123,6 +127,8 @@ describe('peg-in and peg-out e2e test', () => {
 			'0.00002',
 			'--mock-proof',
 			USE_MOCK_PROOF,
+			'--skip-proof',
+			USE_MOCK_PROOF,
 		]);
 		expect(charmsUserPaymentResult).toBeTruthy();
 		logger.log('Charms User Payment Result: ', charmsUserPaymentResult);
@@ -135,6 +141,8 @@ describe('peg-in and peg-out e2e test', () => {
 			'--app-vk',
 			deployResult.appVk,
 			'--mock-proof',
+			USE_MOCK_PROOF,
+			'--skip-proof',
 			USE_MOCK_PROOF,
 			'--network',
 			'regtest',

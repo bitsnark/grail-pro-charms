@@ -126,9 +126,9 @@ export interface TokenUtxo {
 	amount: number; // Amount in satoshis
 }
 
-type CharmsDesc =
+export type CharmsDesc =
 	| number
-	| { current_cosigners?: string; current_threshold?: number };
+	| { ticker?: string; current_cosigners?: string; current_threshold?: number };
 
 export interface SpellMetadata {
 	apps: { [appId: string]: string };
@@ -153,4 +153,10 @@ export interface TokenDetails {
 	name?: string;
 	image?: string;
 	url?: string;
+}
+
+export class Outspend {
+	spent!: boolean;
+	txid?: string;
+	vin?: number;
 }

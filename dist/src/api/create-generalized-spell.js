@@ -170,7 +170,7 @@ async function createGeneralizedSpell(context, feerate, previousNftTxid, nextGra
                 public_inputs: {
                     $00: { action: 'update' },
                     $01: {
-                        action: this.generalizedInfo.outgoingGrailBtc.amount > 0
+                        action: this.generalizedInfo.outgoingGrailBtc.amount <= 0
                             ? 'mint'
                             : 'burn',
                     },
