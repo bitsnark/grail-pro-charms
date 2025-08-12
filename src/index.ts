@@ -1,3 +1,5 @@
+/* Foobah 1.0.0 */
+
 import { createGeneralizedSpell } from './api/create-generalized-spell';
 import { createPeginSpell } from './api/create-pegin-spell';
 import { createPegoutSpell } from './api/create-pegout-spell';
