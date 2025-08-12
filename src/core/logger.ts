@@ -1,10 +1,9 @@
 /* eslint-disable  @typescript-eslint/no-explicit-any */
-import { parse } from './env-parser';
 import { bufferReplacer } from './json';
 
-let debugLevel = parse.integer('DEBUG_LEVEL', 1);
-let printDate = parse.boolean('PRINT_DATE', true); // Print date in logs
-let printLevel = parse.boolean('PRINT_LEVEL', true); // Print log level in logs
+let debugLevel = Number.parseInt(process.env['DEBUG_LEVEL'] ?? '1') || 1; // Default debug level
+let printDate = process.env['PRINT_DATE'] ?? true; // Print date in logs
+let printLevel = process.env['PRINT_LEVEL'] ?? true; // Print log level in logs
 
 export const DEBUG_LEVELS = {
 	LOG: -1,
