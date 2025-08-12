@@ -14,8 +14,10 @@ import {
 	transmitSpell,
 } from './api/spell-operations';
 import { Context } from './core/context';
+import * as types from './core/types';
 
 export {
+	types,
 	Context,
 	getPreviousGrailState,
 	getPreviousTransactions,
