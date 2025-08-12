@@ -31,7 +31,11 @@ fi
 # Create ../bin if it doesn't exist
 mkdir -p ../bin
 
-# Copy contents from target to ../bin
-cp -r target/* ../bin/
+# Copy contents from target to ./bin
+cp -r target/charms-app ./bin
 
-echo "Build output copied to ../bin successfully."
+# Check the VK
+echo "Verification key:"
+"$CHARMS_BIN" app vk ./bin/charms-app
+
+echo "Build output copied to bin successfully."
