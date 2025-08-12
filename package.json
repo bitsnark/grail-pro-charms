@@ -2,7 +2,7 @@
 	"name": "grail-pro-charms",
 	"version": "1.0.1",
 	"description": "This is a [Charms](https://charms.dev) app.",
-	"main": "dist/index.js",
+	"main": "dist/src/index.js",
 	"scripts": {
 		"prettier-fix": "prettier --write \"**/*.ts\"",
 		"build": "tsc --project . --outDir ./dist --declaration --pretty",
