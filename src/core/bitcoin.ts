@@ -182,7 +182,9 @@ export class BitcoinClient {
 			);
 			const walletName = parse.string('BTC_WALLET_NAME', 'default');
 			try {
-				await thus.client.loadWallet(walletName);
+				if (parse.boolean('BTC_NODE_LOAD_WALLET', false)) {
+					await thus.client.loadWallet(walletName);
+				}
 			} catch (error) {
 				const message = (error as { message: string }).message ?? '';
 				// Check for various wallet already loaded error messages
