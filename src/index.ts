@@ -12,6 +12,7 @@ import {
 	signAsCosigner,
 	filterValidCosignerSignatures,
 	transmitSpell,
+	getUserWalletAddressFromUserPaymentUtxo,
 } from './api/spell-operations';
 import { Context } from './core/context';
 import * as types from './core/types';
@@ -30,4 +31,5 @@ export {
 	filterValidCosignerSignatures,
 	createGeneralizedSpell,
 	transmitSpell,
+	getUserWalletAddressFromUserPaymentUtxo,
 };
