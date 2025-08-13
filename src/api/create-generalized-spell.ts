@@ -230,7 +230,7 @@ export async function createGeneralizedSpell(
 					$00: { action: 'update' },
 					$01: {
 						action:
-							this.generalizedInfo.outgoingGrailBtc!.amount < 0
+							this.generalizedInfo.outgoingGrailBtc!.amount <= 0
 								? 'mint'
 								: 'burn',
 					},
