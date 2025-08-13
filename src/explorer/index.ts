@@ -1,6 +1,7 @@
 import cors from 'cors';
 import express from 'express';
 import * as http from 'http';
+import dotenv from 'dotenv';
 import { setApi } from './api';
 import { DEBUG_LEVELS, logger } from '../core/logger';
 import { parse } from '../core/env-parser';
@@ -8,6 +9,8 @@ import { parse } from '../core/env-parser';
 logger.setLoggerOptions(DEBUG_LEVELS.ERROR, true, true); // Set debug level to ALL, print date and level
 
 export function initServer(): void {
+	dotenv.config({ path: ['.env.test', '.env.local', '.env'] });
+
 	const app = express();
 	app.use(cors()); // <-- Enable CORS for cross-origin requests
 	app.set('trust proxy', 2);
