@@ -16,7 +16,8 @@
 		"test:cli:simple": "jest --detectOpenHandles --runInBand tests/cli/simple.test.ts",
 		"test:e2e": "jest --detectOpenHandles --runInBand tests/e2e/",
 		"lint": "eslint --ignore-pattern node_modules/ --ignore-pattern dist/ --ignore-pattern python/ .",
-		"lint-fix": "npm run lint -- --fix"
+		"lint-fix": "npm run lint -- --fix",
+		"start-explorer": "ts-node --project tsconfig.explorer.json src/explorer/index.ts"
 	},
 	"devDependencies": {
 		"@jest/globals": "29.7.0",
