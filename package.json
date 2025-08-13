@@ -17,7 +17,7 @@
 		"test:e2e": "jest --detectOpenHandles --runInBand tests/e2e/",
 		"lint": "eslint --ignore-pattern node_modules/ --ignore-pattern dist/ --ignore-pattern python/ .",
 		"lint-fix": "npm run lint -- --fix",
-		"start-explorer": "ts-node --project tsconfig.explorer.json src/explorer/index.ts"
+		"start-explorer": "DEBUG_LEVEL=10 ts-node src/explorer/index.ts"
 	},
 	"devDependencies": {
 		"@jest/globals": "29.7.0",
