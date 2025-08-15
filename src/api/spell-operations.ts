@@ -202,13 +202,7 @@ export async function injectSignaturesIntoSpell(
 		);
 	}
 
-	// const commitmentTxid = txBytesToTxid(spell.commitmentTxBytes);
-	// spell.spellTxBytes = await resignSpellWithTemporarySecret(
-	// 	context,
-	// 	spell.spellTxBytes,
-	// 	{ [commitmentTxid]: spell.commitmentTxBytes },
-	// 	context.temporarySecret
-	// );
+
 
 	return spell;
 }
