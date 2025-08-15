@@ -1,9 +1,9 @@
 /* eslint-disable  @typescript-eslint/no-explicit-any */
 import { bufferReplacer } from './json';
 
-let debugLevel = parseInt(process.env.DEBUG || '0');
-let printDate = false;
-let printLevel = false;
+let debugLevel = Number.parseInt(process.env['DEBUG_LEVEL'] ?? '1') || 1; // Default debug level
+let printDate = process.env['PRINT_DATE'] ?? true; // Print date in logs
+let printLevel = process.env['PRINT_LEVEL'] ?? true; // Print log level in logs
 
 export const DEBUG_LEVELS = {
 	LOG: -1,

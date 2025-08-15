@@ -3,6 +3,11 @@
 import fs from 'node:fs';
 import minimist from 'minimist';
 import { GrailState, UserPaymentDetails } from '../core/types';
+import { IContext } from '../core/i-context';
+import { parse } from '../core/env-parser';
+import { ZKAPP_BIN } from './consts';
+import { Context } from '../core/context';
+import { Network } from '../core/taproot/taproot-common';
 
 const grailStateSchema = {
 	publicKeys: [''],
@@ -70,4 +75,24 @@ export function getUserPaymentFromArgv(
 		);
 	}
 	return userPaymentDetails as UserPaymentDetails;
+}
+
+export async function createContext(
+	argv: minimist.ParsedArgs
+): Promise<IContext> {
+	const appId = argv['app-id'] as string;
+	if (!appId) {
+		throw new Error('--app-id is required');
+	}
+
+	return await Context.create({
+		appId: argv['app-id'] as string,
+		appVk: argv['app-vk'] as string,
+		charmsBin: parse.string('CHARMS_BIN'),
+		zkAppBin: ZKAPP_BIN,
+		network:
+			argv['network'] ?? (parse.string('BTC_NETWORK', 'regtest') as Network),
+		mockProof: !!argv['mock-proof'],
+		skipProof: !!argv['skip-proof'],
+	});
 }

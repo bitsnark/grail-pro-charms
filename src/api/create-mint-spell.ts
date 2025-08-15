@@ -47,7 +47,7 @@ export async function createMintSpell(
 			],
 			outgoingUserBtc: [],
 		},
-		tokenDetails, // Empty token details for minting
+		tokenDetails,
 		fundingUtxo
 	);
 
