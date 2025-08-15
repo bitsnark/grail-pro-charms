@@ -30,18 +30,12 @@ describe('deploy e2e test', () => {
 
 		// Deploy the NFT using the CLI
 		deploymentResult = await deployNftCli([
-			'--deployer-public-key',
-			deployerPublicKey,
-			'--mock-proof',
-			'true',
-			'--network',
-			'regtest',
-			'--feerate',
-			'0.00002',
-			'--transmit',
-			'true',
-			'--ticker',
-			'TESTNFT',
+			'--deployer-public-key', deployerPublicKey,
+			'--mock-proof', 'true',
+			'--network', 'regtest',
+			'--feerate', '0.00002',
+			'--transmit', 'true',
+			'--ticker', 'TESTNFT',
 		]);
 
 		// Verify deployment result structure

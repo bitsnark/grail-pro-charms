@@ -84,6 +84,7 @@ describe('mint e2e test', () => {
             '--token-name', 'Multi Cosigner Token',
             '--token-image', 'https://example.com/multi.png',
             '--token-url', 'https://example.com/multi',
+            '--transmit', 'true',
             ...TEST_CLI_ARGS,
         ]);
 
@@ -112,6 +113,7 @@ describe('mint e2e test', () => {
             '--token-name', 'Custom Address Token',
             '--token-image', 'https://example.com/custom.png',
             '--token-url', 'https://example.com/custom',
+            '--transmit', 'true',
             ...TEST_CLI_ARGS,
         ]);
 
