@@ -21,6 +21,7 @@
 	},
 	"devDependencies": {
 		"@jest/globals": "29.7.0",
+		"@types/amqplib": "^0.10.7",
 		"@types/bitcoinjs-lib": "4.0.1",
 		"@types/cors": "2.8.19",
 		"@types/express": "5.0.3",
@@ -38,6 +39,7 @@
 		"@noble/curves": "1.9.2",
 		"@scure/btc-signer": "1.8.1",
 		"@types/mustache": "4.2.6",
+		"amqplib": "^0.10.8",
 		"bech32": "2.0.0",
 		"bitcoin-core": "5.0.0",
 		"bitcoinjs-lib": "6.1.7",

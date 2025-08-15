@@ -1,14 +1,11 @@
 import cors from 'cors';
 import express from 'express';
 import * as http from 'http';
-import dotenv from 'dotenv';
 import { setApi } from './api';
 import { logger } from '../core/logger';
 import { parse } from '../core/env-parser';
 
 export function initServer(): void {
-	dotenv.config({ path: ['.env.test', '.env.local', '.env'] });
-
 	const app = express();
 	app.use(cors()); // <-- Enable CORS for cross-origin requests
 	app.set('trust proxy', 2);
