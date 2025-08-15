@@ -4,9 +4,7 @@ import dotenv from 'dotenv';
 import { BitcoinClient } from '../core/bitcoin';
 import { showSpell } from '../core/charms-sdk';
 import { IContext } from '../core/i-context';
-import { parse } from '../core/env-parser';
-import { Context } from '../core/context';
-import { Network } from '../core/taproot/taproot-common';
+import { createContext } from './utils';
 
 async function viewNft(context: IContext, nftTxid: string) {
 	const bitcoinClient = await BitcoinClient.initialize();
@@ -38,13 +36,7 @@ async function main() {
 		process.exit(1);
 	}
 
-	const context = await Context.create({
-		charmsBin: parse.string('CHARMS_BIN'),
-		zkAppBin: './zkapp/target/charms-app',
-		network: argv['network'] as Network,
-		mockProof: !!argv['mock-proof'],
-		skipProof: !!argv['skip-proof'],
-	});
+	const context = await createContext(argv);
 
 	await viewNft(context, nftTxid).catch(error => {
 		logger.error('Error viewing NFT: ', error);

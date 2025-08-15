@@ -6,6 +6,7 @@ import { randomBytes } from 'node:crypto';
 import { Utxo } from './types';
 import { sha256 } from 'bitcoinjs-lib/src/crypto';
 import { BitcoinClient } from './bitcoin';
+import { parse } from './env-parser';
 
 export class Context implements IContext {
 	charmsBin!: string;
@@ -40,8 +41,8 @@ export class Context implements IContext {
 		thus.mockProof = obj.mockProof || false;
 		thus.skipProof = obj.skipProof || false;
 
-		const charmsSecret = process.env.CHARMS_SECRET
-			? Buffer.from(process.env.CHARMS_SECRET, 'hex')
+		const charmsSecret = parse.string('CHARMS_SECRET', '')
+			? Buffer.from(parse.string('CHARMS_SECRET'), 'hex')
 			: randomBytes(32);
 		thus.temporarySecret = charmsSecret;
 
@@ -68,5 +69,17 @@ export class Context implements IContext {
 			Buffer.from(`${fundingUtxo.txid}:${fundingUtxo.vout}`, 'ascii')
 		).toString('hex');
 		return Context.create({ ...obj, appId });
+	}
+
+	public static async createForVisualize(
+		obj: Partial<IContext>
+	): Promise<Context> {
+		const context = await Context.create({
+			...obj,
+			appId: 'visualize',
+			appVk: 'visualize',
+			zkAppBin: parse.string('ZKAPP_BIN', 'zkapp'),
+		});
+		return context;
 	}
 }

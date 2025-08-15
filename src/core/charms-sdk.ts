@@ -44,7 +44,7 @@ function executeCommand(
 }
 
 export async function getVerificationKey(context: IContext): Promise<string> {
-	const command = [context.charmsBin, 'app vk'];
+	const command = [context.charmsBin, 'app vk', './bin/charms-app'];
 	const zkappFolder = parse.string('ZKAPP_FOLDER', './zkapp');
 	return (await executeCommand(context, command, zkappFolder)).trim();
 }

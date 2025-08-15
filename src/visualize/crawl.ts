@@ -5,7 +5,7 @@ import { showSpell } from '../core/charms-sdk';
 import { logger } from '../core/logger';
 import { TransactionInfoMap } from './types';
 
-export async function crawl(
+export async function crawlBack(
 	context: IContext,
 	maxDepth: number,
 	txid: string,
@@ -36,7 +36,45 @@ export async function crawl(
 
 	for (const input of transactions[txid].tx.ins) {
 		const inputTxid = hashToTxid(input.hash);
-		await crawl(context, maxDepth - 1, inputTxid, transactions);
+		await crawlBack(context, maxDepth - 1, inputTxid, transactions);
+	}
+
+	return transactions;
+}
+
+export async function crawlForward(
+	context: IContext,
+	maxDepth: number,
+	txid: string,
+	/* out */ transactions: TransactionInfoMap = {}
+): Promise<TransactionInfoMap> {
+	if (maxDepth <= 0) return transactions;
+	try {
+		const txBytes = await context.bitcoinClient.getTransactionBytes(txid);
+		if (!txBytes || txBytes.length === 0) return transactions;
+		transactions[txid] = {
+			txid,
+			bytes: txBytes,
+			tx: bitcoin.Transaction.fromBuffer(txBytes),
+		};
+	} catch (error) {
+		logger.warn(`Error fetching transaction ${txid}:`, error);
+		return transactions;
+	}
+
+	try {
+		const spell = await showSpell(context, txid);
+		if (!spell) return transactions;
+		transactions[txid].spell = spell;
+	} catch (error) {
+		logger.warn(`Error showing spell for txid ${txid}:`, error);
+		return transactions;
+	}
+
+	const outspends = await context.bitcoinClient.getOutspends(txid);
+	for (const outspend of outspends) {
+		if (!outspend?.spent || !outspend.txid) continue;
+		await crawlForward(context, maxDepth - 1, outspend.txid, transactions);
 	}
 
 	return transactions;

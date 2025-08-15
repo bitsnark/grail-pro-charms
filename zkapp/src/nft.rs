@@ -55,6 +55,8 @@ pub fn nft_update_satisfied(app: &App, tx: &Transaction) -> bool {
 
     let nft_charms = app_datas(app, tx.outs.iter()).collect::<Vec<_>>();
 
+    eprintln!("!!! {:?} !!!", nft_charms[0]);
+
     // the NFT has the correct structure.
     check!(nft_charms[0].value::<NftData>().is_ok());
 

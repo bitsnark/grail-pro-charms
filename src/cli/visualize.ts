@@ -2,13 +2,11 @@ import minimist from 'minimist';
 import fs from 'node:fs';
 import { logger } from '../core/logger';
 import dotenv from 'dotenv';
-import { Network } from '../core/taproot/taproot-common';
-import { Context } from '../core/context';
-import { parse } from '../core/env-parser';
 import { DEFAULT_FEERATE } from './consts';
-import { crawl } from '../visualize/crawl';
 import { dot } from '../visualize/dot';
 import { exec } from 'child_process';
+import { crawlBack, crawlForward } from '../visualize/crawl';
+import { createContext } from './utils';
 
 export async function visualizeCli(_argv: string[]): Promise<void> {
 	dotenv.config({ path: ['.env.test', '.env.local', '.env'] });
@@ -33,24 +31,7 @@ export async function visualizeCli(_argv: string[]): Promise<void> {
 		'--': true,
 	});
 
-	const network = argv['network'] as Network;
-
-	const appId = argv['app-id'] as string;
-	if (!appId) {
-		logger.error('--app-id is required');
-		return;
-	}
-	const appVk = argv['app-vk'] as string;
-
-	const context = await Context.create({
-		appId,
-		appVk,
-		charmsBin: parse.string('CHARMS_BIN'),
-		zkAppBin: './zkapp/target/charms-app',
-		network,
-		mockProof: !!argv['mock-proof'],
-		skipProof: !!argv['skip-proof'],
-	});
+	const context = await createContext(argv);
 
 	const txid = argv['txid'] as string;
 	if (!txid) {
@@ -70,14 +51,15 @@ export async function visualizeCli(_argv: string[]): Promise<void> {
 		return;
 	}
 
-	const transactionInfoMap = await crawl(context, maxDepth, txid);
+	const transactionInfoMap = await crawlBack(context, maxDepth, txid);
+	await crawlForward(context, maxDepth, txid, transactionInfoMap);
 
 	const dotFile = outfile.replace('.svg', '') + '.dot';
 
 	// Open a write stream to the output file
 	const fileWriter = fs.createWriteStream(dotFile, { flags: 'w' });
 	const out = { log: (s: string) => fileWriter.write(s + '\n') };
-	await dot(context, transactionInfoMap, out);
+	await dot(context, txid, transactionInfoMap, out);
 	fileWriter.close();
 
 	return new Promise<void>((resolve, reject) => {

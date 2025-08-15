@@ -8,9 +8,7 @@ import { Network } from '../core/taproot/taproot-common';
 import { TIMELOCK_BLOCKS } from './pegin';
 import { findCharmsUtxos } from '../core/spells';
 import { IContext } from '../core/i-context';
-import { Context } from '../core/context';
-import { parse } from '../core/env-parser';
-import { DEFAULT_FEERATE, ZKAPP_BIN } from './consts';
+import { DEFAULT_FEERATE } from './consts';
 import { createTransferSpell } from '../api/create-transfer-spell';
 import {
 	getPreviousTransactions,
@@ -18,6 +16,7 @@ import {
 } from '../api/spell-operations';
 import { GrailState } from '../core/types';
 import { hashToTxid } from '../core/bitcoin';
+import { createContext } from './utils';
 
 export async function sendUserPaymentCharms(
 	context: IContext,
@@ -79,8 +78,7 @@ export async function sendUserPaymentCharms(
 export async function sendUserPaymentBtc(
 	context: IContext,
 	grailState: GrailState,
-	amount: number,
-	network: Network
+	amount: number
 ): Promise<{ txid: string; recoveryPublicKey: string }> {
 	const recoveryKeypair = generateRandomKeypair();
 
@@ -90,7 +88,7 @@ export async function sendUserPaymentBtc(
 			recoveryPublicKey: recoveryKeypair.publicKey.toString('hex'),
 			timelockBlocks: TIMELOCK_BLOCKS,
 		},
-		network
+		context.network
 	);
 
 	logger.debug('Sending funds to user payment address: ', userPaymentAddress);
@@ -124,7 +122,6 @@ export async function userPaymentCli(
 		'--': true,
 	});
 
-	const network = argv['network'] as Network;
 	if (!argv['current-public-keys']) {
 		throw new Error('--current-public-keys is required.');
 	}
@@ -159,24 +156,7 @@ export async function userPaymentCli(
 		throw new Error('--type must be either "charms" or "btc".');
 	}
 
-	const appId = argv['app-id'] as string;
-	if (!appId) {
-		throw new Error('--app-id is required.');
-	}
-	const appVk = argv['app-vk'] as string;
-	if (!appVk) {
-		throw new Error('--app-vk is required.');
-	}
-
-	const context = await Context.create({
-		appId,
-		appVk,
-		charmsBin: parse.string('CHARMS_BIN'),
-		zkAppBin: ZKAPP_BIN,
-		network,
-		mockProof: !!argv['mock-proof'],
-		skipProof: !!argv['skip-proof'],
-	});
+	const context = await createContext(argv);
 
 	if (type == 'charms') {
 		const changeAddress = await context.bitcoinClient.getAddress();
@@ -186,10 +166,10 @@ export async function userPaymentCli(
 			grailState,
 			amount,
 			changeAddress,
-			network
+			context.network
 		);
 	} else if (type == 'btc') {
-		return await sendUserPaymentBtc(context, grailState, amount, network);
+		return await sendUserPaymentBtc(context, grailState, amount);
 	} else throw new Error('Invalid type specified. Use "charms" or "btc".');
 }
 

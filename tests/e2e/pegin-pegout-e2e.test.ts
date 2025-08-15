@@ -34,8 +34,6 @@ describe('peg-in and peg-out e2e test', () => {
 			'0.00002',
 			'--transmit',
 			'true',
-			'--ticker',
-			'TESTNFT',
 		]);
 		expect(deployResult).toBeTruthy();
 		logger.log('Deployment Result: ', deployResult);

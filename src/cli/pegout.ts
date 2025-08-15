@@ -2,9 +2,6 @@ import { logger } from '../core/logger';
 import minimist from 'minimist';
 import dotenv from 'dotenv';
 import { BitcoinClient } from '../core/bitcoin';
-import { Network } from '../core/taproot/taproot-common';
-import { Context } from '../core/context';
-import { parse } from '../core/env-parser';
 import { SignatureResponse, UserPaymentDetails } from '../core/types';
 import {
 	filterValidCosignerSignatures,
@@ -18,6 +15,7 @@ import { privateToKeypair } from './generate-random-keypairs';
 import { createPegoutSpell } from '../api/create-pegout-spell';
 import { TIMELOCK_BLOCKS } from './pegin';
 import { DEFAULT_FEERATE } from './consts';
+import { createContext } from './utils';
 
 export async function pegoutCli(_argv: string[]): Promise<[string, string]> {
 	dotenv.config({ path: ['.env.test', '.env.local', '.env'] });
@@ -48,17 +46,7 @@ export async function pegoutCli(_argv: string[]): Promise<[string, string]> {
 		throw new Error('--app-vk is required');
 	}
 
-	const network = argv['network'] as Network;
-
-	const context = await Context.create({
-		appId,
-		appVk,
-		charmsBin: parse.string('CHARMS_BIN'),
-		zkAppBin: './zkapp/target/charms-app',
-		network: argv['network'] as Network,
-		mockProof: !!argv['mock-proof'],
-		skipProof: !!argv['skip-proof'],
-	});
+	const context = await createContext(argv);
 
 	if (!argv['new-public-keys']) {
 		throw new Error('--new-public-keys is required');
@@ -122,7 +110,7 @@ export async function pegoutCli(_argv: string[]): Promise<[string, string]> {
 	const userWalletAddress = await getUserWalletAddressFromUserPaymentUtxo(
 		context,
 		{ txid: userPaymentTxid, vout: userPaymentVout },
-		network
+		context.network
 	);
 
 	const userPaymentDetails: UserPaymentDetails = {
