@@ -12,12 +12,7 @@ export async function showWalletCharmsCli(
 	const argv = minimist(_argv, {
 		alias: {},
 		boolean: ['mock-proof', 'skip-proof'],
-		default: {
-			network: 'regtest',
-			amount: 666666,
-			'mock-proof': false,
-			'skip-proof': false,
-		},
+		default: {},
 		'--': true,
 	});
 

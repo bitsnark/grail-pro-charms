@@ -10,6 +10,7 @@ import {
 import { IContext } from '../core/i-context';
 import { createGeneralizedSpell } from './create-generalized-spell';
 import { getPreviousGrailState } from './spell-operations';
+import { parse } from '../core/env-parser';
 
 export async function createPeginSpell(
 	context: IContext,
@@ -33,7 +34,15 @@ export async function createPeginSpell(
 		throw new Error('Previous Grail state not found');
 	}
 
-	fundingUtxo = fundingUtxo || (await context.bitcoinClient.getFundingUtxo());
+	if (!fundingUtxo) {
+		const defaultTransactionSize = parse.number(
+			'BTC_DEFAULT_TRANSACTION_SIZE',
+			250
+		);
+		fundingUtxo = await context.bitcoinClient.getFundingUtxo(
+			feerate * defaultTransactionSize
+		);
+	}
 
 	const userPaymentTxBytes = await context.bitcoinClient.getTransactionBytes(
 		userPaymentDetails.txid

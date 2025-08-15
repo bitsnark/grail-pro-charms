@@ -2,12 +2,13 @@
 
 import fs from 'node:fs';
 import minimist from 'minimist';
-import { GrailState, UserPaymentDetails } from '../core/types';
+import { GrailState, UserPaymentDetails, Utxo } from '../core/types';
 import { IContext } from '../core/i-context';
 import { parse } from '../core/env-parser';
 import { ZKAPP_BIN } from './consts';
 import { Context } from '../core/context';
 import { Network } from '../core/taproot/taproot-common';
+import { BitcoinClient } from '../core/bitcoin';
 
 const grailStateSchema = {
 	publicKeys: [''],
@@ -95,4 +96,20 @@ export async function createContext(
 		mockProof: !!argv['mock-proof'],
 		skipProof: !!argv['skip-proof'],
 	});
+}
+
+export async function getFundingUtxo(
+	bitcoinClientOrContext: BitcoinClient | IContext,
+	feerate: number
+): Promise<Utxo> {
+	if (!(bitcoinClientOrContext instanceof BitcoinClient)) {
+		bitcoinClientOrContext = bitcoinClientOrContext.bitcoinClient;
+	}
+	const defaultTransactionSize = parse.number(
+		'DEFAULT_CHARMS_TRANSACTION_SIZE',
+		10000
+	);
+	return await bitcoinClientOrContext.getFundingUtxo(
+		feerate * defaultTransactionSize * 1e8
+	);
 }

@@ -1,7 +1,6 @@
 import { logger } from '../core/logger';
 import minimist from 'minimist';
 import dotenv from 'dotenv';
-import { BitcoinClient } from '../core/bitcoin';
 import { createPeginSpell } from '../api/create-pegin-spell';
 import { SignatureResponse, UserPaymentDetails } from '../core/types';
 import {
@@ -14,7 +13,7 @@ import {
 import { privateToKeypair } from './generate-random-keypairs';
 import { DEFAULT_FEERATE } from './consts';
 import { filterValidCosignerSignatures } from '../api/spell-operations';
-import { createContext } from './utils';
+import { createContext, getFundingUtxo } from './utils';
 
 export const TIMELOCK_BLOCKS = 100; // Default timelock for user payments
 
@@ -36,10 +35,11 @@ export async function peginCli(_argv: string[]): Promise<[string, string]> {
 		'--': true,
 	});
 
-	const bitcoinClient = await BitcoinClient.initialize();
-	const fundingUtxo = await bitcoinClient.getFundingUtxo();
-
 	const context = await createContext(argv);
+
+	const feerate = Number.parseFloat(argv['feerate']) || DEFAULT_FEERATE;
+	const transmit = argv['transmit'] as boolean;
+	const fundingUtxo = await getFundingUtxo(context, feerate);
 
 	if (!argv['new-public-keys']) {
 		throw new Error('--new-public-keys is required');
@@ -62,8 +62,6 @@ export async function peginCli(_argv: string[]): Promise<[string, string]> {
 	if (!previousNftTxid) {
 		throw new Error('--previous-nft-txid is required');
 	}
-
-	const transmit = !!argv['transmit'];
 
 	if (!argv['private-keys']) {
 		throw new Error('--private-keys is required');
@@ -111,11 +109,6 @@ export async function peginCli(_argv: string[]): Promise<[string, string]> {
 		grailState: newGrailState,
 		userWalletAddress,
 	};
-
-	if (!argv['feerate']) {
-		throw new Error('--feerate is required');
-	}
-	const feerate = Number.parseFloat(argv['feerate']);
 
 	const { spell, signatureRequest } = await createPeginSpell(
 		context,

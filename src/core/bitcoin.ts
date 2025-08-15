@@ -290,9 +290,9 @@ export class BitcoinClient {
 		return this.client!.getNewAddress();
 	}
 
-	public async getFundingUtxo(): Promise<Utxo> {
+	public async getFundingUtxo(amount: number): Promise<Utxo> {
 		const unspent = (await this.listUnspent()).filter(
-			utxo => utxo.spendable && utxo.value >= 10000 // 0.001 BTC minimum
+			utxo => utxo.spendable && utxo.value >= amount
 		);
 		if (unspent.length === 0) {
 			throw new Error('No suitable funding UTXO found');

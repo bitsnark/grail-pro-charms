@@ -5,6 +5,8 @@ import { deployNftCli } from '../../src/cli/deploy';
 jest.setTimeout(600000000);
 logger.setLoggerOptions(DEBUG_LEVELS.ALL, true, true); // Set debug level to ALL, print date and level
 
+const USE_MOCK_PROOF = 'true';
+
 describe('mint e2e test', () => {
 	it('should deploy, then mint successfully', async () => {
 		const deployerPublicKey =
@@ -21,7 +23,7 @@ describe('mint e2e test', () => {
 			'--deployer-public-key',
 			deployerPublicKey,
 			'--mock-proof',
-			'false',
+			USE_MOCK_PROOF,
 			'--network',
 			'mainnnet',
 			'--feerate',
@@ -61,7 +63,7 @@ describe('mint e2e test', () => {
 			'--private-keys',
 			[deployerPrivateKey].join(','),
 			'--mock-proof',
-			'false',
+			USE_MOCK_PROOF,
 			'--network',
 			'mainnnet',
 			'--feerate',

@@ -24,6 +24,7 @@ import { getCharmsAmountFromUtxo } from '../core/spells';
 import { mapAsync } from '../core/array-utils';
 import { DUST_LIMIT, txBytesToTxid } from '../core/bitcoin';
 import { LOCKED_BTC_MIN_AMOUNT } from '../cli/consts';
+import { parse } from '../core/env-parser';
 
 function getAmountFromUtxo(
 	previousTransactions: { [key: string]: Buffer },
@@ -168,7 +169,16 @@ export async function createGeneralizedSpell(
 	}
 
 	const fundingChangeAddress = await context.bitcoinClient.getAddress();
-	fundingUtxo = fundingUtxo || (await context.bitcoinClient.getFundingUtxo());
+
+	if (!fundingUtxo) {
+		const defaultTransactionSize = parse.number(
+			'BTC_DEFAULT_TRANSACTION_SIZE',
+			250
+		);
+		fundingUtxo = await context.bitcoinClient.getFundingUtxo(
+			feerate * defaultTransactionSize
+		);
+	}
 
 	const previousSpellData = await showSpell(context, previousNftTxid);
 	if (!previousSpellData) {

@@ -1,7 +1,6 @@
 import { logger } from '../core/logger';
 import minimist from 'minimist';
 import dotenv from 'dotenv';
-import { BitcoinClient } from '../core/bitcoin';
 import {
 	getPreviousTransactions,
 	transmitSpell,
@@ -9,7 +8,7 @@ import {
 import { DEFAULT_FEERATE } from './consts';
 import { createTransferSpell } from '../api/create-transfer-spell';
 import { findCharmsUtxos } from '../core/spells';
-import { createContext } from './utils';
+import { createContext, getFundingUtxo } from './utils';
 
 export async function transferCli(_argv: string[]): Promise<[string, string]> {
 	dotenv.config({ path: ['.env.test', '.env.local', '.env'] });
@@ -17,29 +16,18 @@ export async function transferCli(_argv: string[]): Promise<[string, string]> {
 	const argv = minimist(_argv, {
 		alias: {},
 		boolean: ['transmit', 'mock-proof', 'skip-proof'],
-		default: {
-			network: 'regtest',
-			feerate: DEFAULT_FEERATE,
-			transmit: true,
-			'mock-proof': false,
-			'skip-proof': false,
-		},
+		default: {},
 		'--': true,
 	});
 
-	const bitcoinClient = await BitcoinClient.initialize();
-	const fundingUtxo = await bitcoinClient.getFundingUtxo();
-
 	const context = await createContext(argv);
 
-	const transmit = !!argv['transmit'];
-
-	const feerate = Number.parseFloat(argv['feerate']);
-	if (isNaN(feerate) || feerate <= 0) {
-		throw new Error('--feerate must be a positive number.');
-	}
+	const feerate = Number.parseFloat(argv['feerate']) || DEFAULT_FEERATE;
+	const transmit = argv['transmit'] as boolean;
+	const fundingUtxo = await getFundingUtxo(context, feerate);
 
 	const amount = Number.parseInt(argv['amount']);
+
 	if (!amount || isNaN(amount) || amount <= 0) {
 		throw new Error('--amount must be a positive number.');
 	}
@@ -51,11 +39,13 @@ export async function transferCli(_argv: string[]): Promise<[string, string]> {
 	logger.debug('Found Charms UTXOs: ', inputUtxos);
 
 	const outputAddress =
-		(argv['output-address'] as string) ?? (await bitcoinClient.getAddress());
+		(argv['output-address'] as string) ??
+		(await context.bitcoinClient.getAddress());
 	logger.debug('Output address: ', outputAddress);
 
 	const changeAddress =
-		(argv['change-address'] as string) ?? (await bitcoinClient.getAddress());
+		(argv['change-address'] as string) ??
+		(await context.bitcoinClient.getAddress());
 	logger.debug('Change address: ', changeAddress);
 
 	const spell = await createTransferSpell(
@@ -75,7 +65,7 @@ export async function transferCli(_argv: string[]): Promise<[string, string]> {
 		spell.commitmentTxBytes
 	);
 
-	spell.spellTxBytes = await bitcoinClient.signTransaction(
+	spell.spellTxBytes = await context.bitcoinClient.signTransaction(
 		spell.spellTxBytes,
 		previousTransactionsMap,
 		'ALL|ANYONECANPAY'

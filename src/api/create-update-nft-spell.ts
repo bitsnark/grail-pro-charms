@@ -1,5 +1,4 @@
 import { logger } from '../core/logger';
-import { BitcoinClient } from '../core/bitcoin';
 import { showSpell } from '../core/charms-sdk';
 import { IContext } from '../core/i-context';
 import {
@@ -10,6 +9,7 @@ import {
 	Utxo,
 } from '../core/types';
 import { createGeneralizedSpell } from './create-generalized-spell';
+import { parse } from '../core/env-parser';
 
 export async function createUpdateNftSpell(
 	context: IContext,
@@ -18,10 +18,14 @@ export async function createUpdateNftSpell(
 	grailState: GrailState,
 	fundingUtxo?: Utxo
 ): Promise<{ spell: Spell; signatureRequest: SignatureRequest }> {
-	const bitcoinClient = await BitcoinClient.initialize();
-
 	if (!fundingUtxo) {
-		fundingUtxo = await bitcoinClient.getFundingUtxo();
+		const defaultTransactionSize = parse.number(
+			'BTC_DEFAULT_TRANSACTION_SIZE',
+			250
+		);
+		fundingUtxo = await context.bitcoinClient.getFundingUtxo(
+			feerate * defaultTransactionSize
+		);
 	}
 
 	const previousSpellData = await showSpell(context, previousNftTxid);

@@ -11,6 +11,7 @@ import { createSpell } from '../core/spells';
 import { transmitSpell } from '../api/spell-operations';
 import { parse } from '../core/env-parser';
 import { DEFAULT_FEERATE, ZKAPP_BIN } from './consts';
+import { getFundingUtxo } from './utils';
 
 export async function deployNft(
 	context: IContext,
@@ -90,11 +91,7 @@ export async function deployNftCli(
 		alias: {},
 		boolean: ['transmit', 'mock-proof', 'skip-proof'],
 		default: {
-			network: 'regtest',
-			feerate: DEFAULT_FEERATE,
 			transmit: true,
-			'mock-proof': false,
-			'skip-proof': false,
 		},
 		'--': true,
 	});
@@ -107,14 +104,10 @@ export async function deployNftCli(
 		'hex'
 	);
 
-	if (!argv['feerate']) {
-		throw new Error('--feerate is required');
-	}
-	const feerate = Number.parseFloat(argv['feerate']);
-	const transmit = !!argv['transmit'];
-
+	const feerate = Number.parseFloat(argv['feerate']) || DEFAULT_FEERATE;
+	const transmit = argv['transmit'] as boolean;
 	const bitcoinClient = await BitcoinClient.initialize();
-	const fundingUtxo = await bitcoinClient.getFundingUtxo();
+	const fundingUtxo = await getFundingUtxo(bitcoinClient, feerate);
 
 	const context = await Context.createForDeploy(
 		{
@@ -124,6 +117,7 @@ export async function deployNftCli(
 				argv['network'] ?? (parse.string('BTC_NETWORK', 'regtest') as Network),
 			mockProof: !!argv['mock-proof'],
 			skipProof: !!argv['skip-proof'],
+			bitcoinClient,
 		},
 		fundingUtxo
 	);

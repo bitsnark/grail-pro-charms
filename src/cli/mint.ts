@@ -1,7 +1,6 @@
 import { logger } from '../core/logger';
 import minimist from 'minimist';
 import dotenv from 'dotenv';
-import { BitcoinClient } from '../core/bitcoin';
 import { SignatureResponse, TokenDetails } from '../core/types';
 import {
 	injectSignaturesIntoSpell,
@@ -12,7 +11,7 @@ import { privateToKeypair } from './generate-random-keypairs';
 import { DEFAULT_FEERATE } from './consts';
 import { filterValidCosignerSignatures } from '../api/spell-operations';
 import { createMintSpell } from '../api/create-mint-spell';
-import { createContext } from './utils';
+import { createContext, getFundingUtxo } from './utils';
 
 export const TIMELOCK_BLOCKS = 100; // Default timelock for user payments
 
@@ -24,18 +23,10 @@ export async function mintCli(_argv: string[]): Promise<[string, string]> {
 		string: ['private-keys', 'user-wallet-address'],
 		boolean: ['transmit', 'mock-proof', 'skip-proof'],
 		default: {
-			network: 'regtest',
-			feerate: DEFAULT_FEERATE,
-			transmit: true,
-			'mock-proof': false,
-			'skip-proof': false,
 			'user-payment-vout': 0,
 		},
 		'--': true,
 	});
-
-	const bitcoinClient = await BitcoinClient.initialize();
-	const fundingUtxo = await bitcoinClient.getFundingUtxo();
 
 	const appId = argv['app-id'] as string;
 	if (!appId) {
@@ -44,12 +35,14 @@ export async function mintCli(_argv: string[]): Promise<[string, string]> {
 
 	const context = await createContext(argv);
 
+	const feerate = Number.parseFloat(argv['feerate']) || DEFAULT_FEERATE;
+	const transmit = argv['transmit'] as boolean;
+	const fundingUtxo = await getFundingUtxo(context, feerate);
+
 	const previousNftTxid = argv['previous-nft-txid'] as string;
 	if (!previousNftTxid) {
 		throw new Error('--previous-nft-txid is required');
 	}
-
-	const transmit = !!argv['transmit'];
 
 	if (!argv['private-keys']) {
 		throw new Error('--private-keys is required');
@@ -61,11 +54,6 @@ export async function mintCli(_argv: string[]): Promise<[string, string]> {
 	const userWalletAddress =
 		(argv['user-wallet-address'] as string) ||
 		(await context.bitcoinClient.getAddress());
-
-	if (!argv['feerate']) {
-		throw new Error('--feerate is required');
-	}
-	const feerate = Number.parseFloat(argv['feerate']);
 
 	const amount = Number.parseInt(argv['amount'] as string, 10);
 	if (!amount || isNaN(amount) || amount <= 0) {

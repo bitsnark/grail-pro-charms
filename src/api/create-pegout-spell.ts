@@ -11,6 +11,7 @@ import { generateGrailPaymentAddress } from '../core/taproot';
 import { bitcoinjslibNetworks } from '../core/taproot/taproot-common';
 import { filterAsync } from '../core/array-utils';
 import { LOCKED_BTC_MIN_AMOUNT } from '../cli/consts';
+import { parse } from '../core/env-parser';
 
 export async function findLockedBtcUtxos(
 	context: IContext,
@@ -85,7 +86,15 @@ export async function createPegoutSpell(
 		throw new Error('Previous Grail state not found');
 	}
 
-	fundingUtxo = fundingUtxo || (await context.bitcoinClient.getFundingUtxo());
+	if (!fundingUtxo) {
+		const defaultTransactionSize = parse.number(
+			'BTC_DEFAULT_TRANSACTION_SIZE',
+			250
+		);
+		fundingUtxo = await context.bitcoinClient.getFundingUtxo(
+			feerate * defaultTransactionSize
+		);
+	}
 
 	const userPaymentAmount = await getCharmsAmountFromUtxo(
 		context,

@@ -1,7 +1,6 @@
 import { logger } from '../core/logger';
 import minimist from 'minimist';
 import dotenv from 'dotenv';
-import { BitcoinClient } from '../core/bitcoin';
 import { createUpdateNftSpell } from '../api/create-update-nft-spell';
 import { privateToKeypair } from './generate-random-keypairs';
 import {
@@ -9,7 +8,11 @@ import {
 	signAsCosigner,
 	transmitSpell,
 } from '../api/spell-operations';
-import { createContext, getNewGrailStateFromArgv } from './utils';
+import {
+	createContext,
+	getFundingUtxo,
+	getNewGrailStateFromArgv,
+} from './utils';
 import { SignatureResponse } from '../core/types';
 import { DEFAULT_FEERATE } from './consts';
 
@@ -31,17 +34,17 @@ export async function updateNftCli(
 		'--': true,
 	});
 
-	const bitcoinClient = await BitcoinClient.initialize();
-	const fundingUtxo = await bitcoinClient.getFundingUtxo();
-
 	const context = await createContext(argv);
 
+	const feerate = Number.parseFloat(argv['feerate']) || DEFAULT_FEERATE;
+	const transmit = argv['transmit'] as boolean;
+	const fundingUtxo = await getFundingUtxo(context, feerate);
+
 	const previousNftTxid = argv['previous-nft-txid'] as string;
+
 	if (!previousNftTxid) {
 		throw new Error('--previous-nft-txid is required');
 	}
-
-	const transmit = !!argv['transmit'];
 
 	if (!argv['private-keys']) {
 		throw new Error('--private-keys is required');
@@ -49,11 +52,6 @@ export async function updateNftCli(
 	const privateKeys = (argv['private-keys'] as string)
 		.split(',')
 		.map(s => s.trim().replace('0x', ''));
-
-	if (!argv['feerate']) {
-		throw new Error('--feerate is required');
-	}
-	const feerate = Number.parseFloat(argv['feerate']);
 
 	const newGrailState = getNewGrailStateFromArgv(argv);
 	if (!newGrailState) {
