@@ -11,7 +11,7 @@ import { createSpell } from '../core/spells';
 import { transmitSpell } from '../api/spell-operations';
 import { parse } from '../core/env-parser';
 import { DEFAULT_FEERATE, ZKAPP_BIN } from './consts';
-import { getFundingUtxo } from './utils';
+import { getFundingUtxo } from '../api/spell-operations';
 
 export async function deployNft(
 	context: IContext,

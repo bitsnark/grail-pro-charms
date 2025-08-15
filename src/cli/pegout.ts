@@ -14,7 +14,8 @@ import { privateToKeypair } from './generate-random-keypairs';
 import { createPegoutSpell } from '../api/create-pegout-spell';
 import { TIMELOCK_BLOCKS } from './pegin';
 import { DEFAULT_FEERATE } from './consts';
-import { createContext, getFundingUtxo } from './utils';
+import { createContext } from './utils';
+import { getFundingUtxo } from '../api/spell-operations';
 
 export async function pegoutCli(_argv: string[]): Promise<[string, string]> {
 	dotenv.config({ path: ['.env.test', '.env.local', '.env'] });

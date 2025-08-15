@@ -8,7 +8,8 @@ import {
 import { DEFAULT_FEERATE } from './consts';
 import { createTransferSpell } from '../api/create-transfer-spell';
 import { findCharmsUtxos } from '../core/spells';
-import { createContext, getFundingUtxo } from './utils';
+import { createContext } from './utils';
+import { getFundingUtxo } from '../api/spell-operations';
 
 export async function transferCli(_argv: string[]): Promise<[string, string]> {
 	dotenv.config({ path: ['.env.test', '.env.local', '.env'] });

@@ -9,7 +9,7 @@ import {
 	Utxo,
 } from '../core/types';
 import { createGeneralizedSpell } from './create-generalized-spell';
-import { parse } from '../core/env-parser';
+import { getFundingUtxo } from './spell-operations';
 
 export async function createUpdateNftSpell(
 	context: IContext,
@@ -18,15 +18,8 @@ export async function createUpdateNftSpell(
 	grailState: GrailState,
 	fundingUtxo?: Utxo
 ): Promise<{ spell: Spell; signatureRequest: SignatureRequest }> {
-	if (!fundingUtxo) {
-		const defaultTransactionSize = parse.number(
-			'BTC_DEFAULT_TRANSACTION_SIZE',
-			250
-		);
-		fundingUtxo = await context.bitcoinClient.getFundingUtxo(
-			feerate * defaultTransactionSize
-		);
-	}
+	if (!fundingUtxo)
+		fundingUtxo = await getFundingUtxo(context.bitcoinClient, feerate);
 
 	const previousSpellData = await showSpell(context, previousNftTxid);
 	logger.debug('Previous NFT spell: ', previousSpellData);

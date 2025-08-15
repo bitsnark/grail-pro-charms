@@ -2,7 +2,7 @@ import { logger } from '../core/logger';
 import { Spell, TokenUtxo, TransferRequest, Utxo } from '../core/types';
 import { IContext } from '../core/i-context';
 import { createSpell } from '../core/spells';
-import { parse } from '../core/env-parser';
+import { getFundingUtxo } from './spell-operations';
 
 export async function createTransferSpell(
 	context: IContext,
@@ -13,15 +13,8 @@ export async function createTransferSpell(
 	amount: number,
 	fundingUtxo?: Utxo
 ): Promise<Spell> {
-	if (!fundingUtxo) {
-		const defaultTransactionSize = parse.number(
-			'BTC_DEFAULT_TRANSACTION_SIZE',
-			250
-		);
-		fundingUtxo = await context.bitcoinClient.getFundingUtxo(
-			feerate * defaultTransactionSize
-		);
-	}
+	if (!fundingUtxo)
+		fundingUtxo = await getFundingUtxo(context.bitcoinClient, feerate);
 
 	const inputTotal = inputUtxos.reduce((sum, utxo) => sum + utxo.amount, 0);
 	if (inputUtxos.length == 0 || inputTotal <= 0) {

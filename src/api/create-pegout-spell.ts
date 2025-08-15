@@ -3,7 +3,7 @@ import * as bitcoin from 'bitcoinjs-lib';
 import { GrailState, SignatureRequest, Spell, Utxo } from '../core/types';
 import { IContext } from '../core/i-context';
 import { createGeneralizedSpell } from './create-generalized-spell';
-import { getPreviousGrailState } from './spell-operations';
+import { getFundingUtxo, getPreviousGrailState } from './spell-operations';
 import { hashToTxid } from '../core/bitcoin';
 import { getCharmsAmountFromUtxo, getStateFromNft } from '../core/spells';
 import { UserPaymentDetails } from '../core/types';
@@ -11,7 +11,6 @@ import { generateGrailPaymentAddress } from '../core/taproot';
 import { bitcoinjslibNetworks } from '../core/taproot/taproot-common';
 import { filterAsync } from '../core/array-utils';
 import { LOCKED_BTC_MIN_AMOUNT } from '../cli/consts';
-import { parse } from '../core/env-parser';
 
 export async function findLockedBtcUtxos(
 	context: IContext,
@@ -86,15 +85,8 @@ export async function createPegoutSpell(
 		throw new Error('Previous Grail state not found');
 	}
 
-	if (!fundingUtxo) {
-		const defaultTransactionSize = parse.number(
-			'BTC_DEFAULT_TRANSACTION_SIZE',
-			250
-		);
-		fundingUtxo = await context.bitcoinClient.getFundingUtxo(
-			feerate * defaultTransactionSize
-		);
-	}
+	if (!fundingUtxo)
+		fundingUtxo = await getFundingUtxo(context.bitcoinClient, feerate);
 
 	const userPaymentAmount = await getCharmsAmountFromUtxo(
 		context,

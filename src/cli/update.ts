@@ -8,13 +8,10 @@ import {
 	signAsCosigner,
 	transmitSpell,
 } from '../api/spell-operations';
-import {
-	createContext,
-	getFundingUtxo,
-	getNewGrailStateFromArgv,
-} from './utils';
+import { createContext, getNewGrailStateFromArgv } from './utils';
 import { SignatureResponse } from '../core/types';
 import { DEFAULT_FEERATE } from './consts';
+import { getFundingUtxo } from '../api/spell-operations';
 
 export async function updateNftCli(
 	_argv: string[]

@@ -2,8 +2,7 @@ import { logger } from '../core/logger';
 import { SignatureRequest, Spell, TokenDetails, Utxo } from '../core/types';
 import { IContext } from '../core/i-context';
 import { createGeneralizedSpell } from './create-generalized-spell';
-import { getPreviousGrailState } from './spell-operations';
-import { parse } from '../core/env-parser';
+import { getFundingUtxo, getPreviousGrailState } from './spell-operations';
 
 export async function createMintSpell(
 	context: IContext,
@@ -28,15 +27,8 @@ export async function createMintSpell(
 		throw new Error('Previous Grail state not found');
 	}
 
-	if (!fundingUtxo) {
-		const defaultTransactionSize = parse.number(
-			'BTC_DEFAULT_TRANSACTION_SIZE',
-			250
-		);
-		fundingUtxo = await context.bitcoinClient.getFundingUtxo(
-			feerate * defaultTransactionSize
-		);
-	}
+	if (!fundingUtxo)
+		fundingUtxo = await getFundingUtxo(context.bitcoinClient, feerate);
 
 	const { spell, signatureRequest } = await createGeneralizedSpell(
 		context,

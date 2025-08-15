@@ -13,7 +13,8 @@ import {
 import { privateToKeypair } from './generate-random-keypairs';
 import { DEFAULT_FEERATE } from './consts';
 import { filterValidCosignerSignatures } from '../api/spell-operations';
-import { createContext, getFundingUtxo } from './utils';
+import { createContext } from './utils';
+import { getFundingUtxo } from '../api/spell-operations';
 
 export const TIMELOCK_BLOCKS = 100; // Default timelock for user payments
 
