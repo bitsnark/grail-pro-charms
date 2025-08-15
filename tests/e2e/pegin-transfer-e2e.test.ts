@@ -9,6 +9,8 @@ import { transferCli } from '../../src/cli/transfer';
 jest.setTimeout(600000000);
 logger.setLoggerOptions(DEBUG_LEVELS.ALL, true, true); // Set debug level to ALL, print date and level
 
+const USE_MOCK_PROOF = 'true';
+
 describe('peg-in and transfer e2e test', () => {
 	it('should deploy, then peg-in, then transfer successfully', async () => {
 		const deployerKaypair = generateRandomKeypair();
@@ -24,7 +26,7 @@ describe('peg-in and transfer e2e test', () => {
 			'--deployer-public-key',
 			deployerPublicKey,
 			'--mock-proof',
-			'true',
+			USE_MOCK_PROOF,
 			'--network',
 			'regtest',
 			'--feerate',
@@ -33,8 +35,6 @@ describe('peg-in and transfer e2e test', () => {
 			'true',
 			'--ticker',
 			'TESTNFT',
-			'--skip-proof',
-			'true',
 		]);
 		expect(deployResult).toBeTruthy();
 		logger.log('Deployment Result:', deployResult);
@@ -87,7 +87,7 @@ describe('peg-in and transfer e2e test', () => {
 			'--private-keys',
 			[deployerPrivateKey, newPrivateKey].join(','),
 			'--mock-proof',
-			'true',
+			USE_MOCK_PROOF,
 			'--network',
 			'regtest',
 			'--feerate',
@@ -96,8 +96,6 @@ describe('peg-in and transfer e2e test', () => {
 			'true',
 			'--ticker',
 			'TESTNFT',
-			'--skip-proof',
-			'true',
 		]);
 		expect(peginResult).toBeTruthy();
 		logger.log('Pegin Result:', peginResult);
@@ -116,7 +114,7 @@ describe('peg-in and transfer e2e test', () => {
 			'--app-vk',
 			deployResult.appVk,
 			'--mock-proof',
-			'true',
+			USE_MOCK_PROOF,
 			'--network',
 			'regtest',
 			'--feerate',
@@ -125,8 +123,6 @@ describe('peg-in and transfer e2e test', () => {
 			'true',
 			'--amount',
 			transmitAmount.toString(),
-			'--skip-proof',
-			'false',
 		]);
 		expect(transferResult).toBeTruthy();
 		logger.log('Transfer Result:', transferResult);

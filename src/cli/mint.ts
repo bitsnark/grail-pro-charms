@@ -1,10 +1,6 @@
 import { logger } from '../core/logger';
 import minimist from 'minimist';
 import dotenv from 'dotenv';
-import { BitcoinClient } from '../core/bitcoin';
-import { Network } from '../core/taproot/taproot-common';
-import { Context } from '../core/context';
-import { parse } from '../core/env-parser';
 import { SignatureResponse, TokenDetails } from '../core/types';
 import {
 	injectSignaturesIntoSpell,
@@ -15,6 +11,8 @@ import { privateToKeypair } from './generate-random-keypairs';
 import { DEFAULT_FEERATE } from './consts';
 import { filterValidCosignerSignatures } from '../api/spell-operations';
 import { createMintSpell } from '../api/create-mint-spell';
+import { createContext } from './utils';
+import { getFundingUtxo } from '../api/spell-operations';
 
 export const TIMELOCK_BLOCKS = 100; // Default timelock for user payments
 
@@ -26,43 +24,26 @@ export async function mintCli(_argv: string[]): Promise<[string, string]> {
 		string: ['private-keys', 'user-wallet-address'],
 		boolean: ['transmit', 'mock-proof', 'skip-proof'],
 		default: {
-			network: 'regtest',
-			feerate: DEFAULT_FEERATE,
-			transmit: true,
-			'mock-proof': false,
-			'skip-proof': false,
 			'user-payment-vout': 0,
 		},
 		'--': true,
 	});
 
-	const bitcoinClient = await BitcoinClient.initialize();
-	const fundingUtxo = await bitcoinClient.getFundingUtxo();
-
 	const appId = argv['app-id'] as string;
 	if (!appId) {
 		throw new Error('--app-id is required');
 	}
-	const appVk = argv['app-vk'] as string;
 
-	const network = argv['network'] as Network;
+	const context = await createContext(argv);
 
-	const context = await Context.create({
-		appId,
-		appVk,
-		charmsBin: parse.string('CHARMS_BIN'),
-		zkAppBin: './zkapp/target/charms-app',
-		network,
-		mockProof: !!argv['mock-proof'],
-		skipProof: !!argv['skip-proof'],
-	});
+	const feerate = Number.parseFloat(argv['feerate']) || DEFAULT_FEERATE;
+	const transmit = argv['transmit'] as boolean;
+	const fundingUtxo = await getFundingUtxo(context, feerate);
 
 	const previousNftTxid = argv['previous-nft-txid'] as string;
 	if (!previousNftTxid) {
 		throw new Error('--previous-nft-txid is required');
 	}
-
-	const transmit = !!argv['transmit'];
 
 	if (!argv['private-keys']) {
 		throw new Error('--private-keys is required');
@@ -74,11 +55,6 @@ export async function mintCli(_argv: string[]): Promise<[string, string]> {
 	const userWalletAddress =
 		(argv['user-wallet-address'] as string) ||
 		(await context.bitcoinClient.getAddress());
-
-	if (!argv['feerate']) {
-		throw new Error('--feerate is required');
-	}
-	const feerate = Number.parseFloat(argv['feerate']);
 
 	const amount = Number.parseInt(argv['amount'] as string, 10);
 	if (!amount || isNaN(amount) || amount <= 0) {

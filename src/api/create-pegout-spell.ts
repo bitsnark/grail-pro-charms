@@ -3,7 +3,7 @@ import * as bitcoin from 'bitcoinjs-lib';
 import { GrailState, SignatureRequest, Spell, Utxo } from '../core/types';
 import { IContext } from '../core/i-context';
 import { createGeneralizedSpell } from './create-generalized-spell';
-import { getPreviousGrailState } from './spell-operations';
+import { getFundingUtxo, getPreviousGrailState } from './spell-operations';
 import { hashToTxid } from '../core/bitcoin';
 import { getCharmsAmountFromUtxo, getStateFromNft } from '../core/spells';
 import { UserPaymentDetails } from '../core/types';
@@ -85,7 +85,8 @@ export async function createPegoutSpell(
 		throw new Error('Previous Grail state not found');
 	}
 
-	fundingUtxo = fundingUtxo || (await context.bitcoinClient.getFundingUtxo());
+	if (!fundingUtxo)
+		fundingUtxo = await getFundingUtxo(context.bitcoinClient, feerate);
 
 	const userPaymentAmount = await getCharmsAmountFromUtxo(
 		context,

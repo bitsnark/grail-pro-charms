@@ -1,10 +1,6 @@
 import { logger } from '../core/logger';
 import minimist from 'minimist';
 import dotenv from 'dotenv';
-import { BitcoinClient } from '../core/bitcoin';
-import { Network } from '../core/taproot/taproot-common';
-import { Context } from '../core/context';
-import { parse } from '../core/env-parser';
 import { createUpdateNftSpell } from '../api/create-update-nft-spell';
 import { privateToKeypair } from './generate-random-keypairs';
 import {
@@ -12,9 +8,10 @@ import {
 	signAsCosigner,
 	transmitSpell,
 } from '../api/spell-operations';
-import { getNewGrailStateFromArgv } from './utils';
+import { createContext, getNewGrailStateFromArgv } from './utils';
 import { SignatureResponse } from '../core/types';
 import { DEFAULT_FEERATE } from './consts';
+import { getFundingUtxo } from '../api/spell-operations';
 
 export async function updateNftCli(
 	_argv: string[]
@@ -34,31 +31,17 @@ export async function updateNftCli(
 		'--': true,
 	});
 
-	const bitcoinClient = await BitcoinClient.initialize();
-	const fundingUtxo = await bitcoinClient.getFundingUtxo();
+	const context = await createContext(argv);
 
-	const appId = argv['app-id'] as string;
-	if (!appId) {
-		throw new Error('--app-id is required');
-	}
-	const appVk = argv['app-vk'] as string;
-
-	const context = await Context.create({
-		appId,
-		appVk,
-		charmsBin: parse.string('CHARMS_BIN'),
-		zkAppBin: './zkapp/target/charms-app',
-		network: argv['network'] as Network,
-		mockProof: !!argv['mock-proof'],
-		skipProof: !!argv['skip-proof'],
-	});
+	const feerate = Number.parseFloat(argv['feerate']) || DEFAULT_FEERATE;
+	const transmit = argv['transmit'] as boolean;
+	const fundingUtxo = await getFundingUtxo(context, feerate);
 
 	const previousNftTxid = argv['previous-nft-txid'] as string;
+
 	if (!previousNftTxid) {
 		throw new Error('--previous-nft-txid is required');
 	}
-
-	const transmit = !!argv['transmit'];
 
 	if (!argv['private-keys']) {
 		throw new Error('--private-keys is required');
@@ -66,11 +49,6 @@ export async function updateNftCli(
 	const privateKeys = (argv['private-keys'] as string)
 		.split(',')
 		.map(s => s.trim().replace('0x', ''));
-
-	if (!argv['feerate']) {
-		throw new Error('--feerate is required');
-	}
-	const feerate = Number.parseFloat(argv['feerate']);
 
 	const newGrailState = getNewGrailStateFromArgv(argv);
 	if (!newGrailState) {

@@ -1,3 +1,5 @@
+/* Foobah 1.0.0 */
+
 import { createGeneralizedSpell } from './api/create-generalized-spell';
 import { createPeginSpell } from './api/create-pegin-spell';
 import { createPegoutSpell } from './api/create-pegout-spell';
@@ -9,10 +11,15 @@ import {
 	injectSignaturesIntoSpell,
 	signAsCosigner,
 	filterValidCosignerSignatures,
+	transmitSpell,
+	getUserWalletAddressFromUserPaymentUtxo,
+	findUserPaymentVout,
 } from './api/spell-operations';
 import { Context } from './core/context';
+import * as types from './core/types';
 
 export {
+	types,
 	Context,
 	getPreviousGrailState,
 	getPreviousTransactions,
@@ -23,5 +30,8 @@ export {
 	injectSignaturesIntoSpell,
 	createTransferSpell,
 	filterValidCosignerSignatures,
-	createGeneralizedSpell
+	createGeneralizedSpell,
+	transmitSpell,
+	getUserWalletAddressFromUserPaymentUtxo,
+	findUserPaymentVout,
 };

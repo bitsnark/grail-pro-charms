@@ -1,10 +1,6 @@
 import { logger } from '../core/logger';
 import minimist from 'minimist';
 import dotenv from 'dotenv';
-import { BitcoinClient } from '../core/bitcoin';
-import { Network } from '../core/taproot/taproot-common';
-import { Context } from '../core/context';
-import { parse } from '../core/env-parser';
 import { SignatureResponse, UserPaymentDetails } from '../core/types';
 import {
 	filterValidCosignerSignatures,
@@ -18,6 +14,8 @@ import { privateToKeypair } from './generate-random-keypairs';
 import { createPegoutSpell } from '../api/create-pegout-spell';
 import { TIMELOCK_BLOCKS } from './pegin';
 import { DEFAULT_FEERATE } from './consts';
+import { createContext } from './utils';
+import { getFundingUtxo } from '../api/spell-operations';
 
 export async function pegoutCli(_argv: string[]): Promise<[string, string]> {
 	dotenv.config({ path: ['.env.test', '.env.local', '.env'] });
@@ -36,9 +34,6 @@ export async function pegoutCli(_argv: string[]): Promise<[string, string]> {
 		'--': true,
 	});
 
-	const bitcoinClient = await BitcoinClient.initialize();
-	const fundingUtxo = await bitcoinClient.getFundingUtxo();
-
 	const appId = argv['app-id'] as string;
 	if (!appId) {
 		throw new Error('--app-id is required');
@@ -48,17 +43,11 @@ export async function pegoutCli(_argv: string[]): Promise<[string, string]> {
 		throw new Error('--app-vk is required');
 	}
 
-	const network = argv['network'] as Network;
+	const context = await createContext(argv);
 
-	const context = await Context.create({
-		appId,
-		appVk,
-		charmsBin: parse.string('CHARMS_BIN'),
-		zkAppBin: './zkapp/target/charms-app',
-		network: argv['network'] as Network,
-		mockProof: !!argv['mock-proof'],
-		skipProof: !!argv['skip-proof'],
-	});
+	const feerate = Number.parseFloat(argv['feerate']) || DEFAULT_FEERATE;
+	const transmit = argv['transmit'] as boolean;
+	const fundingUtxo = await getFundingUtxo(context, feerate);
 
 	if (!argv['new-public-keys']) {
 		throw new Error('--new-public-keys is required');
@@ -81,8 +70,6 @@ export async function pegoutCli(_argv: string[]): Promise<[string, string]> {
 	if (!previousNftTxid) {
 		throw new Error('--previous-nft-txid is required');
 	}
-
-	const transmit = !!argv['transmit'];
 
 	if (!argv['private-keys']) {
 		throw new Error('--private-keys is required');
@@ -122,7 +109,7 @@ export async function pegoutCli(_argv: string[]): Promise<[string, string]> {
 	const userWalletAddress = await getUserWalletAddressFromUserPaymentUtxo(
 		context,
 		{ txid: userPaymentTxid, vout: userPaymentVout },
-		network
+		context.network
 	);
 
 	const userPaymentDetails: UserPaymentDetails = {
@@ -133,8 +120,6 @@ export async function pegoutCli(_argv: string[]): Promise<[string, string]> {
 		grailState: newGrailState,
 		userWalletAddress,
 	};
-
-	const feerate = Number.parseFloat(argv['feerate']);
 
 	const { spell, signatureRequest } = await createPegoutSpell(
 		context,

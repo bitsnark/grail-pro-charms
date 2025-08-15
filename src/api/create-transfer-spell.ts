@@ -1,8 +1,8 @@
 import { logger } from '../core/logger';
-import { BitcoinClient } from '../core/bitcoin';
 import { Spell, TokenUtxo, TransferRequest, Utxo } from '../core/types';
 import { IContext } from '../core/i-context';
 import { createSpell } from '../core/spells';
+import { getFundingUtxo } from './spell-operations';
 
 export async function createTransferSpell(
 	context: IContext,
@@ -13,11 +13,8 @@ export async function createTransferSpell(
 	amount: number,
 	fundingUtxo?: Utxo
 ): Promise<Spell> {
-	const bitcoinClient = await BitcoinClient.initialize();
-
-	if (!fundingUtxo) {
-		fundingUtxo = await bitcoinClient.getFundingUtxo();
-	}
+	if (!fundingUtxo)
+		fundingUtxo = await getFundingUtxo(context.bitcoinClient, feerate);
 
 	const inputTotal = inputUtxos.reduce((sum, utxo) => sum + utxo.amount, 0);
 	if (inputUtxos.length == 0 || inputTotal <= 0) {

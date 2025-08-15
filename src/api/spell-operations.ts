@@ -24,11 +24,13 @@ import {
 import { showSpell } from '../core/charms-sdk';
 import { bitcoinjslibNetworks, Network } from '../core/taproot/taproot-common';
 import {
+	BitcoinClient,
 	getAddressFromScript,
 	hashToTxid,
 	txBytesToTxid,
 } from '../core/bitcoin';
 import { generateSpendingScriptForGrail } from '../core/taproot';
+import { parse } from '../core/env-parser';
 
 export async function getPreviousGrailState(
 	context: IContext,
@@ -176,11 +178,14 @@ export async function injectSignaturesIntoSpell(
 		labeledSignatures.length = input.state.threshold;
 
 		// Now we need to sort them and insert 0 where missing
-		const signaturesOrdered = input.state.publicKeys.sort().map(
-			(pk: string) =>
-				labeledSignatures.find(lsig => lsig.publicKey === pk)?.signature ||
-				Buffer.from([])
-		).reverse();
+		const signaturesOrdered = input.state.publicKeys
+			.sort()
+			.map(
+				(pk: string) =>
+					labeledSignatures.find(lsig => lsig.publicKey === pk)?.signature ||
+					Buffer.from([])
+			)
+			.reverse();
 
 		signaturesByIndex[input.index] = signaturesOrdered;
 	}
@@ -249,8 +254,8 @@ export async function getPreviousTransactions(
 ): Promise<PreviousTransactions> {
 	const result: PreviousTransactions = commitmentTxBytes
 		? {
-			[txBytesToTxid(commitmentTxBytes)]: commitmentTxBytes,
-		}
+				[txBytesToTxid(commitmentTxBytes)]: commitmentTxBytes,
+			}
 		: {};
 	const tx = bitcoin.Transaction.fromBuffer(spellTxBytes);
 	for (const input of tx.ins) {
@@ -395,4 +400,20 @@ export async function getUserWalletAddressFromUserPaymentUtxo(
 
 	// Now try every address type possible
 	return getAddressFromScript(script, network);
+}
+
+export async function getFundingUtxo(
+	bitcoinClientOrContext: BitcoinClient | IContext,
+	feerate: number
+): Promise<Utxo> {
+	if (!(bitcoinClientOrContext instanceof BitcoinClient)) {
+		bitcoinClientOrContext = bitcoinClientOrContext.bitcoinClient;
+	}
+	const defaultTransactionSize = parse.number(
+		'DEFAULT_CHARMS_TRANSACTION_SIZE',
+		10000
+	);
+	return await bitcoinClientOrContext.getFundingUtxo(
+		feerate * defaultTransactionSize * 1e8
+	);
 }

@@ -1,10 +1,6 @@
 import { logger } from '../core/logger';
 import minimist from 'minimist';
 import dotenv from 'dotenv';
-import { BitcoinClient } from '../core/bitcoin';
-import { Network } from '../core/taproot/taproot-common';
-import { Context } from '../core/context';
-import { parse } from '../core/env-parser';
 import { createPeginSpell } from '../api/create-pegin-spell';
 import { SignatureResponse, UserPaymentDetails } from '../core/types';
 import {
@@ -17,6 +13,8 @@ import {
 import { privateToKeypair } from './generate-random-keypairs';
 import { DEFAULT_FEERATE } from './consts';
 import { filterValidCosignerSignatures } from '../api/spell-operations';
+import { createContext } from './utils';
+import { getFundingUtxo } from '../api/spell-operations';
 
 export const TIMELOCK_BLOCKS = 100; // Default timelock for user payments
 
@@ -38,26 +36,11 @@ export async function peginCli(_argv: string[]): Promise<[string, string]> {
 		'--': true,
 	});
 
-	const bitcoinClient = await BitcoinClient.initialize();
-	const fundingUtxo = await bitcoinClient.getFundingUtxo();
+	const context = await createContext(argv);
 
-	const appId = argv['app-id'] as string;
-	if (!appId) {
-		throw new Error('--app-id is required');
-	}
-	const appVk = argv['app-vk'] as string;
-
-	const network = argv['network'] as Network;
-
-	const context = await Context.create({
-		appId,
-		appVk,
-		charmsBin: parse.string('CHARMS_BIN'),
-		zkAppBin: './zkapp/target/charms-app',
-		network,
-		mockProof: !!argv['mock-proof'],
-		skipProof: !!argv['skip-proof'],
-	});
+	const feerate = Number.parseFloat(argv['feerate']) || DEFAULT_FEERATE;
+	const transmit = argv['transmit'] as boolean;
+	const fundingUtxo = await getFundingUtxo(context, feerate);
 
 	if (!argv['new-public-keys']) {
 		throw new Error('--new-public-keys is required');
@@ -80,8 +63,6 @@ export async function peginCli(_argv: string[]): Promise<[string, string]> {
 	if (!previousNftTxid) {
 		throw new Error('--previous-nft-txid is required');
 	}
-
-	const transmit = !!argv['transmit'];
 
 	if (!argv['private-keys']) {
 		throw new Error('--private-keys is required');
@@ -118,7 +99,7 @@ export async function peginCli(_argv: string[]): Promise<[string, string]> {
 	const userWalletAddress = await getUserWalletAddressFromUserPaymentUtxo(
 		context,
 		{ txid: userPaymentTxid, vout: userPaymentVout },
-		network
+		context.network
 	);
 
 	const userPaymentDetails: UserPaymentDetails = {
@@ -129,11 +110,6 @@ export async function peginCli(_argv: string[]): Promise<[string, string]> {
 		grailState: newGrailState,
 		userWalletAddress,
 	};
-
-	if (!argv['feerate']) {
-		throw new Error('--feerate is required');
-	}
-	const feerate = Number.parseFloat(argv['feerate']);
 
 	const { spell, signatureRequest } = await createPeginSpell(
 		context,

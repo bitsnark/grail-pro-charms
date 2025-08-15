@@ -1,9 +1,10 @@
 import Client from 'bitcoin-core';
-import { PreviousTransactions, Utxo } from './types';
+import { Outspend, PreviousTransactions, Utxo } from './types';
 import * as bitcoin from 'bitcoinjs-lib';
 import * as ecc from 'tiny-secp256k1';
 import { bitcoinjslibNetworks, Network } from './taproot/taproot-common';
 import { logger } from './logger';
+import { parse } from './env-parser';
 
 bitcoin.initEccLib(ecc);
 
@@ -122,11 +123,49 @@ export class ExtendedClient {
 	}
 }
 
+export interface ExtendedTxInput {
+	prevout: {
+		hash: string;
+		index: number;
+	};
+	script: string;
+	witness: string;
+	sequence: number;
+	address: string | null;
+}
+
+export interface ExtendedTxOutput {
+	value: number; // in satoshis
+	script: string;
+	address: string | null;
+}
+
+export interface ExtendedTransaction {
+	txid: string;
+	version: number;
+	locktime: number;
+	vin: ExtendedTxInput[];
+	vout: ExtendedTxOutput[];
+	size: number;
+	weight?: number;
+	fee?: number; // in satoshis
+	status: {
+		confirmed: boolean;
+		block_height?: number;
+		block_hash?: string;
+		block_time?: number; // Unix timestamp
+	};
+	hex?: string;
+}
+
 export class BitcoinClient {
 	private client: ExtendedClient | null = null;
+	private mempoolUrl: string;
 	private static txhash: { [txid: string]: Buffer } = {};
 
-	private constructor() {}
+	private constructor() {
+		this.mempoolUrl = parse.string('MEMPOOL_URL', 'https://mempool.space/api');
+	}
 
 	public static async initialize(client?: Client): Promise<BitcoinClient> {
 		const thus = new BitcoinClient();
@@ -135,15 +174,17 @@ export class BitcoinClient {
 		} else {
 			thus.client = new ExtendedClient(
 				new Client({
-					username: process.env.BTC_NODE_USERNAME || 'bitcoin',
-					password: process.env.BTC_NODE_PASSWORD || '1234',
-					host: process.env.BTC_NODE_HOST || 'http://localhost:18443', // default for regtest
+					username: parse.string('BTC_NODE_USERNAME', 'bitcoin'),
+					password: parse.string('BTC_NODE_PASSWORD', '1234'),
+					host: parse.string('BTC_NODE_HOST', 'http://localhost:18443'),
 					timeout: 30000, // 30 seconds
 				})
 			);
-			const walletName = process.env.BTC_WALLET_NAME || 'default';
+			const walletName = parse.string('BTC_WALLET_NAME', 'default');
 			try {
-				await thus.client.loadWallet(walletName);
+				if (parse.boolean('BTC_NODE_LOAD_WALLET', false)) {
+					await thus.client.loadWallet(walletName);
+				}
 			} catch (error) {
 				const message = (error as { message: string }).message ?? '';
 				// Check for various wallet already loaded error messages
@@ -152,6 +193,7 @@ export class BitcoinClient {
 					!message.includes('Database is already opened') &&
 					!message.includes('Unable to obtain an exclusive lock')
 				) {
+					logger.error(error);
 					throw new Error(`Failed to load wallet: ${message}`);
 				}
 				// If it's a lock error, try to unload and reload
@@ -248,9 +290,9 @@ export class BitcoinClient {
 		return this.client!.getNewAddress();
 	}
 
-	public async getFundingUtxo(): Promise<Utxo> {
+	public async getFundingUtxo(amount: number): Promise<Utxo> {
 		const unspent = (await this.listUnspent()).filter(
-			utxo => utxo.spendable && utxo.value >= 1000000 // 0.01 BTC minimum
+			utxo => utxo.spendable && utxo.value >= amount
 		);
 		if (unspent.length === 0) {
 			throw new Error('No suitable funding UTXO found');
@@ -302,5 +344,21 @@ export class BitcoinClient {
 		address: string
 	): Promise<string[]> {
 		return this.client!.generateToAddress(blocks, address);
+	}
+
+	async getOutspends(txid: string): Promise<Outspend[]> {
+		const response = await fetch(`${this.mempoolUrl}/tx/${txid}/outspends`);
+		if (!response.ok) {
+			throw new Error(`Failed to fetch outspends: ${response.statusText}`);
+		}
+		return response.json();
+	}
+
+	async getExtendedTransactionData(txid: string): Promise<ExtendedTransaction> {
+		const response = await fetch(`${this.mempoolUrl}/tx/${txid}`);
+		if (!response.ok) {
+			throw new Error(`Failed to fetch transaction: ${response.statusText}`);
+		}
+		return response.json();
 	}
 }

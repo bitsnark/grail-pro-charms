@@ -18,6 +18,7 @@ import { showSpell } from '../core/charms-sdk';
 import { IContext } from '../core/i-context';
 import {
 	createUpdatingSpell,
+	getFundingUtxo,
 	getPreviousGrailStateMap,
 } from './spell-operations';
 import { getCharmsAmountFromUtxo } from '../core/spells';
@@ -168,7 +169,9 @@ export async function createGeneralizedSpell(
 	}
 
 	const fundingChangeAddress = await context.bitcoinClient.getAddress();
-	fundingUtxo = fundingUtxo || (await context.bitcoinClient.getFundingUtxo());
+
+	if (!fundingUtxo)
+		fundingUtxo = await getFundingUtxo(context.bitcoinClient, feerate);
 
 	const previousSpellData = await showSpell(context, previousNftTxid);
 	if (!previousSpellData) {

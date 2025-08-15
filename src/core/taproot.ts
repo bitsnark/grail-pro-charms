@@ -1,19 +1,7 @@
-import { logger } from './logger';
-import fs from 'node:fs';
 import * as bitcoin from 'bitcoinjs-lib';
 import { SimpleTapTree } from './taproot/taptree';
 import { Network } from './taproot/taproot-common';
 import { GrailState, UserPaymentDetails } from './types';
-
-if (process.env.DEBUG_TAPROOT) {
-	try {
-		if (!fs.existsSync('./debuglog/taproot')) {
-			fs.mkdirSync('./debuglog/taproot', { recursive: true });
-		}
-	} catch (e) {
-		logger.error('Error in debugLog: ', e);
-	}
-}
 
 export interface KeyPair {
 	publicKey: Buffer;

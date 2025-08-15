@@ -32,7 +32,10 @@ function getTokenValue(
 			) {
 				const appId = spell.apps[key].slice(0, 6) + '...';
 				values.push(formatValue(spell.outs[index].charms![key], appId));
-			} else if (spell.apps[key].startsWith('n/')) {
+			} else if (
+				spell.apps[key].startsWith('n/') &&
+				(spell.outs[index].charms![key] as { ticker?: string }).ticker
+			) {
 				values.push('NFT ' + spell.apps[key].slice(2, 6) + '...');
 			}
 		}
@@ -52,6 +55,7 @@ function getSpellActions(spell: SpellMetadata): string[] {
 
 export async function dot(
 	context: IContext,
+	txid: string,
 	transactionMap: TransactionInfoMap,
 	out: { log: (s: string) => void } = console
 ) {
@@ -71,12 +75,12 @@ export async function dot(
 		if (txinfo.spell) {
 			const label = `<${shortTxid(txinfo.txid)}<br/>${getSpellActions(txinfo.spell).map(a => `action: ${a}<br/>`)}<br/>>`;
 			out.log(
-				`"${txinfo.txid}" [shape="hexagon", color="${txinfo.spell ? 'red' : 'blue'}", ordering="in", rank="same", label=${label}, tooltip="", target="_blank", URL="https://mempool.space/tx/${txinfo.txid}"]`
+				`"${txinfo.txid}" [shape="hexagon", color="${txinfo.spell ? 'red' : 'blue'}", penwidth=${txid == txinfo.txid ? 3 : 1}, ordering="in", rank="same", label=${label}, tooltip="", URL="/transaction/${txinfo.txid}"]`
 			);
 		} else {
 			const label = `<${shortTxid(txinfo.txid)}<br/>>`;
 			out.log(
-				`"${txinfo.txid}" [shape="hexagon", color="${txinfo.spell ? 'red' : 'blue'}", ordering="in", rank="same", label=${label}, tooltip="",  target="_blank", URL="https://mempool.space/tx/${txinfo.txid}"]`
+				`"${txinfo.txid}" [shape="hexagon", color="${txinfo.spell ? 'red' : 'blue'}", penwidth=${txid == txinfo.txid ? 3 : 1}, ordering="in", rank="same", label=${label}, tooltip="",  target="_blank", URL="https://mempool.space/tx/${txinfo.txid}"]`
 			);
 		}
 		txinfo.tx.outs.forEach((output, index) => {
