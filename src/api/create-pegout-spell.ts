@@ -81,7 +81,7 @@ export async function findLockedBtcUtxos(
 
 	if (totalAmount < minAmount + LOCKED_BTC_MIN_AMOUNT) {
 		throw new Error(
-			`Not enough BTC locked UTXOs found. Required: ${minAmount}`
+			`Not enough locked BTC UTXOs found. Required: ${minAmount + LOCKED_BTC_MIN_AMOUNT}`
 		);
 	}
 
@@ -135,6 +135,17 @@ export async function createPegoutSpell(
 			userPaymentAmount,
 			nextGrailState
 		));
+
+	const totalLockedBtcAmount = lockedBtcUtxos.reduce(
+		(acc, utxo) => acc + (utxo?.value ?? 0),
+		0
+	);
+	logger.debug('Total locked BTC amount: ', totalLockedBtcAmount);
+	if (totalLockedBtcAmount < userPaymentAmount + LOCKED_BTC_MIN_AMOUNT) {
+		throw new Error(
+			`Not enough locked BTC UTXOs found. Required: ${userPaymentAmount + LOCKED_BTC_MIN_AMOUNT}`
+		);
+	}
 
 	const { spell, signatureRequest } = await createGeneralizedSpell(
 		context,
