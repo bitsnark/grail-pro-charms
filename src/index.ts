@@ -2,7 +2,10 @@
 
 import { createGeneralizedSpell } from './api/create-generalized-spell';
 import { createPeginSpell } from './api/create-pegin-spell';
-import { createPegoutSpell } from './api/create-pegout-spell';
+import {
+	createPegoutSpell,
+	findLockedBtcUtxos,
+} from './api/create-pegout-spell';
 import { createTransferSpell } from './api/create-transfer-spell';
 import { createUpdateNftSpell } from './api/create-update-nft-spell';
 import {
@@ -34,4 +37,5 @@ export {
 	transmitSpell,
 	getUserWalletAddressFromUserPaymentUtxo,
 	findUserPaymentVout,
+	findLockedBtcUtxos,
 };
