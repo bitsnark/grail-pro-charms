@@ -24,6 +24,9 @@ export function isNftSpendableByState(
 	return counter >= nftState.threshold;
 }
 
+// TODO: Scan the chain from the beginning instead of from the end So that we recycle old locked BTC UTXOs first
+// TODO: Move to spell-operations
+
 export async function findLockedBtcUtxos(
 	context: IContext,
 	lastNftTxid: string,
