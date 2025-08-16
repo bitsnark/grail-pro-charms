@@ -13,10 +13,22 @@ import { filterAsync } from '../core/array-utils';
 import { LOCKED_BTC_MIN_AMOUNT } from '../cli/consts';
 import { parse } from '../core/env-parser';
 
+export function isNftSpendableByState(
+	nftState: GrailState,
+	nextState: GrailState
+): boolean {
+	let counter = 0;
+	for (const publicKey of nftState.publicKeys) {
+		counter += nextState.publicKeys.includes(publicKey) ? 1 : 0;
+	}
+	return counter >= nftState.threshold;
+}
+
 export async function findLockedBtcUtxos(
 	context: IContext,
 	lastNftTxid: string,
-	minAmount: number
+	minAmount: number,
+	nextGrailState: GrailState
 ): Promise<Utxo[]> {
 	const selectedUtxos: Utxo[] = [];
 	let nftTxid: string | null = lastNftTxid;
@@ -24,6 +36,14 @@ export async function findLockedBtcUtxos(
 	while (nftTxid) {
 		const state = await getStateFromNft(context, nftTxid); // Ensure the state is fetched
 		if (!state) break;
+
+		if (!isNftSpendableByState(state, nextGrailState)) {
+			logger.warn(
+				`NFT state ${nftTxid} is not spendable by the next state. Skipping...`
+			);
+			break;
+		}
+
 		const grailAddress = generateGrailPaymentAddress(state, context.network);
 		const tx = bitcoin.Transaction.fromBuffer(
 			await context.bitcoinClient.getTransactionBytes(nftTxid)
@@ -44,6 +64,7 @@ export async function findLockedBtcUtxos(
 					utxo.value >= LOCKED_BTC_MIN_AMOUNT &&
 					utxo.script.equals(outputScript)
 			);
+
 		const unspent = await filterAsync(utxos, async utxo => {
 			return await context.bitcoinClient.isUtxoSpendable(utxo.txid, utxo.vout);
 		});
@@ -73,6 +94,7 @@ export async function createPegoutSpell(
 	previousNftTxid: string,
 	nextGrailState: GrailState,
 	userPaymentDetails: UserPaymentDetails,
+	lockedBtcUtxos?: Utxo[],
 	fundingUtxo?: Utxo
 ): Promise<{ spell: Spell; signatureRequest: SignatureRequest }> {
 	const previousNftTxhex =
@@ -105,11 +127,14 @@ export async function createPegoutSpell(
 	);
 	logger.debug('User payment transaction amount: ', userPaymentAmount);
 
-	const lockedBtcUtxos = await findLockedBtcUtxos(
-		context,
-		previousNftTxid,
-		userPaymentAmount
-	);
+	lockedBtcUtxos =
+		lockedBtcUtxos ??
+		(await findLockedBtcUtxos(
+			context,
+			previousNftTxid,
+			userPaymentAmount,
+			nextGrailState
+		));
 
 	const { spell, signatureRequest } = await createGeneralizedSpell(
 		context,

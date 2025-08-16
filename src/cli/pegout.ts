@@ -126,6 +126,7 @@ export async function pegoutCli(_argv: string[]): Promise<[string, string]> {
 		previousNftTxid,
 		newGrailState,
 		userPaymentDetails,
+		undefined, // lockedBtcUtxos will be fetched inside createPegoutSpell
 		fundingUtxo
 	);
 	logger.debug('Spell created: ', spell);
