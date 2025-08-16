@@ -50,7 +50,7 @@ export async function findLockedBtcUtxos(
 		for (const utxo of unspent) {
 			selectedUtxos.push(utxo);
 			totalAmount += utxo.value;
-			if (totalAmount >= minAmount) {
+			if (totalAmount >= minAmount + LOCKED_BTC_MIN_AMOUNT) {
 				break;
 			}
 		}
@@ -58,7 +58,7 @@ export async function findLockedBtcUtxos(
 		nftTxid = hashToTxid(tx.ins[0].hash);
 	}
 
-	if (totalAmount < minAmount) {
+	if (totalAmount < minAmount + LOCKED_BTC_MIN_AMOUNT) {
 		throw new Error(
 			`Not enough BTC locked UTXOs found. Required: ${minAmount}`
 		);
