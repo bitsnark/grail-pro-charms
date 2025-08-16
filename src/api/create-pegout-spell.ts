@@ -20,6 +20,7 @@ export async function findLockedBtcUtxos(
 ): Promise<Utxo[]> {
 	const selectedUtxos: Utxo[] = [];
 	let nftTxid: string | null = lastNftTxid;
+	let totalAmount = 0;
 	while (nftTxid) {
 		const state = await getStateFromNft(context, nftTxid); // Ensure the state is fetched
 		if (!state) break;
@@ -46,14 +47,16 @@ export async function findLockedBtcUtxos(
 		const unspent = await filterAsync(utxos, async utxo => {
 			return await context.bitcoinClient.isUtxoSpendable(utxo.txid, utxo.vout);
 		});
-		selectedUtxos.push(...unspent);
-		nftTxid = tx.ins[0] ? hashToTxid(tx.ins[0].hash) : null;
+		for (const utxo of unspent) {
+			selectedUtxos.push(utxo);
+			totalAmount += utxo.value;
+			if (totalAmount >= minAmount) {
+				break;
+			}
+		}
+		if (!tx.ins[0]?.hash) break;
+		nftTxid = hashToTxid(tx.ins[0].hash);
 	}
-
-	const totalAmount = selectedUtxos.reduce(
-		(sum, utxo) => sum + (utxo?.value ?? 0),
-		0
-	);
 
 	if (totalAmount < minAmount) {
 		throw new Error(
